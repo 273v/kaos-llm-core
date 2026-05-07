@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0a2] — 2026-05-07
+
+audit-01 follow-ups. No public-API or behavior changes; all changes are
+documentation, internal error-message guidance, and tooling configuration.
+
+### Added
+
+- Public namespace `__all__` declarations on the previously-implicit
+  `kaos_llm_core.integrations` and `kaos_llm_core.integrations.mcp`
+  package roots (both empty — these are pure namespace packages). Codifies
+  that nothing is intentionally re-exported through those `__init__.py`s,
+  which keeps `from kaos_llm_core.integrations import *` deterministic
+  and import-tooling-friendly.
+- `live` pytest marker registered in `[tool.pytest.ini_options].markers`
+  for tests that issue real, billable LLM API calls. The two existing
+  `@pytest.mark.live` integration tests now collect cleanly under
+  `--strict-markers` (they previously errored at collection time).
+- `missing_batch_id_error()` and `unknown_batch_error(batch_id)` helpers
+  in `kaos_llm_core.integrations.mcp._batch_helpers` so every batch tool
+  reports the same what/how/alternative recovery hint when the input is
+  missing or the batch can't be found.
+
+### Changed
+
+- VFS-resolution error messages in
+  `kaos_llm_core.integrations.mcp._batch_helpers._resolve_vfs_to_disk`
+  and `resolve_output_dir` now include a specific recovery hint
+  (configure `VFS_BACKEND=disk`, run through `kaos-llm-core-serve`, or
+  fall back to an inline `list` input source) instead of just naming
+  the failure.
+- `kaos-llm-core-batch-status` and `kaos-llm-core-batch-results` use the
+  new shared error helpers, replacing terse single-sentence errors with
+  the standard recovery-hint pattern.
+- `kaos-llm-core-batch-results` `format` validation now lists the three
+  valid values inline so callers don't have to look at the schema.
+
 ## [0.1.0a1] — 2026-05-07
 
 First public alpha. Apache-2.0. Earlier internal versions were proprietary.
