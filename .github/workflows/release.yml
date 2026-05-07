@@ -37,7 +37,7 @@ jobs:
         run: uv python install 3.13
 
       - name: Install dependencies
-        run: uv sync --group dev --python 3.13
+        run: uv sync --group dev --extra vision --python 3.13
 
       - name: Verify version matches tag
         id: version
