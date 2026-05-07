@@ -1,0 +1,53 @@
+{
+  "source": "The Atticus Project \u2014 CUAD v1",
+  "source_url": "https://github.com/TheAtticusProject/cuad",
+  "source_sha256": "ed0b77d85bdf4014d7495800e8e4a70565b48ee6f8a2e5dca9cf8655dbf10eae",
+  "source_license": "CC-BY-4.0",
+  "source_citation": "Hendrycks et al. 2021, arXiv:2103.06268",
+  "subset": "5 contracts \u00d7 5 target clauses",
+  "target_clauses": [
+    "Parties",
+    "Agreement Date",
+    "Governing Law",
+    "Termination For Convenience",
+    "Cap On Liability"
+  ],
+  "contracts": [
+    {
+      "doc_id": "ticketscominc-06-22-1999-ex-10-22-sponsorship-agreement",
+      "cuad_index": 346,
+      "title": "TICKETSCOMINC_06_22_1999-EX-10.22-SPONSORSHIP AGREEMENT",
+      "size_chars": 8080,
+      "file": "ticketscominc-06-22-1999-ex-10-22-sponsorship-agreement.txt"
+    },
+    {
+      "doc_id": "mphasetechnologiesinc-20030911-10-k-ex-10-15-1560667-ex-10-1",
+      "cuad_index": 186,
+      "title": "MphaseTechnologiesInc_20030911_10-K_EX-10.15_1560667_EX-10.15_Co-Branding Agreement",
+      "size_chars": 8321,
+      "file": "mphasetechnologiesinc-20030911-10-k-ex-10-15-1560667-ex-10-1.txt"
+    },
+    {
+      "doc_id": "dragonsystemsinc-01-08-1999-ex-10-17-outsourcing-agreement",
+      "cuad_index": 62,
+      "title": "DRAGONSYSTEMSINC_01_08_1999-EX-10.17-OUTSOURCING AGREEMENT",
+      "size_chars": 8599,
+      "file": "dragonsystemsinc-01-08-1999-ex-10-17-outsourcing-agreement.txt"
+    },
+    {
+      "doc_id": "centrackinternationalinc-10-29-1999-ex-10-3-web-site-hosting",
+      "cuad_index": 3,
+      "title": "CENTRACKINTERNATIONALINC_10_29_1999-EX-10.3-WEB SITE HOSTING AGREEMENT",
+      "size_chars": 15176,
+      "file": "centrackinternationalinc-10-29-1999-ex-10-3-web-site-hosting.txt"
+    },
+    {
+      "doc_id": "lucidinc-04-15-2011-ex-10-9-distributor-agreement",
+      "cuad_index": 164,
+      "title": "LUCIDINC_04_15_2011-EX-10.9-DISTRIBUTOR AGREEMENT",
+      "size_chars": 15540,
+      "file": "lucidinc-04-15-2011-ex-10-9-distributor-agreement.txt"
+    }
+  ],
+  "generated_with": "kaos-llm-core tests/fixtures/cuad-sample build script (WS-TR.PR-5)"
+}

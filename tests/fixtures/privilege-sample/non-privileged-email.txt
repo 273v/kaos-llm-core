@@ -1,0 +1,23 @@
+From: David Kim <dkim@acmecorp.com>
+To: Finance Team <finance-all@acmecorp.com>
+CC: Operations <ops-team@acmecorp.com>
+Date: March 12, 2024
+Subject: Q1 2024 Budget Planning Meeting - Action Items
+
+Team,
+
+Thank you for attending yesterday's Q1 budget planning session. Here are the action items:
+
+1. Sarah (FP&A): Please finalize the revenue forecast for CloudFirst by March 20. Include the three new enterprise deals in the pipeline.
+
+2. Mike (Procurement): The vendor contract renewals for AWS and Snowflake are due April 1. Please circulate the proposed terms by March 25.
+
+3. Lisa (HR): Headcount plan for Q2 needs to account for the 15 new engineering hires approved by the board. Please coordinate with recruiting.
+
+4. All: Please submit your department budgets in the shared template by March 22. The CFO review meeting is scheduled for March 28.
+
+The Q1 board deck is due April 5. I'll need final numbers from each department by April 1.
+
+Best,
+David Kim
+VP Finance, Acme Corp

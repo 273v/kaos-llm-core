@@ -1,0 +1,35 @@
+{"split":"train","question":"What does CPU stand for?","category":"ABBR"}
+{"split":"train","question":"What is the abbreviation for South Carolina?","category":"ABBR"}
+{"split":"train","question":"What does NASA stand for?","category":"ABBR"}
+{"split":"train","question":"What is the meaning of the abbreviation NATO?","category":"ABBR"}
+{"split":"train","question":"What is photosynthesis?","category":"DESC"}
+{"split":"train","question":"How is bread made?","category":"DESC"}
+{"split":"train","question":"Why is the sky blue?","category":"DESC"}
+{"split":"train","question":"What is the difference between a virus and a bacterium?","category":"DESC"}
+{"split":"train","question":"What kind of animal is a kangaroo?","category":"ENTY"}
+{"split":"train","question":"What instrument did Louis Armstrong play?","category":"ENTY"}
+{"split":"train","question":"What language is spoken in Brazil?","category":"ENTY"}
+{"split":"train","question":"What sport does Tiger Woods play?","category":"ENTY"}
+{"split":"train","question":"Who wrote Hamlet?","category":"HUM"}
+{"split":"train","question":"Who painted the Mona Lisa?","category":"HUM"}
+{"split":"train","question":"Who was the first president of the United States?","category":"HUM"}
+{"split":"train","question":"Who discovered penicillin?","category":"HUM"}
+{"split":"train","question":"Where is Mount Everest located?","category":"LOC"}
+{"split":"train","question":"In what country is the Great Wall?","category":"LOC"}
+{"split":"train","question":"How many planets are in the solar system?","category":"NUM"}
+{"split":"train","question":"What year did World War II end?","category":"NUM"}
+{"split":"val","question":"What does HTML stand for?","category":"ABBR"}
+{"split":"val","question":"What is the meaning of the acronym SCUBA?","category":"ABBR"}
+{"split":"val","question":"What is gravity?","category":"DESC"}
+{"split":"val","question":"How does a refrigerator work?","category":"DESC"}
+{"split":"val","question":"What kind of fish is a salmon?","category":"ENTY"}
+{"split":"val","question":"What programming language was created by Guido van Rossum?","category":"ENTY"}
+{"split":"val","question":"Who invented the telephone?","category":"HUM"}
+{"split":"val","question":"Who wrote the novel 1984?","category":"HUM"}
+{"split":"val","question":"Where is the Eiffel Tower?","category":"LOC"}
+{"split":"val","question":"What is the capital of Australia?","category":"LOC"}
+{"split":"val","question":"In what country is Tokyo?","category":"LOC"}
+{"split":"val","question":"How many bones are in the adult human body?","category":"NUM"}
+{"split":"val","question":"What is the speed of light in meters per second?","category":"NUM"}
+{"split":"val","question":"How tall is the Empire State Building in feet?","category":"NUM"}
+{"split":"val","question":"How many U.S. states are there?","category":"NUM"}

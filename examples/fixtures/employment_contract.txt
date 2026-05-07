@@ -1,0 +1,32 @@
+EMPLOYMENT AGREEMENT
+
+This Employment Agreement ("Agreement") is entered into as of January 15, 2025, by and between TechCorp Solutions Inc., a Delaware corporation ("Company"), and Sarah Chen ("Employee").
+
+1. POSITION AND DUTIES
+Employee shall serve as Vice President of Engineering, reporting to the Chief Technology Officer. Employee shall devote substantially all of her business time and efforts to the Company.
+
+2. COMPENSATION
+(a) Base Salary. Employee shall receive an annual base salary of $285,000, payable in accordance with the Company's standard payroll practices.
+(b) Annual Bonus. Employee shall be eligible for an annual performance bonus of up to 40% of base salary, based on achievement of objectives determined by the Board.
+(c) Equity. Employee shall receive a stock option grant of 150,000 shares, vesting over four years with a one-year cliff.
+
+3. NON-COMPETITION
+During employment and for a period of twenty-four (24) months following termination for any reason, Employee shall not, directly or indirectly, engage in, own, manage, or participate in any business that competes with the Company's business anywhere in the United States, Canada, or the European Union.
+
+4. INTELLECTUAL PROPERTY ASSIGNMENT
+Employee hereby assigns to the Company all right, title, and interest in any invention, improvement, design, original work of authorship, formula, process, or trade secret that Employee may solely or jointly conceive, develop, or reduce to practice during the period of employment, whether or not during working hours, that (a) relates to the Company's business or actual or demonstrably anticipated research or development, or (b) results from any work performed by Employee for the Company, or (c) is developed using Company equipment, supplies, or facilities.
+
+5. CONFIDENTIALITY
+Employee agrees that all Confidential Information is the sole property of the Company. Employee shall not use or disclose any Confidential Information during or after employment except as required in the performance of duties. This obligation survives termination of employment indefinitely.
+
+6. TERMINATION
+(a) Termination Without Cause. The Company may terminate Employee's employment without Cause upon 30 days' written notice. In such event, Employee shall receive 12 months of base salary continuation and accelerated vesting of 25% of unvested equity.
+(b) Termination for Cause. The Company may terminate Employee's employment immediately for Cause, including material breach of this Agreement, conviction of a felony, or willful misconduct.
+
+7. GOVERNING LAW
+This Agreement shall be governed by the laws of the State of Delaware, without regard to conflict of laws principles.
+
+IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first above written.
+
+TECHCORP SOLUTIONS INC.          EMPLOYEE
+By: James Morrison, CEO           Sarah Chen

@@ -1,0 +1,21 @@
+{
+  "purpose": "WS-TR.PR-6b chunk-retry validation. Long enough (~63 KB, ~7-8 chunks at default config) to trigger chunk-retry but small enough that the LLM can also see the whole thing in one call for the baseline.",
+  "documents": [
+    {
+      "doc_id": "ppd-employment-agreement",
+      "file": "ppd-employment-agreement.txt",
+      "size_chars": 63367,
+      "approximate_chunks_at_default": 8,
+      "title": "Employment Agreement between Pharmaceutical Product Development, Inc. and Raymond H. Hill",
+      "source": "SEC 10-K exhibit (EX-10) — public domain (US government / SEC filing)",
+      "fixture_lineage": "Sourced from kelvin-nlp test resources (employment_02.txt). The document is a real PPD CEO employment agreement filed as an exhibit to PPD's SEC filings; SEC filings are public-domain works."
+    }
+  ],
+  "schema_id": "long-doc-extraction-v1",
+  "target_columns": [
+    {"id": "parties", "rationale": "Always on page 1 — should extract on first call; control variable."},
+    {"id": "effective_date", "rationale": "Always on page 1 — control variable."},
+    {"id": "governing_law", "rationale": "Buried in Article 7.7 and again in Annex A/B — chunk-retry target."},
+    {"id": "termination_for_convenience", "rationale": "Article 4 — mid-document, may dilute on long-context attention."}
+  ]
+}

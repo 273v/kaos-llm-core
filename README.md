@@ -1,0 +1,245 @@
+# kaos-llm-core
+
+> **Part of [Kelvin Agentic OS](https://kelvin.legal) (KAOS)** — open agentic
+> infrastructure for legal work, built by
+> [273 Ventures](https://273ventures.com).
+> See the [full KAOS package map](https://github.com/273v) for the rest of the stack.
+
+[![PyPI - Version](https://img.shields.io/pypi/v/kaos-llm-core)](https://pypi.org/project/kaos-llm-core/)
+[![Python](https://img.shields.io/pypi/pyversions/kaos-llm-core)](https://pypi.org/project/kaos-llm-core/)
+[![License](https://img.shields.io/pypi/l/kaos-llm-core)](https://github.com/273v/kaos-llm-core/blob/main/LICENSE)
+[![CI](https://github.com/273v/kaos-llm-core/actions/workflows/ci.yml/badge.svg)](https://github.com/273v/kaos-llm-core/actions/workflows/ci.yml)
+
+`kaos-llm-core` is the LLM-programming layer of KAOS — typed Signatures,
+composable Programs, optimizers, codecs, routers, caches, and a batch
+runner sitting between
+[`kaos-llm-client`](https://github.com/273v/kaos-llm-client) (transport)
+and [`kaos-agents`](https://github.com/273v/kaos-agents) (agent runtime).
+
+`kaos-llm-client` answers "how do I send a request to Claude/GPT/Gemini?".
+`kaos-llm-core` answers "how do I build reliable, composable,
+self-improving programs out of those calls?". Signatures are Pydantic
+models; Programs (Call, ChainOfThought, Judge, Ensemble, ReAct, Refine,
+BestOfN, RAG, Grounded, MultiChainComparison, ProgramOfThought) compose
+those signatures; optimizers (Bootstrap, Instruction, Hyperparameter,
+CoOptimizer, Reflective, MiproLite, MiproV2) tune them against labelled
+data with a shared budget tracker.
+
+The package is pure Python with no compiled extensions. Required
+dependencies are `kaos-core` (runtime + settings + logging),
+`kaos-content` (document AST consumed by the `RAG` and `extract_corpus`
+programs), `kaos-llm-client` (provider transport), `kaos-nlp-core`
+(deterministic alpha extractors and segmentation used by the chunk
+retry loop), and `pydantic` (Signature base + validation). The
+single `[otel]` extra adds OpenTelemetry span emission for LLM calls.
+
+## Install
+
+```bash
+uv add kaos-llm-core
+# or
+pip install kaos-llm-core
+
+# OpenTelemetry span emission for LLM calls
+uv add 'kaos-llm-core[otel]'
+```
+
+`kaos-llm-core` requires Python **3.13** or newer (3.14 is supported).
+The package is pure Python — no compiled extensions, no native wheels.
+
+The cross-module input bridges for the batch runner (`[mcp]`, `[pdf]`,
+`[tabular]`) are deliberately **not** declared in `0.1.0a1` because the
+underlying `kaos-mcp`, `kaos-pdf`, and `kaos-tabular` packages are not
+yet on PyPI and `uv lock` refuses to resolve declared extras whose
+package is unresolvable. They will return in `0.1.0a2` once those
+siblings ship; until then, install those packages from source if you
+need the bridges.
+
+## Quick start
+
+The `starter` API is the lowest-friction surface — set
+`KAOS_LLM_CORE_DEFAULT_MODEL` (or pass `model=`) and call one function:
+
+```python
+import asyncio
+
+from kaos_llm_core import classify, extract, summarize, text
+
+
+async def main() -> None:
+    answer = await text(
+        "Name one primary color.",
+        model="anthropic:claude-haiku-4-5",
+    )
+    print(answer)
+
+    person = await extract(
+        "John is 32 years old.",
+        {"name": str, "age": int},
+        model="anthropic:claude-haiku-4-5",
+    )
+    print(person)  # {"name": "John", "age": 32}
+
+    label = await classify(
+        "Great product, love it!",
+        labels=["positive", "negative", "neutral"],
+        model="anthropic:claude-haiku-4-5",
+    )
+    print(label)  # "positive"
+
+    short = await summarize(
+        "Long article text ...",
+        max_words=20,
+        model="anthropic:claude-haiku-4-5",
+    )
+    print(short)
+
+
+asyncio.run(main())
+```
+
+`@llm_call` (decorator syntax) and `Call` / `Program` (class syntax)
+remain the production surfaces for typed standalone functions and
+optimizable workflows respectively — the three coexist.
+
+## Concepts
+
+| Concept | What it does | Example |
+|---|---|---|
+| **`Signature`** | Pydantic-model I/O contract: typed input/output fields with descriptions. | `class Caption(Signature): image: Image = InputField(...); caption: str = OutputField(...)` |
+| **`Call`** | Single LLM invocation against a Signature with validation + retry. | `Call(MySig, model="anthropic:claude-haiku-4-5")` |
+| **`Program`** | Composed function that wires multiple Calls together via `forward()`. | `class Analyzer(Program): self.extract = Call(...); self.classify = Call(...)` |
+| **`Codec`** | Bidirectional Signature ↔ provider-message translation: `JSONCodec`, `ChatCodec`, `XMLCodec`. | `Call(MySig, codec=JSONCodec())` |
+| **`Router`** | Multi-model selection: cheapest-first cascade or rule-based dispatch. | `CascadeRouter(models=["claude-haiku-4-5", "claude-sonnet-4-6"], escalation_check=...)` |
+| **`Optimizer`** | Self-improving programs over labelled data: instructions, demos, hyperparameters, codec, model. | `BootstrapOptimizer(metric=exact_match).optimize(call, train_set, val_set)` |
+| **`Invocation`** | Runtime contract returned by `Call.invoke()` / `Program.invoke()` — bundles output, trace, usage, error, context. | `inv = await call.invoke(text="..."); inv.output, inv.trace, inv.usage.cost_usd` |
+| **`ExecutionTrace`** | Hierarchical record with token counts, latency, per-call cost, JSONL export. | `format_cost_report(invocation.trace)` |
+| **`SemanticCache`** | Two-tier response cache: tier 1 exact-input hash (O(1)), tier 2 embedding similarity. Optional crash-safe JSONL persistence. | `Call(MySig, cache=SemanticCache(disk_path=...))` |
+| **`Cited[T]` / `Answer[T]`** | Grounding types: every output value carries source spans verifiable against a corpus. | `entities: list[Cited[str]] = OutputField(...)` |
+| **`Grounded` program** | Wraps any Call: produce → verify spans against corpus → retry with feedback → return best. | `Grounded(producer, corpus=passages)` |
+| **`batch_run()`** | Streaming JSONL batch primitive with content-addressed `custom_id`s, resume contract, three error policies, cost attribution. | `await batch_run(envelope, source, output_dir=...)` |
+
+## CLI
+
+Two entry-point scripts. Both support `--json` for machine-readable
+output piped to other agents:
+
+```bash
+kaos-llm-core --help                   # admin CLI
+kaos-llm-core-serve --help             # MCP server
+```
+
+`kaos-llm-core-serve` exposes 29 MCP tools over either transport:
+
+```bash
+kaos-llm-core-serve                    # stdio (Claude Code / Desktop)
+kaos-llm-core-serve --http --port 8000 # streamable HTTP
+```
+
+Tool surface (all `kaos-llm-core-*`-prefixed):
+
+| Group | Tools |
+|---|---|
+| Core programs | `call`, `reason`, `judge`, `ensemble`, `react`, `refine`, `best-of-n` |
+| Evaluation | `evaluate`, `metric`, `cost-report`, `analyze-trial` |
+| Optimization | `optimize`, `optimize-codec`, `optimize-model`, `pareto`, `recipe-tune`, `mipro-v2` |
+| Envelopes | `save-load`, `program-execute` |
+| Batch | `batch-create`, `batch-run`, `batch-status`, `batch-results` |
+| Alpha extractors | `alpha-date`, `alpha-entity`, `alpha-money`, `alpha-number`, `alpha-percent`, `alpha-duration` |
+
+Tools are mostly read-only / open-world. `program-execute` and the
+`batch-*` family touch the workspace SQLite + VFS; the cost cap from
+`error_policy` is enforced inside the runner.
+
+## Compatibility & status
+
+| Aspect | |
+|---|---|
+| **Python** | 3.13, 3.14 |
+| **OS** | Linux, macOS, Windows (pure-Python wheel; no native code) |
+| **Maturity** | Alpha (`Development Status :: 3 - Alpha`). The public API is documented in `kaos_llm_core.__all__` (~140 symbols). |
+| **Stability policy** | Pre-1.0: minor bumps may change behaviour. Every change is documented in [`CHANGELOG.md`](CHANGELOG.md). MCP tool names and `KAOS_LLM_CORE_*` env vars are public API. |
+| **Test coverage** | 93 unit-test modules plus a live integration tier (`tests/integration/`) that hits real provider APIs. Run the live tier with provider keys configured. |
+| **Type checker** | Validated with [`ty`](https://docs.astral.sh/ty/), Astral's Python type checker. |
+
+## Companion packages
+
+`kaos-llm-core` is one of the packages in the
+[Kelvin Agentic OS](https://kelvin.legal). The broader stack:
+
+| Package | Layer | What it does |
+|---|---|---|
+| [`kaos-core`](https://github.com/273v/kaos-core) | Core | Foundational runtime, MCP-native types, registries, execution engine, VFS |
+| [`kaos-content`](https://github.com/273v/kaos-content) | Core | Typed document AST: Block/Inline, provenance, views |
+| [`kaos-mcp`](https://github.com/273v/kaos-mcp) | Bridge | FastMCP server, `kaos` management CLI, MCP resource templates |
+| [`kaos-pdf`](https://github.com/273v/kaos-pdf) | Extraction | PDF → AST with provenance |
+| [`kaos-web`](https://github.com/273v/kaos-web) | Extraction | Web extraction, browser automation, search, domain intelligence |
+| [`kaos-office`](https://github.com/273v/kaos-office) | Extraction | DOCX / PPTX / XLSX readers + writers to AST |
+| [`kaos-tabular`](https://github.com/273v/kaos-tabular) | Extraction | DuckDB-powered SQL analytics |
+| [`kaos-source`](https://github.com/273v/kaos-source) | Data | Government + financial data connectors (Federal Register, eCFR, EDGAR, GovInfo, PACER, GLEIF) |
+| [`kaos-llm-client`](https://github.com/273v/kaos-llm-client) | LLM | Multi-provider LLM transport |
+| [`kaos-llm-core`](https://github.com/273v/kaos-llm-core) | LLM | Typed LLM programming (Signatures, Programs, Optimizers) |
+| [`kaos-nlp-core`](https://github.com/273v/kaos-nlp-core) | Primitives (Rust) | High-performance NLP primitives |
+| [`kaos-nlp-transformers`](https://github.com/273v/kaos-nlp-transformers) | ML | Dense embeddings + retrieval |
+| [`kaos-graph`](https://github.com/273v/kaos-graph) | Primitives (Rust) | Graph algorithms + RDF/SPARQL |
+| [`kaos-ml-core`](https://github.com/273v/kaos-ml-core) | Primitives (Rust) | Classical ML on the document AST |
+| [`kaos-citations`](https://github.com/273v/kaos-citations) | Legal | Legal citation extraction, resolution, verification |
+| [`kaos-agents`](https://github.com/273v/kaos-agents) | Agentic | Agent runtime, memory, recipes |
+| [`kaos-reference`](https://github.com/273v/kaos-reference) | Sample | Reference module for module authors |
+
+Packages depend on `kaos-core`; everything else is opt-in. Mix and match the
+ones you need.
+
+## Development
+
+```bash
+git clone https://github.com/273v/kaos-llm-core
+cd kaos-llm-core
+uv sync --group dev
+```
+
+Install pre-commit hooks (recommended — they run the same checks as CI on
+every commit, scoped to staged files):
+
+```bash
+uvx pre-commit install
+uvx pre-commit run --all-files     # one-time full sweep
+```
+
+Manual QA commands (the same set CI runs):
+
+```bash
+uv run ruff format --check kaos_llm_core tests
+uv run ruff check kaos_llm_core tests
+uv run ty check kaos_llm_core tests
+uv run pytest -m "not live and not network and not slow"
+```
+
+## Build from source
+
+```bash
+uv build
+uv pip install dist/*.whl
+python -c "import kaos_llm_core; print(kaos_llm_core.__version__)"  # smoke import
+```
+
+## Contributing
+
+Issues and pull requests are welcome. By contributing you certify the
+[Developer Certificate of Origin v1.1](https://developercertificate.org/) —
+sign every commit with `git commit -s`. Please open an issue before starting
+on a non-trivial change so we can align on scope.
+
+## Security
+
+For security issues, **please do not file a public issue**. Report privately
+via [GitHub Private Vulnerability Reporting](https://github.com/273v/kaos-llm-core/security/advisories/new)
+or email **security@273ventures.com**. See [SECURITY.md](SECURITY.md) for the
+full disclosure policy.
+
+## License
+
+Apache License 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
+
+Copyright 2026 [273 Ventures LLC](https://273ventures.com).
+Built for [kelvin.legal](https://kelvin.legal).

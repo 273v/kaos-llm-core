@@ -1,0 +1,11 @@
+# Default owner for everything in this repo
+* @mjbommar
+
+# Critical paths get explicit ownership for clarity
+/.github/                       @mjbommar
+/pyproject.toml                 @mjbommar
+/LICENSE                        @mjbommar
+/NOTICE                         @mjbommar
+/CHANGELOG.md                   @mjbommar
+/SECURITY.md                    @mjbommar
+/kaos_llm_core/_version.py    @mjbommar

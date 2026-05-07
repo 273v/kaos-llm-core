@@ -1,0 +1,28 @@
+Environmental Protection Agency
+40 CFR Part 122
+National Pollutant Discharge Elimination System (NPDES)
+Clean Water Act Section 402 Permit Requirements
+
+SUMMARY OF RULE
+
+The Clean Water Act (CWA) Section 402 establishes the National Pollutant Discharge Elimination System (NPDES), which requires all point sources discharging pollutants into waters of the United States to obtain a permit. The NPDES program is one of the primary regulatory mechanisms for controlling water pollution in the United States.
+
+PERMIT REQUIREMENTS
+
+Individual NPDES permits are issued for a maximum term of five years and contain the following core elements:
+
+(a) Effluent Limitations. Technology-based effluent limitations (TBELs) apply minimum levels of pollution control based on the best available technology economically achievable (BAT) for existing sources and new source performance standards (NSPS) for new sources. Water quality-based effluent limitations (WQBELs) may impose stricter requirements to meet applicable water quality standards.
+
+(b) Monitoring and Reporting. Permittees must conduct regular monitoring of their discharges and submit Discharge Monitoring Reports (DMRs) at least quarterly. Monitoring parameters typically include biochemical oxygen demand (BOD), total suspended solids (TSS), pH, fecal coliform, and any pollutants of concern specific to the discharge.
+
+(c) Standard Conditions. All NPDES permits include standard conditions requiring:
+  - Proper operation and maintenance of treatment facilities
+  - Twenty-four hour reporting of noncompliance that may endanger health
+  - Notification of planned changes to the facility or discharge
+  - Record retention for a minimum of three years
+
+ENFORCEMENT
+
+Violations of NPDES permit conditions may result in civil penalties of up to $64,618 per day per violation (as adjusted for inflation in 2024). Criminal penalties apply to knowing violations and may include fines of up to $50,000 per day and imprisonment of up to three years for a first offense, doubled for repeat offenders. Citizens may also bring enforcement actions under CWA Section 505.
+
+The EPA refers approximately 150-200 CWA cases to the Department of Justice each year for civil judicial enforcement. In fiscal year 2023, CWA enforcement actions secured $185 million in civil penalties and $1.2 billion in injunctive relief requiring pollution control improvements.

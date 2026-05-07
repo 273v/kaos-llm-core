@@ -1,0 +1,507 @@
+{
+  "sprint": "FUND-6",
+  "model": "anthropic:claude-haiku-4-5",
+  "generated_at": "2026-04-16T00:03:44.678664",
+  "total_questions": 48,
+  "total_correct": 42,
+  "overall_accuracy": 0.875,
+  "per_set": {
+    "grounding": {
+      "total": 20,
+      "correct": 18,
+      "accuracy": 0.9
+    },
+    "multiformat": {
+      "total": 12,
+      "correct": 8,
+      "accuracy": 0.667
+    },
+    "expanded": {
+      "total": 16,
+      "correct": 16,
+      "accuracy": 1.0
+    }
+  },
+  "per_question": [
+    {
+      "set": "grounding",
+      "id": "q01",
+      "answerable": true,
+      "question": "What is the filing fee for a Delaware certificate of incorporation?",
+      "expected_hint": "$89",
+      "answer_preview": "The filing fee is $89.",
+      "correct": true,
+      "elapsed_s": 1.32
+    },
+    {
+      "set": "grounding",
+      "id": "q02",
+      "answerable": true,
+      "question": "What does the First Amendment say about establishing a religion?",
+      "expected_hint": "Congress shall make no law respecting an establishment of religion",
+      "answer_preview": "The First Amendment states: 'Congress shall make no law respecting an establishment of religion, or prohibiting the free exercise thereof.' This prohibits Congress from making laws that establish a re",
+      "correct": true,
+      "elapsed_s": 1.09
+    },
+    {
+      "set": "grounding",
+      "id": "q03",
+      "answerable": true,
+      "question": "According to RFC 2119, what does MUST NOT mean?",
+      "expected_hint": "absolute prohibition of the specification",
+      "answer_preview": "According to RFC 2119, MUST NOT means that the definition is an absolute prohibition of the specification. The document states: 'MUST NOT   This phrase, or the phrase \"SHALL NOT\", mean that the defini",
+      "correct": true,
+      "elapsed_s": 1.21
+    },
+    {
+      "set": "grounding",
+      "id": "q04",
+      "answerable": true,
+      "question": "Under 17 USC 107, does teaching use count as fair use?",
+      "expected_hint": "teaching including multiple copies for classroom use is listed as a fair use purpose",
+      "answer_preview": "Yes, under 17 USC 107, teaching use counts as fair use. The document states: 'the fair use of a copyrighted work, including such use by reproduction in copies or phonorecords or by any other means spe",
+      "correct": false,
+      "elapsed_s": 1.71
+    },
+    {
+      "set": "grounding",
+      "id": "q05",
+      "answerable": true,
+      "question": "What does Rule 10b-5(a) prohibit?",
+      "expected_hint": "any device, scheme, or artifice to defraud",
+      "answer_preview": "Rule 10b-5(a) prohibits any person from employing 'any device, scheme, or artifice to defraud' directly or indirectly by the use of means or instrumentality of interstate commerce, the mails, or any f",
+      "correct": true,
+      "elapsed_s": 1.46
+    },
+    {
+      "set": "grounding",
+      "id": "q06",
+      "answerable": true,
+      "question": "When did Apollo 11 launch?",
+      "expected_hint": "July 16, 1969 at 13:32 UTC",
+      "answer_preview": "Apollo 11 launched from Kennedy Space Center on July 16, 1969 at 13:32 UTC.",
+      "correct": true,
+      "elapsed_s": 0.81
+    },
+    {
+      "set": "grounding",
+      "id": "q07",
+      "answerable": true,
+      "question": "Under GDPR Article 17, how quickly must a controller erase personal data?",
+      "expected_hint": "without undue delay",
+      "answer_preview": "Under GDPR Article 17, the controller shall have the obligation to erase personal data 'without undue delay' where one of the specified grounds applies.",
+      "correct": true,
+      "elapsed_s": 1.03
+    },
+    {
+      "set": "grounding",
+      "id": "q08",
+      "answerable": true,
+      "question": "When did Voyager 1 cross the heliopause and enter interstellar space?",
+      "expected_hint": "August 25, 2012",
+      "answer_preview": "Voyager 1 crossed the heliopause and entered interstellar space on August 25, 2012.",
+      "correct": true,
+      "elapsed_s": 1.59
+    },
+    {
+      "set": "grounding",
+      "id": "q09",
+      "answerable": true,
+      "question": "According to Miranda, what must a person be warned of prior to questioning?",
+      "expected_hint": "right to remain silent",
+      "answer_preview": "According to Miranda, prior to any questioning, the person must be warned that he has a right to remain silent, that any statement he does make may be used as evidence against him, and that he has a r",
+      "correct": true,
+      "elapsed_s": 0.98
+    },
+    {
+      "set": "grounding",
+      "id": "q10",
+      "answerable": true,
+      "question": "According to NIST, what is the minimum length for subscriber-chosen memorized secrets?",
+      "expected_hint": "at least 8 characters in length",
+      "answer_preview": "According to NIST, the minimum length for subscriber-chosen memorized secrets is at least 8 characters. The document states: 'Verifiers SHALL require subscriber-chosen memorized secrets to be at least",
+      "correct": true,
+      "elapsed_s": 1.15
+    },
+    {
+      "set": "grounding",
+      "id": "q11",
+      "answerable": false,
+      "question": "Who was the first person to orbit the Earth?",
+      "expected_hint": "",
+      "answer_preview": "Insufficient evidence",
+      "correct": true,
+      "elapsed_s": 1.15
+    },
+    {
+      "set": "grounding",
+      "id": "q12",
+      "answerable": false,
+      "question": "What is the criminal penalty for violating Rule 10b-5?",
+      "expected_hint": "",
+      "answer_preview": "Insufficient evidence",
+      "correct": true,
+      "elapsed_s": 1.23
+    },
+    {
+      "set": "grounding",
+      "id": "q13",
+      "answerable": false,
+      "question": "What is the filing fee for a California certificate of incorporation?",
+      "expected_hint": "",
+      "answer_preview": "Insufficient evidence",
+      "correct": true,
+      "elapsed_s": 1.38
+    },
+    {
+      "set": "grounding",
+      "id": "q14",
+      "answerable": false,
+      "question": "What does the Second Amendment protect?",
+      "expected_hint": "",
+      "answer_preview": "Insufficient evidence",
+      "correct": true,
+      "elapsed_s": 1.11
+    },
+    {
+      "set": "grounding",
+      "id": "q15",
+      "answerable": false,
+      "question": "How many Voyager probes did NASA launch in total?",
+      "expected_hint": "",
+      "answer_preview": "NASA launched 2 Voyager probes in total. According to the document: 'Voyager 1 was launched by NASA on September 5, 1977 from Cape Canaveral Air Force Station. Voyager 2 was launched slightly earlier,",
+      "correct": false,
+      "elapsed_s": 1.06
+    },
+    {
+      "set": "grounding",
+      "id": "q16",
+      "answerable": false,
+      "question": "What are the four statutory factors courts consider when determining fair use?",
+      "expected_hint": "",
+      "answer_preview": "Insufficient evidence",
+      "correct": true,
+      "elapsed_s": 1.9
+    },
+    {
+      "set": "grounding",
+      "id": "q17",
+      "answerable": false,
+      "question": "When did Voyager 2 cross the heliopause?",
+      "expected_hint": "",
+      "answer_preview": "Insufficient evidence",
+      "correct": true,
+      "elapsed_s": 1.38
+    },
+    {
+      "set": "grounding",
+      "id": "q18",
+      "answerable": false,
+      "question": "According to RFC 2119, what does MAY mean?",
+      "expected_hint": "",
+      "answer_preview": "Insufficient evidence",
+      "correct": true,
+      "elapsed_s": 1.17
+    },
+    {
+      "set": "grounding",
+      "id": "q19",
+      "answerable": false,
+      "question": "What is the maximum administrative fine for a GDPR Article 17 violation?",
+      "expected_hint": "",
+      "answer_preview": "Insufficient evidence",
+      "correct": true,
+      "elapsed_s": 0.83
+    },
+    {
+      "set": "grounding",
+      "id": "q20",
+      "answerable": false,
+      "question": "According to NIST SP 800-63B, is biometric authentication acceptable?",
+      "expected_hint": "",
+      "answer_preview": "Insufficient evidence",
+      "correct": true,
+      "elapsed_s": 1.67
+    },
+    {
+      "set": "multiformat",
+      "id": "mf01",
+      "answerable": true,
+      "question": "According to RFC 2119, what does MUST NOT mean?",
+      "expected_hint": "absolute prohibition of the specification",
+      "answer_preview": "According to RFC 2119, MUST NOT means \"the definition is an absolute prohibition of the specification.\" The document states: \"This phrase, or the phrase 'SHALL NOT', mean that the definition is an abs",
+      "correct": true,
+      "elapsed_s": 1.15
+    },
+    {
+      "set": "multiformat",
+      "id": "mf02",
+      "answerable": true,
+      "question": "According to NIST SP 800-63B, what is the minimum length for subscriber-chosen memorized secrets?",
+      "expected_hint": "at least 8 characters in length",
+      "answer_preview": "According to NIST SP 800-63B, the minimum length for subscriber-chosen memorized secrets is 8 characters. The document states: 'Verifiers SHALL require subscriber-chosen memorized secrets to be at lea",
+      "correct": true,
+      "elapsed_s": 1.15
+    },
+    {
+      "set": "multiformat",
+      "id": "mf03",
+      "answerable": true,
+      "question": "Under Rule 10b-5, what kinds of acts are prohibited by paragraph (a)?",
+      "expected_hint": "any device, scheme, or artifice to defraud",
+      "answer_preview": "Insufficient evidence",
+      "correct": false,
+      "elapsed_s": 2.03
+    },
+    {
+      "set": "multiformat",
+      "id": "mf04",
+      "answerable": true,
+      "question": "According to Miranda v. Arizona, what rights must a person be warned of prior to custodial interrogation?",
+      "expected_hint": "right to remain silent, statements may be used as evidence, right to the presence of an attorney",
+      "answer_preview": "Insufficient evidence.",
+      "correct": false,
+      "elapsed_s": 1.76
+    },
+    {
+      "set": "multiformat",
+      "id": "mf05",
+      "answerable": true,
+      "question": "What maximum contaminant level does the EPA PFAS rule set for PFOA and PFOS?",
+      "expected_hint": "4 parts per trillion for each of PFOA and PFOS",
+      "answer_preview": "The EPA PFAS rule sets a Maximum Contaminant Level (MCL) of 4 parts per trillion for each of PFOA and PFOS.",
+      "correct": true,
+      "elapsed_s": 0.93
+    },
+    {
+      "set": "multiformat",
+      "id": "mf06",
+      "answerable": true,
+      "question": "What are the four core functions of the NIST AI Risk Management Framework?",
+      "expected_hint": "Govern, Map, Measure, Manage",
+      "answer_preview": "The four core functions of the NIST AI Risk Management Framework are: **Govern** \u2014 cultivate a culture of risk management; establish policies, processes, procedures, and practices. **Map** \u2014 establish",
+      "correct": false,
+      "elapsed_s": 2.05
+    },
+    {
+      "set": "multiformat",
+      "id": "mf07",
+      "answerable": true,
+      "question": "According to the CFPB Fair Credit Reporting Act summary, what does the FCRA promote about information in the files of consumer reporting agencies?",
+      "expected_hint": "accuracy, fairness, and privacy",
+      "answer_preview": "Insufficient evidence",
+      "correct": false,
+      "elapsed_s": 1.94
+    },
+    {
+      "set": "multiformat",
+      "id": "mf08",
+      "answerable": false,
+      "question": "What is the penalty for violating Rule 10b-5?",
+      "expected_hint": "",
+      "answer_preview": "Insufficient evidence",
+      "correct": true,
+      "elapsed_s": 1.96
+    },
+    {
+      "set": "multiformat",
+      "id": "mf09",
+      "answerable": false,
+      "question": "When did Voyager 2 cross the heliopause?",
+      "expected_hint": "",
+      "answer_preview": "Insufficient evidence",
+      "correct": true,
+      "elapsed_s": 0.78
+    },
+    {
+      "set": "multiformat",
+      "id": "mf10",
+      "answerable": false,
+      "question": "What does Article 17 of the GDPR say about the right to erasure?",
+      "expected_hint": "",
+      "answer_preview": "Insufficient evidence.",
+      "correct": true,
+      "elapsed_s": 2.15
+    },
+    {
+      "set": "multiformat",
+      "id": "mf11",
+      "answerable": false,
+      "question": "What is the maximum filing fee for a Delaware certificate of incorporation?",
+      "expected_hint": "",
+      "answer_preview": "Insufficient evidence.",
+      "correct": true,
+      "elapsed_s": 0.82
+    },
+    {
+      "set": "multiformat",
+      "id": "mf12",
+      "answerable": false,
+      "question": "What are the four statutory factors that courts consider when determining fair use under 17 USC 107?",
+      "expected_hint": "",
+      "answer_preview": "Insufficient evidence.",
+      "correct": true,
+      "elapsed_s": 1.8
+    },
+    {
+      "set": "expanded",
+      "id": "exp01",
+      "answerable": true,
+      "question": "What was Microsoft's total revenue for fiscal year 2024?",
+      "expected_hint": "$245.1 billion",
+      "answer_preview": "Microsoft's total revenue for fiscal year 2024 was $245.1 billion, an increase of 16% compared to the prior year.",
+      "correct": true,
+      "elapsed_s": 1.57
+    },
+    {
+      "set": "expanded",
+      "id": "exp02",
+      "answerable": true,
+      "question": "What was the Intelligent Cloud segment revenue for Microsoft in fiscal year 2024?",
+      "expected_hint": "$105.4 billion",
+      "answer_preview": "Intelligent Cloud segment revenue was $105.4 billion for Microsoft in fiscal year 2024, which represented an increase of 22% compared to the prior year, driven by Azure and other cloud services revenu",
+      "correct": true,
+      "elapsed_s": 1.03
+    },
+    {
+      "set": "expanded",
+      "id": "exp03",
+      "answerable": true,
+      "question": "What were Microsoft's capital expenditures for fiscal year 2024?",
+      "expected_hint": "$55.7 billion",
+      "answer_preview": "Microsoft's capital expenditures, including finance leases, were $55.7 billion for fiscal year 2024, an increase from $32.2 billion in the prior year, driven primarily by investments in cloud and AI i",
+      "correct": true,
+      "elapsed_s": 1.16
+    },
+    {
+      "set": "expanded",
+      "id": "exp04",
+      "answerable": false,
+      "question": "What was Microsoft's total headcount as of June 30, 2024?",
+      "expected_hint": "",
+      "answer_preview": "Insufficient evidence",
+      "correct": true,
+      "elapsed_s": 0.92
+    },
+    {
+      "set": "expanded",
+      "id": "exp05",
+      "answerable": true,
+      "question": "How many of the 23 CFO Act agencies had developed incident response plans according to GAO?",
+      "expected_hint": "20",
+      "answer_preview": "According to the GAO report, 20 of the 23 CFO Act agencies had developed incident response plans. The document states: 'Of the 23 civilian Chief Financial Officers (CFO) Act agencies that GAO reviewed",
+      "correct": true,
+      "elapsed_s": 1.28
+    },
+    {
+      "set": "expanded",
+      "id": "exp06",
+      "answerable": true,
+      "question": "What was the average vacancy rate for cybersecurity positions across federal agencies?",
+      "expected_hint": "14%",
+      "answer_preview": "According to the GAO report, 18 of the 23 agencies reported cybersecurity staffing shortages, with an average vacancy rate of 14% for positions requiring specialized cybersecurity skills.",
+      "correct": true,
+      "elapsed_s": 2.22
+    },
+    {
+      "set": "expanded",
+      "id": "exp07",
+      "answerable": true,
+      "question": "How many cybersecurity incidents did the federal government experience in fiscal year 2023?",
+      "expected_hint": "over 32,000",
+      "answer_preview": "The federal government experienced over 32,000 cybersecurity incidents in fiscal year 2023, an increase of 8% from the prior year.",
+      "correct": true,
+      "elapsed_s": 0.78
+    },
+    {
+      "set": "expanded",
+      "id": "exp08",
+      "answerable": false,
+      "question": "What was the average time to remediate a cybersecurity breach at federal agencies?",
+      "expected_hint": "",
+      "answer_preview": "Insufficient evidence",
+      "correct": true,
+      "elapsed_s": 1.76
+    },
+    {
+      "set": "expanded",
+      "id": "exp09",
+      "answerable": true,
+      "question": "What did the Fifth Circuit hold in SEC v. Jarkesy regarding the Seventh Amendment?",
+      "expected_hint": "SEC's use of administrative proceedings to adjudicate securities fraud claims violates the Seventh Amendment right to a jury trial",
+      "answer_preview": "The Fifth Circuit held that 'the SEC's use of administrative proceedings to adjudicate securities fraud claims violates the Seventh Amendment right to a jury trial.' Specifically, the decision in SEC ",
+      "correct": true,
+      "elapsed_s": 1.9
+    },
+    {
+      "set": "expanded",
+      "id": "exp10",
+      "answerable": true,
+      "question": "What percentage of the SEC's enforcement actions in fiscal year 2023 were initiated as administrative proceedings?",
+      "expected_hint": "Over 70%",
+      "answer_preview": "Over 70% of the SEC's enforcement actions in fiscal year 2023 were initiated as administrative proceedings.",
+      "correct": true,
+      "elapsed_s": 0.91
+    },
+    {
+      "set": "expanded",
+      "id": "exp11",
+      "answerable": true,
+      "question": "By how much would the SEC's average per-case litigation costs increase if all cases moved to federal court?",
+      "expected_hint": "65%",
+      "answer_preview": "According to the court brief, the SEC estimated that moving all securities fraud cases to federal district court would increase its average per-case litigation costs by 65%.",
+      "correct": true,
+      "elapsed_s": 1.36
+    },
+    {
+      "set": "expanded",
+      "id": "exp12",
+      "answerable": false,
+      "question": "How much did the SEC spend on enforcement litigation in fiscal year 2023?",
+      "expected_hint": "",
+      "answer_preview": "Insufficient evidence",
+      "correct": true,
+      "elapsed_s": 1.51
+    },
+    {
+      "set": "expanded",
+      "id": "exp13",
+      "answerable": true,
+      "question": "What is the maximum term for an individual NPDES permit?",
+      "expected_hint": "five years",
+      "answer_preview": "Individual NPDES permits are issued for a maximum term of five years.",
+      "correct": true,
+      "elapsed_s": 0.89
+    },
+    {
+      "set": "expanded",
+      "id": "exp14",
+      "answerable": true,
+      "question": "What is the civil penalty amount per day per violation for NPDES permit violations in 2024?",
+      "expected_hint": "$64,618 per day per violation",
+      "answer_preview": "The civil penalty amount for NPDES permit violations in 2024 is up to $64,618 per day per violation (as adjusted for inflation in 2024).",
+      "correct": true,
+      "elapsed_s": 1.02
+    },
+    {
+      "set": "expanded",
+      "id": "exp15",
+      "answerable": true,
+      "question": "How long must NPDES permittees retain monitoring records?",
+      "expected_hint": "minimum of three years",
+      "answer_preview": "NPDES permittees must retain records for a minimum of three years. According to the EPA rulemaking document, standard conditions in all NPDES permits include 'Record retention for a minimum of three y",
+      "correct": true,
+      "elapsed_s": 1.25
+    },
+    {
+      "set": "expanded",
+      "id": "exp16",
+      "answerable": false,
+      "question": "How many active NPDES permits are currently in effect nationwide?",
+      "expected_hint": "",
+      "answer_preview": "Insufficient evidence",
+      "correct": true,
+      "elapsed_s": 1.56
+    }
+  ]
+}

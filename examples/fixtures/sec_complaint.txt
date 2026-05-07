@@ -1,0 +1,35 @@
+UNITED STATES DISTRICT COURT
+SOUTHERN DISTRICT OF NEW YORK
+
+SECURITIES AND EXCHANGE COMMISSION,
+    Plaintiff,
+v.                                          Case No. 25-cv-4821
+GREENFIELD CAPITAL MANAGEMENT LLC
+and MICHAEL R. GREENFIELD,
+    Defendants.
+
+COMPLAINT FOR INJUNCTIVE AND OTHER RELIEF
+
+Plaintiff Securities and Exchange Commission ("SEC") alleges as follows:
+
+SUMMARY
+
+1. From approximately January 2023 through September 2025, Greenfield Capital Management LLC ("GCM"), a registered investment adviser, and its founder and managing partner Michael R. Greenfield ("Greenfield") (collectively, "Defendants") engaged in a scheme to defraud GCM's clients by misrepresenting the fund's investment strategy, performance, and risk controls.
+
+2. GCM managed approximately $1.2 billion in assets on behalf of pension funds, university endowments, and high-net-worth individuals. Greenfield personally managed the fund's primary strategy.
+
+3. Defendants made material misrepresentations to investors, including: (a) overstating the fund's annualized returns by approximately 400 basis points through selective inclusion of favorable positions in performance calculations; (b) misrepresenting the fund's risk management framework as employing systematic hedging strategies when no such strategies were consistently implemented; and (c) failing to disclose concentrated positions exceeding 25% of fund assets in a single issuer, in violation of the fund's stated investment guidelines.
+
+4. Greenfield also engaged in undisclosed related-party transactions, directing approximately $8.5 million in fund assets to entities controlled by his family members, without disclosure to investors or the fund's independent board of directors.
+
+JURISDICTION AND VENUE
+
+5. This Court has jurisdiction over this action pursuant to Sections 20(b), 20(d), and 22(a) of the Securities Act of 1933 and Sections 21(d), 21(e), and 27 of the Securities Exchange Act of 1934.
+
+VIOLATIONS
+
+6. By engaging in the conduct described herein, Defendants violated Section 17(a) of the Securities Act, Section 10(b) of the Exchange Act and Rule 10b-5 thereunder, and Sections 206(1) and 206(2) of the Investment Advisers Act of 1940.
+
+PRAYER FOR RELIEF
+
+WHEREFORE, the SEC respectfully requests that this Court enter a Final Judgment: (a) permanently enjoining Defendants from future violations; (b) ordering Defendants to disgorge all ill-gotten gains plus prejudgment interest; (c) ordering Defendants to pay civil money penalties; and (d) barring Greenfield from serving as an officer or director of any public company.

@@ -1,0 +1,23 @@
+From: Sarah Chen <schen@davispolk.com>
+To: James Morrison <jmorrison@acmecorp.com>
+CC: Lisa Park <lpark@davispolk.com>
+Date: March 15, 2024
+Subject: RE: SEC Inquiry - Privileged and Confidential
+
+James,
+
+Following up on our call this morning, I've reviewed the SEC's informal inquiry letter dated March 10, 2024. Here is my preliminary legal assessment:
+
+1. The inquiry focuses on Acme Corp's Q3 2023 revenue recognition practices for the CloudFirst product line. The SEC staff has identified three specific transactions they want to understand.
+
+2. In my opinion, the most significant legal risk relates to Transaction #2 (the Meridian Technologies arrangement). The side letter dated August 15, 2023 creates an argument that the revenue recognition was premature under ASC 606 because the performance obligations were not substantially complete at the time of recognition. I recommend we prepare a detailed timeline of deliverables for this transaction.
+
+3. I do NOT recommend voluntary production of the internal audit committee memo from September 2023 at this stage. While the memo discusses the same transactions, producing it could be construed as a waiver of work product protection for the broader class of audit committee materials.
+
+4. We should schedule a meeting with your CFO, David Kim, and General Counsel, Rachel Huang, to align on the response strategy before the March 25 deadline.
+
+Please treat this communication as privileged and confidential attorney-client communication. Do not forward to anyone outside of Acme Corp's legal department without my prior approval.
+
+Best regards,
+Sarah Chen
+Partner, Davis Polk & Wardwell LLP

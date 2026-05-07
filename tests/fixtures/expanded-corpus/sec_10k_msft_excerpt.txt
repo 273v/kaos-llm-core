@@ -1,0 +1,28 @@
+Microsoft Corporation
+Form 10-K for the Fiscal Year Ended June 30, 2024
+
+PART I
+
+Item 1. Business
+
+General
+
+We are a technology company whose mission is to empower every person and every organization on the planet to achieve more. We generate revenue by offering a wide range of cloud-based solutions, content, and other services to people and businesses; licensing and supporting an array of software products; delivering relevant online advertising to a global audience; and designing and selling devices. Our most significant expenses are related to compensating employees; supporting and investing in cloud-based services, including datacenter operations; designing, manufacturing, marketing, and selling our other products and services; and income taxes.
+
+Founded in 1975, we are incorporated in Washington state. Our principal executive offices are located in Redmond, Washington.
+
+Revenue Recognition
+
+Revenue is recognized upon transfer of control of promised products or services to customers in an amount that reflects the consideration we expect to receive in exchange for those products or services. We enter into contracts that can include various combinations of products and services, which are generally capable of being distinct and accounted for as separate performance obligations.
+
+Revenue from products is recognized at the point in time when control is transferred to the customer, which is generally when products are shipped.
+
+Segment Information
+
+We report our financial performance based on the following segments: Productivity and Business Processes, Intelligent Cloud, and More Personal Computing. Our revenue for fiscal year 2024 was $245.1 billion, an increase of 16% compared to the prior year. Intelligent Cloud revenue was $105.4 billion, an increase of 22%, driven by Azure and other cloud services revenue growth of 30%.
+
+Capital expenditures, including finance leases, were $55.7 billion for fiscal year 2024, an increase from $32.2 billion in the prior year, driven primarily by investments in cloud and AI infrastructure.
+
+Risk Factors
+
+We face intense competition across all markets for our products and services. Our competitors range in size from diversified global companies with significant resources to small, specialized single-product companies. We must continue to evolve and adapt our products and services to stay competitive.

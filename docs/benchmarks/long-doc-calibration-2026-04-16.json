@@ -1,0 +1,98 @@
+{
+  "sprint": "FUND-7",
+  "model": "anthropic:claude-haiku-4-5",
+  "document": "ppd-employment-agreement.txt",
+  "document_chars": 62974,
+  "schema_columns": 4,
+  "generated_at": "2026-04-16T00:10:46.033489",
+  "results": {
+    "baseline": {
+      "correct": 4,
+      "total": 4,
+      "accuracy": 1.0,
+      "elapsed_s": 2.09,
+      "cost_usd": 0.0,
+      "cells": [
+        {
+          "column": "parties",
+          "extracted": "Pharmaceutical Product Development, Inc., a North Carolina corporation (the \"Company\") and Raymond H. Hill (\"Employee\")",
+          "acceptable": [
+            "Pharmaceutical Product Development, Inc.",
+            "Raymond H. Hill"
+          ],
+          "correct": true
+        },
+        {
+          "column": "effective_date",
+          "extracted": "2011-09-16",
+          "acceptable": [
+            "16th day of September, 2011",
+            "September 16, 2011",
+            "2011-09-16"
+          ],
+          "correct": true
+        },
+        {
+          "column": "governing_law",
+          "extracted": "State of North Carolina",
+          "acceptable": [
+            "State of North Carolina"
+          ],
+          "correct": true
+        },
+        {
+          "column": "termination_for_convenience",
+          "extracted": "Upon written notice by either Employee or the Company to the other party, effective on the date set forth in such notice or such earlier date as the Company may provide",
+          "acceptable": [
+            "written notice by either Employee or the Company to the other party"
+          ],
+          "correct": true
+        }
+      ]
+    },
+    "chunk_retry": {
+      "correct": 4,
+      "total": 4,
+      "accuracy": 1.0,
+      "elapsed_s": 1.94,
+      "cost_usd": 0.0,
+      "cells": [
+        {
+          "column": "parties",
+          "extracted": "Pharmaceutical Product Development, Inc., a North Carolina corporation (the \"Company\") and Raymond H. Hill (\"Employee\")",
+          "acceptable": [
+            "Pharmaceutical Product Development, Inc.",
+            "Raymond H. Hill"
+          ],
+          "correct": true
+        },
+        {
+          "column": "effective_date",
+          "extracted": "2011-09-16",
+          "acceptable": [
+            "16th day of September, 2011",
+            "September 16, 2011",
+            "2011-09-16"
+          ],
+          "correct": true
+        },
+        {
+          "column": "governing_law",
+          "extracted": "State of North Carolina",
+          "acceptable": [
+            "State of North Carolina"
+          ],
+          "correct": true
+        },
+        {
+          "column": "termination_for_convenience",
+          "extracted": "Upon written notice by either Employee or the Company to the other party, effective on the date set forth in such notice or such earlier date as the Company may provide",
+          "acceptable": [
+            "written notice by either Employee or the Company to the other party"
+          ],
+          "correct": true
+        }
+      ]
+    }
+  }
+}

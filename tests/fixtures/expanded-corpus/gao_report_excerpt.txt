@@ -1,0 +1,27 @@
+United States Government Accountability Office
+Report to Congressional Requesters
+GAO-24-106300
+
+CYBERSECURITY: Federal Agencies Need to Fully Implement Incident Response Requirements
+
+March 2024
+
+What GAO Found
+
+Federal agencies have made progress in implementing incident response practices, but significant gaps remain. Of the 23 civilian Chief Financial Officers (CFO) Act agencies that GAO reviewed, 20 had developed incident response plans. However, only 12 agencies had tested those plans within the past year through tabletop exercises or simulations.
+
+The Cybersecurity and Infrastructure Security Agency (CISA) within the Department of Homeland Security (DHS) has a key role in coordinating federal incident response. CISA operates the National Cybersecurity and Communications Integration Center (NCCIC), which serves as a centralized hub for receiving, analyzing, and sharing cybersecurity threat indicators and defensive measures.
+
+GAO found that agencies faced persistent challenges in three areas:
+
+1. Staffing: 18 of the 23 agencies reported cybersecurity staffing shortages, with an average vacancy rate of 14% for positions requiring specialized cybersecurity skills.
+
+2. Automation: Only 8 agencies had implemented automated incident detection and response capabilities consistent with NIST Special Publication 800-61r3 guidelines.
+
+3. Reporting: 15 agencies did not meet the requirement under Executive Order 14028 (Improving the Nation's Cybersecurity) to report significant incidents to CISA within 72 hours. The median reporting time was 5.3 days.
+
+GAO is making 39 recommendations to 22 agencies to address identified weaknesses in incident response capabilities. Of these, 11 recommendations relate to testing incident response plans, 14 relate to staffing and training, and 14 relate to improving automation and reporting timeliness.
+
+Why GAO Did This Study
+
+The federal government experienced over 32,000 cybersecurity incidents in fiscal year 2023, an increase of 8% from the prior year. The cost of responding to and recovering from these incidents was estimated at $2.4 billion across federal agencies. This report was requested by the Senate Committee on Homeland Security and Governmental Affairs.

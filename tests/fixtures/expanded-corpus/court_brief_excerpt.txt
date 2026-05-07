@@ -1,0 +1,29 @@
+IN THE SUPREME COURT OF THE UNITED STATES
+
+No. 23-726
+
+SECURITIES AND EXCHANGE COMMISSION, Petitioner,
+v.
+JARKESY et al., Respondents.
+
+BRIEF AMICUS CURIAE OF THE
+NATIONAL ASSOCIATION OF SECURITIES DEALERS
+IN SUPPORT OF PETITIONER
+
+INTEREST OF AMICUS CURIAE
+
+The National Association of Securities Dealers ("NASD") respectfully submits this brief amicus curiae in support of the petition for certiorari filed by the Securities and Exchange Commission ("SEC"). NASD has a direct interest in the outcome of this case because the decision below threatens to undermine the administrative enforcement framework that has protected investors for nearly a century.
+
+SUMMARY OF ARGUMENT
+
+The Fifth Circuit's decision in SEC v. Jarkesy, 34 F.4th 446 (5th Cir. 2022), as modified on panel rehearing, 51 F.4th 644 (5th Cir. 2022), held that the SEC's use of administrative proceedings to adjudicate securities fraud claims violates the Seventh Amendment right to a jury trial. This conclusion is fundamentally inconsistent with the longstanding doctrine of public rights, which permits Congress to assign the adjudication of statutory claims created by Congress to administrative agencies without jury trials.
+
+The Supreme Court has repeatedly held that when Congress creates a statutory cause of action and assigns its adjudication to an agency, the Seventh Amendment does not require a jury trial. See Atlas Roofing Co. v. Occupational Safety & Health Review Comm'n, 430 U.S. 442, 455 (1977). Securities fraud claims under Section 10(b) of the Exchange Act are precisely such statutory causes of action.
+
+The administrative enforcement framework is not merely a matter of institutional convenience. It serves critical investor-protection purposes. Administrative proceedings allow the SEC to: (1) bring cases more quickly than federal courts, with an average resolution time of 11.3 months compared to 3.2 years in district court; (2) deploy specialized administrative law judges with deep expertise in securities law; and (3) impose tailored remedies including disgorgement, civil penalties, and industry bars that are not available in all federal court proceedings.
+
+If the Fifth Circuit's decision stands, the SEC would be required to litigate all securities fraud cases in federal district court. The SEC estimated that this would increase its average per-case litigation costs by 65% and extend case resolution times by approximately 24 months. Over 70% of the SEC's enforcement actions in fiscal year 2023 were initiated as administrative proceedings.
+
+CONCLUSION
+
+For the foregoing reasons, the Court should reverse the judgment of the Fifth Circuit and hold that SEC administrative proceedings to adjudicate securities fraud claims do not violate the Seventh Amendment.
