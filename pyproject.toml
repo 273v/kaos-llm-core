@@ -52,14 +52,20 @@ dependencies = [
 # because the underlying kaos-mcp, kaos-pdf, and kaos-tabular packages are
 # not yet on PyPI. ``uv lock`` is strict and refuses to resolve any declared
 # extra whose package is not resolvable. These extras (cross-module input
-# bridges for the batch runner) will be re-added in 0.1.0a2 once those
-# siblings ship. Until then, install those packages from source.
+# bridges for the batch runner) will be re-added once those siblings ship.
+# Until then, install those packages from source.
 [project.optional-dependencies]
 # OpenTelemetry instrumentation — emits LLM-call spans through the
 # `opentelemetry-api` no-op tracer when no provider SDK is installed,
 # and through any user-configured exporter when one is.
 otel = [
   "opentelemetry-api>=1.20",
+]
+# Vision programs — typed VLM functions over rendered page images
+# (`kaos_llm_core.vision`). Pulls kaos-content's [images] extra
+# (Pillow + numpy) so KaosImage works as the program input type.
+vision = [
+  "kaos-content[images]>=0.1.0a1,<0.2",
 ]
 
 [project.scripts]

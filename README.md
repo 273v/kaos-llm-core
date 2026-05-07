@@ -30,8 +30,11 @@ dependencies are `kaos-core` (runtime + settings + logging),
 `kaos-content` (document AST consumed by the `RAG` and `extract_corpus`
 programs), `kaos-llm-client` (provider transport), `kaos-nlp-core`
 (deterministic alpha extractors and segmentation used by the chunk
-retry loop), and `pydantic` (Signature base + validation). The
-single `[otel]` extra adds OpenTelemetry span emission for LLM calls.
+retry loop), and `pydantic` (Signature base + validation). Two
+optional extras: `[otel]` adds OpenTelemetry span emission for LLM
+calls; `[vision]` pulls `kaos-content[images]` (Pillow + numpy) so
+the page-level VLM programs (`describe_page`, `classify_page`,
+`ocr_page`) work on `KaosImage` inputs.
 
 ## Install
 
@@ -42,18 +45,21 @@ pip install kaos-llm-core
 
 # OpenTelemetry span emission for LLM calls
 uv add 'kaos-llm-core[otel]'
+
+# Page-level VLM programs (describe_page / classify_page / ocr_page)
+uv add 'kaos-llm-core[vision]'
 ```
 
 `kaos-llm-core` requires Python **3.13** or newer (3.14 is supported).
 The package is pure Python — no compiled extensions, no native wheels.
 
 The cross-module input bridges for the batch runner (`[mcp]`, `[pdf]`,
-`[tabular]`) are deliberately **not** declared in `0.1.0a1` because the
+`[tabular]`) are deliberately **not** declared yet because the
 underlying `kaos-mcp`, `kaos-pdf`, and `kaos-tabular` packages are not
 yet on PyPI and `uv lock` refuses to resolve declared extras whose
-package is unresolvable. They will return in `0.1.0a2` once those
-siblings ship; until then, install those packages from source if you
-need the bridges.
+package is unresolvable. They will return once those siblings ship;
+until then, install those packages from source if you need the
+bridges.
 
 ## Quick start
 
