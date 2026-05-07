@@ -34,7 +34,7 @@ jobs:
         run: uv python install 3.13
 
       - name: Install dependencies
-        run: uv sync --group dev --python 3.13
+        run: uv sync --group dev --extra vision --python 3.13
 
       - name: Ruff format check
         run: uv run ruff format --check kaos_llm_core/ tests/
@@ -66,7 +66,7 @@ jobs:
         run: uv python install 3.13
 
       - name: Install dependencies (needed by the local ty hook)
-        run: uv sync --group dev --python 3.13
+        run: uv sync --group dev --extra vision --python 3.13
 
       - name: Run pre-commit
         run: uvx pre-commit run --all-files --show-diff-on-failure
@@ -117,7 +117,7 @@ jobs:
         run: uv python install --preview ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync --group dev --python ${{ matrix.python-version }}
+        run: uv sync --group dev --extra vision --python ${{ matrix.python-version }}
 
       - name: Run unit tests with coverage
         # Only `tests/unit/` runs in regular CI. `tests/integration/`
@@ -157,7 +157,7 @@ jobs:
         run: uv python install 3.13
 
       - name: Install with lowest-direct resolution
-        run: uv sync --group dev --resolution=lowest-direct --python 3.13
+        run: uv sync --group dev --extra vision --resolution=lowest-direct --python 3.13
 
       - name: Run unit tests
         run: |
