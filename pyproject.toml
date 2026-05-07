@@ -115,6 +115,7 @@ addopts = [
 ]
 markers = [
   "integration: end-to-end behavior checks requiring API credentials",
+  "live: tests that issue real, billable LLM API calls (skipped when keys absent)",
   "unit: focused unit checks",
 ]
 

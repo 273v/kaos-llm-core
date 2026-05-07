@@ -16,7 +16,9 @@ from kaos_core.types.enums import ToolCapability, ToolCategory
 from kaos_core.types.parameters import ParameterSchema
 
 from kaos_llm_core.integrations.mcp._batch_helpers import (
+    missing_batch_id_error,
     record_to_status_dict,
+    unknown_batch_error,
     workspace_or_error,
 )
 from kaos_llm_core.integrations.mcp._common import BaseLLMCoreTool
@@ -67,13 +69,10 @@ class KaosLLMCoreBatchStatusTool(BaseLLMCoreTool):
                 return ws
             batch_id = inputs.get("batch_id")
             if not isinstance(batch_id, str) or not batch_id:
-                return ToolResult.create_error("batch_id is required (string).")
+                return missing_batch_id_error()
             record = ws.get_batch(batch_id)
             if record is None:
-                return ToolResult.create_error(
-                    f"No batch with id {batch_id!r}. Confirm the id from the "
-                    "output of kaos-llm-core-batch-create."
-                )
+                return unknown_batch_error(batch_id)
             output = record_to_status_dict(record)
             n_done = record.n_succeeded + record.n_errored
             total_str = str(record.n_total) if record.n_total is not None else "?"

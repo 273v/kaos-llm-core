@@ -55,6 +55,35 @@ _BATCH_CONTEXT_ID = "__kaos_llm_core_batch__"
 
 
 # ---------------------------------------------------------------------------
+# Standard error helpers
+# ---------------------------------------------------------------------------
+#
+# Every batch-tool input error follows the same what/how/alternative
+# template so callers see a consistent recovery hint without each tool
+# inventing its own phrasing.
+
+
+def missing_batch_id_error() -> ToolResult:
+    """Standard error for a missing-or-non-string ``batch_id`` input."""
+    return ToolResult.create_error(
+        "batch_id is required and must be a non-empty string. "
+        "Use the batch_id returned by kaos-llm-core-batch-create, or list "
+        "recent batches via the workspace SQLite at "
+        "${VFS_ROOT}/.kaos-llm-core/workspace.sqlite."
+    )
+
+
+def unknown_batch_error(batch_id: str) -> ToolResult:
+    """Standard error for a batch_id that is not in the workspace."""
+    return ToolResult.create_error(
+        f"No batch with id {batch_id!r} in this workspace. "
+        "Confirm the id from the kaos-llm-core-batch-create response, or "
+        "check that the runtime VFS root matches the one the batch was "
+        "created against."
+    )
+
+
+# ---------------------------------------------------------------------------
 # Workspace open
 # ---------------------------------------------------------------------------
 
@@ -373,16 +402,25 @@ def _resolve_vfs_to_disk(
         )
     if context is None or context.runtime is None:
         return ToolResult.create_error(
-            f"Cannot resolve VFS path {vfs_path!r} without a runtime context."
+            f"Cannot resolve VFS path {vfs_path!r} without a runtime context. "
+            "Run this tool through an MCP server (kaos-llm-core-serve) so the "
+            "runtime + VFS are available."
         )
     try:
         disk = context.runtime.vfs.resolve_disk_path(vfs_path, context_id=_BATCH_CONTEXT_ID)
     except (AttributeError, NotImplementedError) as exc:
         return ToolResult.create_error(
-            f"VFS backend cannot resolve {vfs_path!r} to a disk path: {exc}."
+            f"VFS backend cannot resolve {vfs_path!r} to a disk path: {exc}. "
+            "Batch I/O requires the disk VFS backend; configure the runtime "
+            "with VFS_BACKEND=disk."
         )
     if disk is None:
-        return ToolResult.create_error(f"VFS path {vfs_path!r} is not on the disk backend.")
+        return ToolResult.create_error(
+            f"VFS path {vfs_path!r} is not on the disk backend. "
+            "Batch I/O requires VFS_BACKEND=disk so inputs/outputs can be "
+            "streamed to real files. Either switch the runtime to the disk "
+            "backend, or use an inline 'list' input source instead of a path."
+        )
     return Path(disk)
 
 
@@ -403,16 +441,26 @@ def resolve_output_dir(
         )
     if context is None or context.runtime is None:
         return ToolResult.create_error(
-            f"Cannot resolve output_dir {vfs_path!r} without a runtime context."
+            f"Cannot resolve output_dir {vfs_path!r} without a runtime context. "
+            "Run this tool through an MCP server (kaos-llm-core-serve) so the "
+            "runtime + VFS are available."
         )
     try:
         disk = context.runtime.vfs.resolve_disk_path(vfs_path, context_id=_BATCH_CONTEXT_ID)
     except (AttributeError, NotImplementedError) as exc:
         return ToolResult.create_error(
-            f"VFS backend cannot resolve output_dir {vfs_path!r}: {exc}."
+            f"VFS backend cannot resolve output_dir {vfs_path!r}: {exc}. "
+            "Batch I/O requires the disk VFS backend; configure the runtime "
+            "with VFS_BACKEND=disk."
         )
     if disk is None:
-        return ToolResult.create_error(f"output_dir {vfs_path!r} is not on the disk backend.")
+        return ToolResult.create_error(
+            f"output_dir {vfs_path!r} is not on the disk backend. "
+            "Batch output requires VFS_BACKEND=disk so the JSONL log and "
+            "manifest can be written to real files. Switch the runtime to "
+            "the disk backend, or omit output_dir to fall back to the "
+            "workspace default directory."
+        )
     Path(disk).mkdir(parents=True, exist_ok=True)
     return Path(disk)
 

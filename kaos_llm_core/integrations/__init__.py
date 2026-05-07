@@ -16,3 +16,5 @@ one 2865-line file. The split happens incrementally — Phase 14A
 lands the common helpers, Phase 14B does the per-tool split, Phase
 14C wires starter + decorator onto the common helpers.
 """
+
+__all__: list[str] = []
