@@ -116,6 +116,14 @@ jobs:
         # No-op for stable versions.
         run: uv python install --preview ${{ matrix.python-version }}
 
+      - name: Install Pillow build deps (Python 3.15 only)
+        # Pillow 12.x doesn't ship a cpython-3.15 wheel yet (3.15 is
+        # pre-release through Oct 2026), so uv falls back to a source
+        # build that needs libjpeg + zlib headers. Drop this step once
+        # Pillow publishes a 3.15 wheel.
+        if: matrix.python-version == '3.15'
+        run: sudo apt-get update && sudo apt-get install -y libjpeg-dev zlib1g-dev
+
       - name: Install dependencies
         run: uv sync --group dev --extra vision --python ${{ matrix.python-version }}
 
