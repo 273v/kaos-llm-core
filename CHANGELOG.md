@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0a3] — 2026-05-07
+
+Page-level VLM programs relocated from `kaos_pdf.vision` to keep the
+extraction → LLM dependency direction one-directional. Closes audit-01
+PDF-001 (the published `kaos-pdf[vision]` extra had `kaos-pdf`
+depending up on `kaos-llm-core`, which inverts the documented DAG).
+
+### Added
+
+- `kaos_llm_core.vision` subpackage with three async page programs:
+  - `describe_page(image, *, model, instruction)` → `PageDescription`
+  - `classify_page(image, *, model)` → `PageClassification`
+    (10 categories: text, table, chart, form, signature_page, exhibit,
+    photo, diagram, blank, mixed)
+  - `ocr_page(image, *, model)` → `PageOCRResult` — VLM-based OCR,
+    the high-accuracy complement to Tesseract
+  All three accept a `KaosImage` (from kaos-content) and return a
+  frozen-slots dataclass. Default model is `anthropic:claude-haiku-4-5`.
+- New `[vision]` extra pulling `kaos-content[images]` (Pillow + numpy)
+  so the `KaosImage` input type works out of the box.
+
+### Migration
+
+Replace:
+
+    from kaos_pdf.vision import describe_page, classify_page, ocr_page
+
+with:
+
+    from kaos_llm_core.vision import describe_page, classify_page, ocr_page
+
+The function signatures, default model, and return shapes are unchanged.
+`kaos_pdf.vision` and the `kaos-pdf[vision]` extra are removed in the
+next `kaos-pdf` release.
+
 ## [0.1.0a2] — 2026-05-07
 
 audit-01 follow-ups. No public-API or behavior changes; all changes are
