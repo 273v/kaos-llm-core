@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Cross-platform import + sandbox preexec.** Two regressions surfaced
+  by the new macOS-arm64 / Windows-x64 CI test legs:
+  - `kaos_llm_core.programs.program_of_thought` did `import resource`
+    at module top level. `resource` is POSIX-only, so on Windows
+    *every* test that transitively imported `kaos_llm_core` failed to
+    collect with `ModuleNotFoundError: No module named 'resource'`.
+    The import is now gated behind `os.name == "posix"` and stored as
+    a private `_resource` symbol; the same gate skips passing
+    `preexec_fn` to `subprocess.run` on Windows (where the kwarg
+    raises). The Windows sandbox is correspondingly weaker — only the
+    wall-clock timeout + `-I -S` isolation apply; the production
+    boundary continues to be POSIX-only as documented in the module
+    header.
+  - `_apply_rlimits` called `resource.setrlimit(RLIMIT_AS, ...)`
+    unconditionally. macOS doesn't support `RLIMIT_AS` and the call
+    raises `OSError(EINVAL)`, which propagated up as
+    `subprocess.SubprocessError: Exception occurred in preexec_fn`
+    and killed every sandbox test on the macOS-arm64 leg. RLIMIT_AS
+    is now skipped on Darwin (`sys.platform == "darwin"`); RLIMIT_CPU
+    + RLIMIT_FSIZE still apply.
+
+  Regression coverage:
+  `tests/unit/test_program_of_thought_crossplatform.py` — three
+  tests (module-import shape, Darwin RLIMIT_AS skip, Linux all-three).
+
 ## [0.1.0a3] — 2026-05-07
 
 Page-level VLM programs relocated from `kaos_pdf.vision` to keep the
