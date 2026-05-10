@@ -33,6 +33,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Regression coverage:
   `tests/unit/test_program_of_thought_crossplatform.py` — three
   tests (module-import shape, Darwin RLIMIT_AS skip, Linux all-three).
+- **Tests: KLLC-02 / KLLC-03 absolute-path fixtures now use a
+  platform-aware absolute path.** Four tests in
+  ``tests/unit/test_security_regressions.py`` and one in
+  ``tests/unit/test_tools.py`` asserted that production code rejects
+  absolute paths like ``/etc/cron.d/escape-test`` with an error
+  containing the word ``"absolute"``. On Windows, a leading ``/``
+  without a drive letter is drive-relative — not absolute —
+  ``Path("/etc/...").is_absolute()`` returns ``False`` there, so
+  the security guard never fired and the tests collected a
+  not-found / no-runtime-context error message instead of the
+  expected ``"absolute"`` one. New ``_abs_escape_path`` helper
+  emits a platform-appropriate absolute path
+  (``/etc/<components>`` on POSIX,
+  ``C:\\Windows\\System32\\drivers\\etc\\<components>`` on
+  Windows). The security guards continue to do the rejection; only
+  the test fixtures change. Files:
+  ``tests/unit/test_security_regressions.py``,
+  ``tests/unit/test_tools.py``.
 
 ## [0.1.0a3] — 2026-05-07
 
