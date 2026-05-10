@@ -51,6 +51,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the test fixtures change. Files:
   ``tests/unit/test_security_regressions.py``,
   ``tests/unit/test_tools.py``.
+### Security
+
+- **bandit + vulture now run in both pre-commit and CI.** The
+  ``.pre-commit-config.yaml`` gains two new hooks (bandit static
+  security scan + vulture dead-code scan), mirrored by jobs in
+  ``security.yml`` so the scan is publicly visible on every PR.
+  Bandit skip list is justified inline per audit
+  (``B101,B404,B603,B607``); vulture runs at ``--min-confidence
+  100`` with a shared ``--ignore-names`` list for framework
+  callbacks / signal handlers / OAuth field names that vulture
+  can't infer from the import graph alone. Both hooks currently
+  pass clean. Mirrors the rollout pattern from kaos-core.
 
 ## [0.1.0a3] — 2026-05-07
 
