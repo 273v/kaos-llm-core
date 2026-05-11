@@ -8,6 +8,93 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **``HybridRubric`` + ``apply_rubric`` row-scoring stack.** New
+  :class:`~kaos_llm_core.signatures.rubric.HybridRubric` value type
+  carries typed ``Criterion`` rules (column / operator / value /
+  weight, 11-operator enum) alongside a free-form
+  ``qualitative_guidance`` channel. ``hard_weight`` + ``soft_weight``
+  combine the two; constructor enforces sum-to-1.0 and rejects fully-
+  empty rubrics.
+  :func:`~kaos_llm_core.programs.scoring.apply_rubric` consumes the
+  rubric + a ``TabularDocument`` and returns a new doc with ``_score``
+  (FLOAT, [0, 1]) and ``_reasoning`` (TEXT) columns appended; hard
+  channel is pure Python, soft channel is one ``Call`` per row
+  concurrent via ``asyncio.gather``. Critically uses a dedicated
+  ``RowJudgmentSignature`` rather than ``Judge.score_response`` —
+  Judge is wired for producer/judge pairs and collapses row scores to
+  ~0.10. 33 unit tests + smoke-verified live (Sonnet 4.6 produces
+  ordered scores 0.94 / 0.87 / 0.36 on the synthetic 3-row table).
+  Public API: ``Criterion``, ``CriterionOperator``, ``HybridRubric``
+  on ``kaos_llm_core.signatures``; ``apply_rubric``,
+  ``RowJudgmentSignature`` on ``kaos_llm_core.programs``. Files:
+  ``kaos_llm_core/signatures/rubric.py``,
+  ``kaos_llm_core/programs/scoring.py``,
+  ``tests/unit/test_rubric_scoring.py``.
+
+- **``SchemaDesigner`` + ``RubricDesigner`` + ``DealReviewProgram``.**
+  Reference implementation of the "agent as runtime program
+  synthesizer" architecture: five-phase pipeline ``design_schema`` →
+  ``extract`` → ``design_rubric`` → ``apply_rubric`` → recommend.
+  Each phase produces a typed artifact (``ExtractionSchema``,
+  ``TabularDocument``, ``HybridRubric``, scored ``TabularDocument``).
+  Designers are single ``Call`` invocations — sub-agent prototypes
+  observed 9 of 10 columns identical across runs of the same
+  question, so synthesis is stable enough without refinement
+  wrappers.
+  :class:`~kaos_llm_core.programs.deal_review.DealReviewProgram`
+  orchestrates all five phases as a ``Program`` subclass (not an
+  envelope) — the 2026-05-10 prototype comparison measured Program at
+  2x smaller LOC, 54% cheaper per run, and able to call existing
+  ``Extract`` / loop over corpora / pass dynamic schema between
+  phases, none of which envelopes currently support. Live-validated
+  on a 2-NDA mini-corpus at Sonnet 4.6 (7 LLM calls, ~$0.08): correctly
+  endorses Acme (Michigan-governed, mutual NDA, no non-solicit) and
+  declines EMNA (Delaware-governed). Public API:
+  ``DealReviewProgram``, ``DealReviewResult``,
+  ``SchemaDesignerSignature``, ``RubricDesignerSignature``,
+  ``design_schema``, ``design_rubric``, ``sample_corpus_text`` on
+  ``kaos_llm_core.programs``. Files:
+  ``kaos_llm_core/programs/designers.py``,
+  ``kaos_llm_core/programs/deal_review.py``.
+
+- **``NeedsAggregation`` typed result + ``RefusalPolicy.allow_aggregation_route`` flag.**
+  Distinguishes "the corpus genuinely lacks the facts"
+  (``InsufficientEvidence``) from "the corpus has the facts but the
+  answer must be derived" (``NeedsAggregation``). Empirically
+  confirmed that every model tested — haiku-4-5, sonnet-4-6,
+  gpt-5.4-mini, gpt-5.5 — collapses aggregation queries (longest /
+  shortest / most / average / count) to ``InsufficientEvidence`` when
+  there's no single span that IS the answer. The refusal route is
+  architectural — model strength doesn't fix it. The new
+  ``NeedsAggregation`` type carries ``operation`` (max / min / count /
+  …), ``relevant_values`` (the retrieved values the agent identified
+  as inputs to the aggregation), and ``suggested_tool`` (pointing at
+  ``kaos-content-stats`` / ``kaos-retrieval-corpus-manifest`` /
+  ``kaos-tabular-top-k`` / ``kaos-llm-core-compute``). Backward-
+  compatible: ``RefusalPolicy.allow_aggregation_route`` defaults
+  to ``False`` so existing programs collapse aggregation gaps to
+  ``InsufficientEvidence`` as today. Recommended ``True`` for
+  legal / financial / comparative review workflows. Public API
+  additions are exported from ``kaos_llm_core.signatures``. Files:
+  ``kaos_llm_core/signatures/grounding.py``,
+  ``kaos_llm_core/signatures/__init__.py``.
+
+### Fixed
+
+- **``ExtractionResult.cost_usd`` + ``tokens_total`` populated from the
+  inner Call.** Pre-fix, ``Extract`` declared both fields with default
+  ``0.0``/``0`` but never assigned ``Call.invoke().usage.cost_usd`` /
+  ``usage.total_tokens`` on success. Any downstream code doing budget
+  enforcement on ``ExtractionResult`` silently under-counted extraction
+  spend. Now populated on the non-grounded path; the grounded path
+  remains zero (with an inline TODO) because ``GroundedResult`` doesn't
+  expose ``usage`` yet — no regression vs prior behaviour. Smoke-
+  verified: ``ExtractionResult.cost_usd = 0.000262``, ``tokens_total =
+  255`` on a single-column extract at Haiku 4.5 (was 0/0 pre-fix).
+  Files: ``kaos_llm_core/programs/extract.py``.
+
 ## [0.1.0a4] — 2026-05-11
 
 ### Fixed

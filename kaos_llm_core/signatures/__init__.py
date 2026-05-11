@@ -17,6 +17,7 @@ from kaos_llm_core.signatures.grounding import (
     GroundedAnswer,
     InsufficientEvidence,
     MatchStrategy,
+    NeedsAggregation,
     RefusalPolicy,
     Span,
     SpanError,
@@ -28,6 +29,11 @@ from kaos_llm_core.signatures.introspection import (
     get_instruction,
     get_output_fields,
     signature_to_json_schema,
+)
+from kaos_llm_core.signatures.rubric import (
+    Criterion,
+    CriterionOperator,
+    HybridRubric,
 )
 from kaos_llm_core.signatures.signature import Signature
 from kaos_llm_core.signatures.span_tagging import (
@@ -45,11 +51,15 @@ __all__ = [
     "ClaimType",
     "ColumnSpec",
     "ColumnTypeName",
+    "Criterion",
+    "CriterionOperator",
     "ExtractionSchema",
     "GroundedAnswer",
+    "HybridRubric",
     "InputField",
     "InsufficientEvidence",
     "MatchStrategy",
+    "NeedsAggregation",
     "OutputField",
     "Provenance",
     "RefusalPolicy",

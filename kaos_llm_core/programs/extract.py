@@ -258,6 +258,12 @@ class Extract(Program):
         # Cited.verify has something to check against.
         effective_corpus = corpus if corpus is not None else {doc_id: text}
 
+        # Track per-doc cost + tokens — populated below from the inner
+        # invocation (or set to 0 for the grounded path, which doesn't
+        # currently surface cost on GroundedResult).
+        invocation_cost_usd: float = 0.0
+        invocation_tokens_total: int = 0
+
         if self.provenance == "grounded":
             grounded = Grounded(
                 self.call,
@@ -278,6 +284,10 @@ class Extract(Program):
             verification_errors = g_result.verification_errors
             is_verified = g_result.is_verified
             attempts = g_result.attempts
+            # TODO: GroundedResult doesn't currently expose cost/tokens.
+            # Once it does, populate invocation_cost_usd / invocation_tokens_total
+            # from g_result.usage. Until then this branch reports 0 — same as
+            # historical behaviour, no regression.
         else:
             try:
                 invocation = await self.call.invoke(source_text=text)
@@ -293,6 +303,14 @@ class Extract(Program):
             verification_errors = ()
             is_verified = True
             attempts = 1
+            # Capture cost + tokens from the inner Call.invoke() so the
+            # ExtractionResult.cost_usd / tokens_total fields are actually
+            # populated. Pre-fix these were silently zero — any caller
+            # doing budget enforcement on ExtractionResult under-counted
+            # extraction spend.
+            usage = invocation.usage
+            invocation_cost_usd = float(getattr(usage, "cost_usd", 0.0) or 0.0)
+            invocation_tokens_total = int(getattr(usage, "total_tokens", 0) or 0)
 
             # For cited provenance, verify spans once (no retry) for the
             # caller's audit trail. Grounded covered this via retry already.
@@ -375,6 +393,8 @@ class Extract(Program):
                 latency_ms=latency_ms,
                 attempts=attempts,
                 model=model_name,
+                cost_usd=invocation_cost_usd,
+                tokens_total=invocation_tokens_total,
             )
 
         # Round-trip-safe raw output dump. ``value`` is a dynamic Pydantic
@@ -393,7 +413,8 @@ class Extract(Program):
             is_verified=is_verified,
             refused_columns=refused_columns,
             latency_ms=latency_ms,
-            tokens_total=0,
+            cost_usd=invocation_cost_usd,
+            tokens_total=invocation_tokens_total,
             attempts=attempts,
             model=model_name,
             verification_error_count=len(verification_errors),
