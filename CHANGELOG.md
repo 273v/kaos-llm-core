@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0a5] — 2026-05-11
+
 ### Added
 
 - **``HybridRubric`` + ``apply_rubric`` row-scoring stack.** New
@@ -370,6 +372,7 @@ First public alpha. Apache-2.0. Earlier internal versions were proprietary.
   yet on PyPI. They will be re-added in `0.1.0a2` once those siblings ship.
   Until then, install those packages from source if you need the bridges.
 
-[Unreleased]: https://github.com/273v/kaos-llm-core/compare/v0.1.0a4...HEAD
+[Unreleased]: https://github.com/273v/kaos-llm-core/compare/v0.1.0a5...HEAD
+[0.1.0a5]: https://github.com/273v/kaos-llm-core/compare/v0.1.0a4...v0.1.0a5
 [0.1.0a4]: https://github.com/273v/kaos-llm-core/compare/v0.1.0a3...v0.1.0a4
 [0.1.0a1]: https://github.com/273v/kaos-llm-core/releases/tag/v0.1.0a1
