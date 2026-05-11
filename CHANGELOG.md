@@ -8,6 +8,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **``NeedsAggregation`` typed result + ``RefusalPolicy.allow_aggregation_route`` flag.**
+  Distinguishes "the corpus genuinely lacks the facts"
+  (``InsufficientEvidence``) from "the corpus has the facts but the
+  answer must be derived" (``NeedsAggregation``). Empirically
+  confirmed that every model tested — haiku-4-5, sonnet-4-6,
+  gpt-5.4-mini, gpt-5.5 — collapses aggregation queries (longest /
+  shortest / most / average / count) to ``InsufficientEvidence`` when
+  there's no single span that IS the answer. The refusal route is
+  architectural — model strength doesn't fix it. The new
+  ``NeedsAggregation`` type carries ``operation`` (max / min / count /
+  …), ``relevant_values`` (the retrieved values the agent identified
+  as inputs to the aggregation), and ``suggested_tool`` (pointing at
+  ``kaos-content-stats`` / ``kaos-retrieval-corpus-manifest`` /
+  ``kaos-tabular-top-k`` / ``kaos-llm-core-compute``). Backward-
+  compatible: ``RefusalPolicy.allow_aggregation_route`` defaults
+  to ``False`` so existing programs collapse aggregation gaps to
+  ``InsufficientEvidence`` as today. Recommended ``True`` for
+  legal / financial / comparative review workflows. Public API
+  additions are exported from ``kaos_llm_core.signatures``. Files:
+  ``kaos_llm_core/signatures/grounding.py``,
+  ``kaos_llm_core/signatures/__init__.py``.
+
 ## [0.1.0a4] — 2026-05-11
 
 ### Fixed

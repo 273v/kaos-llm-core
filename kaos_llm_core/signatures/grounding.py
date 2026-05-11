@@ -631,6 +631,10 @@ class InsufficientEvidence(BaseModel):
             franchise tax schedule", "GDPR Art. 9(2) text").
         what_would_resolve: Optional single-sentence actionable
             hint for a replan loop.
+
+    See also :class:`NeedsAggregation` — used when the underlying
+    facts ARE present but the question is comparative/aggregate
+    and the answer must be derived rather than retrieved.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -640,6 +644,57 @@ class InsufficientEvidence(BaseModel):
     attempted_claims: list[Claim] = Field(default_factory=list)
     missing: list[str] = Field(default_factory=list)
     what_would_resolve: str | None = None
+
+
+class NeedsAggregation(BaseModel):
+    """Aggregation-route signal: the corpus has the facts; the answer
+    needs to be derived from them, not retrieved.
+
+    Distinct from :class:`InsufficientEvidence`. Insufficient means
+    the corpus genuinely lacks the underlying facts. Aggregation means
+    the facts ARE present (one fact per retrieved item) but no single
+    item *is* the answer — the answer is something the agent must
+    compute (max, min, count, average, longest, shortest, etc.) over
+    the retrieved values.
+
+    Pattern matching consumers can route on ``kind``:
+
+      - ``"insufficient_evidence"`` → refuse and ask user for more sources
+      - ``"needs_aggregation"`` → switch to compute mode (call a
+        stats / manifest / sandbox-eval tool over what's already retrieved)
+
+    Empirically, every model from haiku-4-5 through gpt-5.4-mini /
+    sonnet-4-6 / gpt-5.5 will collapse aggregation queries to
+    ``InsufficientEvidence`` if not told otherwise. Adding this typed
+    result + the corresponding ReAct prompt discipline lets the agent
+    loop distinguish the two cases instead of refusing both.
+
+    Attributes:
+        kind: Discriminant, always ``"needs_aggregation"``.
+        reason: Human-readable explanation of why aggregation is
+            needed (e.g., "comparing term lengths across 5 contracts —
+            no single passage is the longest").
+        operation: Optional short name of the aggregate operation
+            (e.g., ``"max"``, ``"min"``, ``"count"``, ``"avg"``,
+            ``"sort_desc"``). Consumers can use this to pick the
+            right downstream tool.
+        relevant_values: Optional list of the retrieved values the
+            agent identified as inputs to the aggregation (each
+            paired with the source span/uri when available, free-form
+            otherwise).
+        suggested_tool: Optional MCP tool name the consumer should
+            call next (e.g., ``"kaos-content-stats"``,
+            ``"kaos-retrieval-corpus-manifest"``,
+            ``"kaos-tabular-top-k"``, ``"kaos-llm-core-compute"``).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["needs_aggregation"] = "needs_aggregation"
+    reason: str = Field(min_length=1)
+    operation: str | None = None
+    relevant_values: list[str] = Field(default_factory=list)
+    suggested_tool: str | None = None
 
 
 type GroundedAnswer[T] = Annotated[
@@ -981,3 +1036,14 @@ class RefusalPolicy(BaseModel):
     require_verification: bool = False
     min_spans_per_claim: int = Field(default=1, ge=1)
     calibration: Literal["self_report", "judged", "ensemble"] = "self_report"
+    allow_aggregation_route: bool = Field(
+        default=False,
+        description=(
+            "When True, consumers should distinguish ``NeedsAggregation`` "
+            "from ``InsufficientEvidence`` (the corpus has the facts but "
+            "the answer must be computed). When False (default, "
+            "backward-compatible), aggregation gaps collapse to "
+            "InsufficientEvidence the same as evidence gaps. Recommended "
+            "on for legal / financial / comparative review workflows."
+        ),
+    )
