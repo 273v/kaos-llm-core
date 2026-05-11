@@ -29,7 +29,15 @@ from kaos_llm_core.programs.batch_bridges import (
 from kaos_llm_core.programs.best_of_n import BestOfN, BestOfNResult
 from kaos_llm_core.programs.call import Call, CallPlan
 from kaos_llm_core.programs.chain_of_thought import ChainOfThought
+from kaos_llm_core.programs.deal_review import DealReviewProgram, DealReviewResult
 from kaos_llm_core.programs.decorator import llm_call
+from kaos_llm_core.programs.designers import (
+    RubricDesignerSignature,
+    SchemaDesignerSignature,
+    design_rubric,
+    design_schema,
+    sample_corpus_text,
+)
 from kaos_llm_core.programs.ensemble import Ensemble
 from kaos_llm_core.programs.envelope import (
     ClientSpec,
@@ -66,6 +74,7 @@ from kaos_llm_core.programs.react import Iteration, ReAct, ReActResult, ToolObse
 from kaos_llm_core.programs.refine import Refine, RefineHistoryEntry, RefineResult
 from kaos_llm_core.programs.reranker import JudgeReranker, RelevanceSignature
 from kaos_llm_core.programs.result_mixin import HasOutputs, OutputForwardingMixin
+from kaos_llm_core.programs.scoring import RowJudgmentSignature, apply_rubric
 from kaos_llm_core.programs.tool import Tool
 
 __all__ = [
@@ -90,6 +99,8 @@ __all__ = [
     "CorpusExtractionResult",
     "CorpusInputSource",
     "CorpusQA",
+    "DealReviewProgram",
+    "DealReviewResult",
     "Ensemble",
     "EnvelopeStep",
     "ExpandQuery",
@@ -125,14 +136,20 @@ __all__ = [
     "RefineHistoryEntry",
     "RefineResult",
     "RelevanceSignature",
+    "RowJudgmentSignature",
+    "RubricDesignerSignature",
+    "SchemaDesignerSignature",
     "TabularRowsInputSource",
     "TokenUsage",
     "Tool",
     "ToolObservation",
     "Tunable",
+    "apply_rubric",
     "batch_run",
     "build_passage_context",
     "current_invocation",
+    "design_rubric",
+    "design_schema",
     "extract_corpus",
     "from_envelope",
     "jsonl_input_source",
@@ -140,5 +157,6 @@ __all__ = [
     "llm_call",
     "pdf_pages_input_source",
     "program_hash",
+    "sample_corpus_text",
     "tabular_rows_input_source",
 ]

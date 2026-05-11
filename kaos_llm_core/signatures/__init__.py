@@ -30,6 +30,11 @@ from kaos_llm_core.signatures.introspection import (
     get_output_fields,
     signature_to_json_schema,
 )
+from kaos_llm_core.signatures.rubric import (
+    Criterion,
+    CriterionOperator,
+    HybridRubric,
+)
 from kaos_llm_core.signatures.signature import Signature
 from kaos_llm_core.signatures.span_tagging import (
     tag_paragraphs,
@@ -46,8 +51,11 @@ __all__ = [
     "ClaimType",
     "ColumnSpec",
     "ColumnTypeName",
+    "Criterion",
+    "CriterionOperator",
     "ExtractionSchema",
     "GroundedAnswer",
+    "HybridRubric",
     "InputField",
     "InsufficientEvidence",
     "MatchStrategy",
