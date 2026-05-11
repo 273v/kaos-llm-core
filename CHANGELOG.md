@@ -8,6 +8,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0a6] — 2026-05-11
+
+### Fixed
+
+- **``observability.cost.PRICING`` now mirrors ``kaos-llm-client``'s
+  authoritative ``MODEL_PRICING`` table.** Closes cross-sibling
+  divergence flagged by kaos-agents PA15 (Gap #2 + Gap #5) / KC16-2
+  (CRITICAL · FIX_BEFORE_TAG). The table was missing ten model rows
+  that the client knew about, including ``gpt-5.5`` (``$5.00`` /
+  ``$30.00`` per MTok) — the highest-cost OpenAI model currently
+  shipped, which silently rolled up to ``$0.00`` on every
+  ``ExecutionTrace`` that used it. ``o3`` rate corrected from the
+  (10.0, 40.0) reasoning-premium tier to the (2.0, 8.0) standard
+  tier the client dispatches against. Newly priced bare names (and
+  their ``provider:model`` aliases): ``gpt-5.5``, ``gpt-4.1``,
+  ``gpt-4.1-mini``, ``gpt-4.1-nano``, ``gpt-4o``, ``gpt-4o-mini``,
+  ``claude-opus-4-7``, ``claude-sonnet-4-5``, ``grok-3``,
+  ``grok-3-mini``.
+
+### Added
+
+- **Cross-sibling pricing-parity regression test**
+  (``tests/unit/test_cost_pricing_parity.py``). Closes KC16-11
+  ("Pricing-table parity untested across siblings"). Asserts every
+  bare model in ``kaos-llm-client.cost.MODEL_PRICING`` exists in
+  ``kaos-llm-core.observability.cost.PRICING`` with matching
+  ``(input, output)`` rates. One-directional (client → core) — core
+  may legitimately track preview-tier and future models the client
+  doesn't yet price. Failure mode is loud and points the reader at
+  the authoritative source.
+
 ## [0.1.0a5] — 2026-05-11
 
 ### Added

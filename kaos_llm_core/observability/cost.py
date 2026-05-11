@@ -26,7 +26,7 @@ class ModelPricing:
         )
 
 
-# Approximate pricing as of April 2026.
+# Approximate pricing per 1M tokens (USD) as of 2026-05.
 # Source: provider pricing pages. Updated periodically.
 #
 # kaos-llm-client's ``infer_provider`` accepts both ``provider:model``
@@ -34,28 +34,58 @@ class ModelPricing:
 # lookup must support both forms — if a caller passes the bare name,
 # the cost tracker would otherwise return $0.00 silently. Every
 # entry below has a ``provider:model`` key plus a bare alias.
+#
+# Cross-sibling parity: ``kaos-llm-client.cost.MODEL_PRICING`` is the
+# authoritative table for the (input, output) base rates of every
+# model both packages know about. The pricing-parity regression test
+# (``tests/unit/test_cost_pricing_parity.py``) enforces that every
+# bare model name in the client table also exists here with the same
+# numeric (input, output) values. ``kaos-llm-core`` may legitimately
+# track additional bare names that the client doesn't yet price (e.g.
+# the ``gpt-5.4`` family, ``gemini-3*-preview``); the test only asserts
+# the one-directional client → core subset relationship. The
+# ``ModelPricing`` dataclass here is intentionally simpler than the
+# client's dict-with-cache-rates schema — this layer only needs the
+# (input, output) tuple for ExecutionTrace cost roll-ups. Closes
+# KC16-2 / KC16-11 (PA15 cross-provider matrix Gap #2 + Gap #5).
 PRICING: dict[str, ModelPricing] = {
     # Anthropic
+    "anthropic:claude-opus-4-7": ModelPricing(5.0, 25.0),
     "anthropic:claude-opus-4-6": ModelPricing(15.0, 75.0),
     "anthropic:claude-sonnet-4-6": ModelPricing(3.0, 15.0),
+    "anthropic:claude-sonnet-4-5": ModelPricing(3.0, 15.0),
     "anthropic:claude-haiku-4-5": ModelPricing(0.80, 4.0),
+    "claude-opus-4-7": ModelPricing(5.0, 25.0),
     "claude-opus-4-6": ModelPricing(15.0, 75.0),
     "claude-sonnet-4-6": ModelPricing(3.0, 15.0),
+    "claude-sonnet-4-5": ModelPricing(3.0, 15.0),
     "claude-haiku-4-5": ModelPricing(0.80, 4.0),
     # OpenAI
+    "openai:gpt-5.5": ModelPricing(5.00, 30.00),
     "openai:gpt-5.4": ModelPricing(2.50, 10.0),
     "openai:gpt-5.4-mini": ModelPricing(0.40, 1.60),
     "openai:gpt-5.4-nano": ModelPricing(0.10, 0.40),
     "openai:gpt-5": ModelPricing(2.0, 8.0),
+    "openai:gpt-4.1": ModelPricing(2.0, 8.0),
+    "openai:gpt-4.1-mini": ModelPricing(0.40, 1.60),
+    "openai:gpt-4.1-nano": ModelPricing(0.10, 0.40),
+    "openai:gpt-4o": ModelPricing(2.50, 10.0),
+    "openai:gpt-4o-mini": ModelPricing(0.15, 0.60),
     "openai:o4-mini": ModelPricing(1.10, 4.40),
-    "openai:o3": ModelPricing(10.0, 40.0),
+    "openai:o3": ModelPricing(2.0, 8.0),
     "openai:o3-mini": ModelPricing(1.10, 4.40),
+    "gpt-5.5": ModelPricing(5.00, 30.00),
     "gpt-5.4": ModelPricing(2.50, 10.0),
     "gpt-5.4-mini": ModelPricing(0.40, 1.60),
     "gpt-5.4-nano": ModelPricing(0.10, 0.40),
     "gpt-5": ModelPricing(2.0, 8.0),
+    "gpt-4.1": ModelPricing(2.0, 8.0),
+    "gpt-4.1-mini": ModelPricing(0.40, 1.60),
+    "gpt-4.1-nano": ModelPricing(0.10, 0.40),
+    "gpt-4o": ModelPricing(2.50, 10.0),
+    "gpt-4o-mini": ModelPricing(0.15, 0.60),
     "o4-mini": ModelPricing(1.10, 4.40),
-    "o3": ModelPricing(10.0, 40.0),
+    "o3": ModelPricing(2.0, 8.0),
     "o3-mini": ModelPricing(1.10, 4.40),
     # Google
     "google:gemini-3.1-pro-preview": ModelPricing(1.25, 10.0),
@@ -66,6 +96,11 @@ PRICING: dict[str, ModelPricing] = {
     "gemini-3-flash-preview": ModelPricing(0.15, 0.60),
     "gemini-2.5-pro": ModelPricing(1.25, 10.0),
     "gemini-2.5-flash": ModelPricing(0.15, 0.60),
+    # xAI
+    "xai:grok-3": ModelPricing(3.0, 15.0),
+    "xai:grok-3-mini": ModelPricing(0.30, 0.50),
+    "grok-3": ModelPricing(3.0, 15.0),
+    "grok-3-mini": ModelPricing(0.30, 0.50),
 }
 
 
