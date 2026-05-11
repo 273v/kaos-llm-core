@@ -63,6 +63,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   callbacks / signal handlers / OAuth field names that vulture
   can't infer from the import graph alone. Both hooks currently
   pass clean. Mirrors the rollout pattern from kaos-core.
+### Changed
+
+- **uv.lock is now tracked in git.** Previously gitignored at v0.1.0a1
+  because the ``[mcp]`` optional extra (and the ``kaos-mcp`` dev
+  dependency) referenced a sibling not yet on PyPI; ``uv lock``
+  couldn't resolve them. ``kaos-mcp`` shipped (0.1.0a2), so the
+  original gating reason no longer applies. Tracking the lockfile
+  gives reproducible local dev environments, lets Dependabot surface
+  sibling-version bumps as PRs, and makes the supply-chain pin set
+  publicly auditable. Mirrors the org-wide convention being adopted
+  across all 16 kaos-* repos.
 
 ## [0.1.0a3] — 2026-05-07
 

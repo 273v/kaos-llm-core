@@ -22,4 +22,3 @@ build/
 # [tabular] extras (re-added at 0.1.0a2 once those siblings ship) would
 # carry unresolvable sibling pins. Re-track this file when extras come
 # back. See F009 #4 in the kaos-modules OSS plan.
-uv.lock
