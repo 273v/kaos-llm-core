@@ -51,7 +51,6 @@ from __future__ import annotations
 
 import asyncio
 import os
-import resource
 import subprocess
 import sys
 import tempfile
@@ -59,6 +58,16 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+# `resource` is POSIX-only — importing it at module top level breaks
+# every test that transitively imports kaos_llm_core on Windows
+# (ModuleNotFoundError: No module named 'resource'). The sandbox
+# preexec is also POSIX-only (no `fork()` on Windows), so we gate the
+# whole rlimit machinery behind `os.name`.
+if os.name == "posix":
+    import resource as _resource
+else:  # pragma: no cover - exercised on Windows CI legs only
+    _resource = None  # type: ignore[assignment]
 
 from kaos_core.logging import get_logger
 from pydantic import create_model
@@ -125,11 +134,21 @@ def _apply_rlimits(
     Sets POSIX resource limits BEFORE the Python interpreter starts.
     Hardens against the most obvious "model writes a fork bomb / mem
     bomb / writes the entire dictionary to disk" classes of mistake.
+
+    Darwin caveat: ``RLIMIT_AS`` is not supported on macOS and
+    ``setrlimit`` raises ``OSError(EINVAL)`` for it. We deliberately
+    skip RLIMIT_AS on Darwin so the other two limits still take
+    effect; failing the whole preexec would propagate up as
+    ``SubprocessError: Exception occurred in preexec_fn`` and kill
+    every subprocess on the macOS test leg.
     """
+    assert _resource is not None  # caller gated by os.name == "posix"
+    is_darwin = sys.platform == "darwin"
     try:
-        resource.setrlimit(resource.RLIMIT_AS, (mem_bytes, mem_bytes))
-        resource.setrlimit(resource.RLIMIT_CPU, (cpu_seconds, cpu_seconds))
-        resource.setrlimit(resource.RLIMIT_FSIZE, (fsize_bytes, fsize_bytes))
+        if not is_darwin:
+            _resource.setrlimit(_resource.RLIMIT_AS, (mem_bytes, mem_bytes))
+        _resource.setrlimit(_resource.RLIMIT_CPU, (cpu_seconds, cpu_seconds))
+        _resource.setrlimit(_resource.RLIMIT_FSIZE, (fsize_bytes, fsize_bytes))
     except (ValueError, OSError):
         # If we can't set the rlimits, do NOT silently proceed — the
         # subprocess will run unbounded. Raise so the parent process
@@ -299,8 +318,20 @@ class ProgramOfThought(Program):
             mem = self.memory_bytes
             cpu = self.cpu_seconds
 
-            def _preexec() -> None:
-                _apply_rlimits(mem_bytes=mem, cpu_seconds=cpu)
+            # POSIX-only: subprocess.run on Windows raises if
+            # preexec_fn is passed. On Windows the sandbox is
+            # weaker — only the wall-clock timeout and isolated
+            # interpreter flags (-I -S) apply. The Windows path is
+            # explicitly NOT a defence-in-depth boundary in
+            # production; see the module docstring. We keep the
+            # subprocess path running so test coverage on the
+            # Windows leg still exercises the code-generation +
+            # interpretation flow.
+            preexec: Callable[[], None] | None
+            if os.name == "posix":
+                preexec = lambda: _apply_rlimits(mem_bytes=mem, cpu_seconds=cpu)  # noqa: E731
+            else:
+                preexec = None
 
             try:
                 completed = subprocess.run(
@@ -309,7 +340,7 @@ class ProgramOfThought(Program):
                     timeout=self.timeout_s,
                     cwd=scratch,
                     env=env,
-                    preexec_fn=_preexec,
+                    preexec_fn=preexec,
                     check=False,
                 )
             except subprocess.TimeoutExpired as exc:
