@@ -1039,11 +1039,24 @@ class TestSaveLoadTool:
         assert "not found" in (result.text or "").lower()
 
     async def test_execute_load_absolute_path_rejected(self) -> None:
-        """KLLC-03 — absolute paths are rejected outright (was: returned 'not found')."""
+        """KLLC-03 — absolute paths are rejected outright (was: returned 'not found').
+
+        The fixture path must be absolute on the test platform. On
+        POSIX ``/nonexistent/...`` is absolute; on Windows a leading
+        ``/`` without a drive letter is drive-relative, so
+        ``Path(...).is_absolute()`` returns ``False`` there and the
+        guard never fires. Use ``Path.cwd().anchor`` to derive the
+        platform's root (``/`` on POSIX, ``C:\\`` on Windows) so the
+        fixture is always absolute.
+        """
+        import sys
+
+        if sys.platform == "win32":
+            abs_path = "C:/nonexistent/path/does_not_exist.json"
+        else:
+            abs_path = "/nonexistent/path/does_not_exist.json"
         tool = KaosLLMCoreSaveLoadTool()
-        result = await tool.execute(
-            {"mode": "load", "path": "/nonexistent/path/does_not_exist.json"}
-        )
+        result = await tool.execute({"mode": "load", "path": abs_path})
         assert result.isError
         assert "absolute" in (result.text or "").lower()
 

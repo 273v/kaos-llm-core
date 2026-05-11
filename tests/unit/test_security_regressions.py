@@ -7,6 +7,7 @@ indicates a security regression.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from unittest.mock import patch
 
@@ -29,6 +30,28 @@ def _err_text(result: object) -> str:
     if not content:
         return ""
     return getattr(content[0], "text", "") or ""
+
+
+def _abs_escape_path(*parts: str) -> str:
+    """An absolute path with the given trailing components, on any OS.
+
+    ``/etc/cron.d/escape-test`` etc. are absolute on POSIX but *not* on
+    Windows (a leading ``/`` without a drive letter is drive-relative
+    there, so ``Path("/etc/...").is_absolute()`` returns ``False``). The
+    KLLC-02/03 security tests assert that the absolute-path guard
+    rejects the input — but the guard only fires when the input is
+    actually absolute, so the test fixture has to be absolute on the
+    runtime OS.
+
+    On Windows we prepend the current drive's anchor (e.g. ``C:\\``)
+    plus a known-system path that is unlikely to be mistaken for any
+    valid VFS target. On POSIX we keep the original
+    ``/etc/<components>`` shape so the test reads the same way it did
+    before.
+    """
+    if sys.platform == "win32":
+        return str(Path("C:/Windows/System32/drivers/etc").joinpath(*parts))
+    return "/" + "/".join(("etc", *parts))
 
 
 class _Sig(Signature):
@@ -97,7 +120,7 @@ def test_kllc_02_resolve_vfs_to_disk_rejects_absolute_path() -> None:
 
     from kaos_llm_core.integrations.mcp._batch_helpers import _resolve_vfs_to_disk
 
-    result = _resolve_vfs_to_disk("/etc/cron.d/escape-test", context=None)
+    result = _resolve_vfs_to_disk(_abs_escape_path("cron.d", "escape-test"), context=None)
     assert isinstance(result, ToolResult)
     assert result.isError
     assert "absolute" in _err_text(result).lower()
@@ -130,7 +153,7 @@ async def test_kllc_03_save_load_load_rejects_absolute_path() -> None:
     from kaos_llm_core.integrations.mcp.save_load import KaosLLMCoreSaveLoadTool
 
     tool = KaosLLMCoreSaveLoadTool()
-    result = await tool._run({"mode": "load", "path": "/etc/hostname"}, context=None)
+    result = await tool._run({"mode": "load", "path": _abs_escape_path("hostname")}, context=None)
     assert result.isError
     assert "absolute" in _err_text(result).lower()
 
@@ -140,7 +163,9 @@ async def test_kllc_03_save_load_round_trip_rejects_absolute_path() -> None:
     from kaos_llm_core.integrations.mcp.save_load import KaosLLMCoreSaveLoadTool
 
     tool = KaosLLMCoreSaveLoadTool()
-    result = await tool._run({"mode": "round-trip", "path": "/etc/hostname"}, context=None)
+    result = await tool._run(
+        {"mode": "round-trip", "path": _abs_escape_path("hostname")}, context=None
+    )
     assert result.isError
     assert "absolute" in _err_text(result).lower()
 
