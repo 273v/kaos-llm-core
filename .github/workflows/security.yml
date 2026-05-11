@@ -85,3 +85,67 @@ jobs:
           uvx --python 3.13 --from pip-audit pip-audit \
             --requirement /tmp/requirements.txt \
             --strict
+
+  # ────────────── bandit (AST-level static security) ──────────────
+  # AST-level scan for common Python security antipatterns. Mirrors
+  # the pre-commit hook so the public PR signal matches what ran
+  # locally. Skip list justified per audit:
+  #   B101 — pytest `assert`s; framework usage, not a security claim.
+  #   B404 — `import subprocess`; intentional (sandbox + tool
+  #          integrations).
+  #   B603 — subprocess without `shell=True`; correct (the safer
+  #          default we deliberately pick).
+  #   B607 — partial-path subprocess; only used for known-safe
+  #          binaries (`python`, `git`).
+  bandit:
+    name: bandit (static security)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+          cache-suffix: security-bandit-py3.13
+
+      - name: Install Python 3.13
+        run: uv python install 3.13
+
+      - name: Run bandit
+        run: |
+          uvx --python 3.13 bandit \
+            --recursive \
+            --skip B101,B404,B603,B607 \
+            --severity-level medium \
+            --confidence-level medium \
+            kaos_llm_core
+
+
+  # ────────────── vulture (dead-code detection) ──────────────
+  # Reports names vulture is 100% confident are unreachable. The
+  # `--ignore-names` list carves out names vulture can't infer from
+  # the import graph (framework callbacks, signal handlers, OAuth /
+  # OIDC field names accessed by string, MCP `_meta` keys, etc.).
+  # Mirrors the pre-commit hook.
+  vulture:
+    name: vulture (dead-code scan)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install Python 3.13
+        run: uv python install 3.13
+
+      - name: Run vulture
+        run: |
+          uvx --python 3.13 vulture \
+            kaos_llm_core \
+            --min-confidence 100 \
+            --ignore-names client_id,scopes,authorization_endpoint,token_endpoint,device_authorization_endpoint,url,open_ch,container_tag,message_id,parent_message_id,kwargs,context_id,frame,signum,exc_type,tb
