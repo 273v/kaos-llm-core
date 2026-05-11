@@ -8,6 +8,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0a7] — 2026-05-11
+
+### Changed
+
+- **Cross-process env recorder (``KAOS_LLM_CORE_RECORDER_DIR``) now
+  streams records to disk as JSONL with ``fsync()`` per line** instead
+  of buffering and writing at exit. A header line is written at
+  ``install_from_env()`` time so a downstream reader can identify the
+  file before any ``Invocation`` runs. Adds SIGTERM / truncation
+  tolerance — the recorder reader skips a corrupted final line
+  without raising. Closes Sprint-3 #8 ("audit trail must survive
+  ``SIGTERM``").
+- **Header schema bumped from v3 → v4.** New header fields:
+  - ``streaming: True`` — advertises the streaming policy
+  - ``redaction_enabled: True`` — advertises the redaction policy
+  - ``redaction_threshold_chars: 2048`` — body-length threshold above
+    which a recorded ``output`` is redacted to a length-only summary
+
+### Added
+
+- **Transparency-lens redaction of long outputs** (KC16-4). Invocation
+  records with ``len(output_text) > 2048`` now serialize as
+  ``{"output": {"_redacted": True, "len_chars": <n>}}`` rather than
+  the raw text. Threshold is overridable at recorder-install time via
+  ``KAOS_LLM_CORE_RECORDER_REDACT_THRESHOLD_CHARS``; disable entirely
+  with ``KAOS_LLM_CORE_RECORDER_REDACT_OUTPUTS=0``. Avoids audit JSONL
+  ballooning to MB-scale per test and avoids leaking long model
+  outputs into long-lived audit storage.
+- **``tests/unit/test_env_recorder.py``** — header/schema-v4
+  assertions (``streaming is True``, ``schema_version == 4``,
+  ``redaction_enabled is True``, ``redaction_threshold_chars == 2048``)
+  plus round-trip + redaction coverage.
+- **``tests/unit/test_env_recorder_durability.py``** — SIGTERM /
+  truncated-final-line / partial-write durability tests that lock in
+  the streaming contract.
+
+### Mirrored from monorepo
+
+This release mirrors monorepo commits ``b8f5998`` (Sprint-3 #8 —
+streaming recorder + per-line ``fsync``) and ``33a7c1a`` (KC16-4 —
+redact long strings + schema-v4) from ``kaos-modules``. Per
+``memory/feedback_per_module_split_mirror.md``, monorepo source edits
+to published packages must be mirrored back into the per-module repo
+before downstream siblings can depend on them. Required dependency
+floor for kaos-agents v0.1.0a1 — its unit tests assert the v4 header
+shape against this package.
+
 ## [0.1.0a6] — 2026-05-11
 
 ### Fixed

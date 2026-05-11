@@ -288,3 +288,20 @@ __all__ = [
     "text_sync",
     "validate_cited_output",
 ]
+
+
+# KC6 / F2 follow-up: the kaos-agents test recorder needs LLM calls
+# made inside subprocesses (kaos-agents-serve, MCP shells, CLI tools)
+# to be captured the same way as in-process calls. Setting
+# ``KAOS_LLM_CORE_RECORDER_DIR=<path>`` in the subprocess environment
+# triggers the patch below at import time. No-op when the env var is
+# unset, which is the production default. Failures are swallowed —
+# telemetry must never break execution.
+try:
+    from kaos_llm_core.observability.env_recorder import (
+        install_from_env as _install_env_recorder,
+    )
+
+    _install_env_recorder()
+except Exception:
+    pass
