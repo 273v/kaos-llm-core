@@ -148,9 +148,11 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libjpeg-dev zlib1g-dev
 
       - name: Install dependencies
+        continue-on-error: ${{ matrix.experimental }}
         run: uv sync --group dev --extra vision --python ${{ matrix.python-version }}
 
       - name: Run unit tests with coverage
+        continue-on-error: ${{ matrix.experimental }}
         # Only `tests/unit/` runs in regular CI. `tests/integration/`
         # is the live-tier (real provider APIs) and runs separately
         # with credentials gated behind a manual workflow.

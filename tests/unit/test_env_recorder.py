@@ -84,10 +84,11 @@ class TestInstallFromEnv:
         tmp_path: Path,
         restore_call_execute: Any,
     ) -> None:
-        # Point at a path under a non-existent root with no permission
-        # to mkdir there. /proc/<pid>/cannot-create is reliably
-        # un-creatable on Linux.
-        monkeypatch.setenv(ENV_VAR, "/proc/0/this-cannot-exist")
+        def _raise_os_error(*_args: Any, **_kwargs: Any) -> None:
+            raise OSError("cannot create recorder dir")
+
+        monkeypatch.setenv(ENV_VAR, str(tmp_path / "recorder"))
+        monkeypatch.setattr(Path, "mkdir", _raise_os_error)
         assert install_from_env() is False
 
 
