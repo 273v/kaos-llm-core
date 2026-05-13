@@ -10,6 +10,28 @@ resolution-markers = [
     "python_full_version < '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 
+[options]
+exclude-newer = "2026-05-09T01:45:58.826684596Z"
+exclude-newer-span = "PT72H"
+
+[options.exclude-newer-package]
+kaos-source = false
+kaos-llm-client = false
+kaos-citations = false
+kaos-web = false
+kaos-content = false
+kaos-mcp = false
+kaos-llm-core = false
+kaos-office = false
+kaos-graph = false
+kaos-ml-core = false
+kaos-nlp-core = false
+kaos-nlp-transformers = false
+kaos-tabular = false
+kaos-core = false
+kaos-pdf = false
+kaos-names = false
+
 [[package]]
 name = "annotated-types"
 version = "0.7.0"
