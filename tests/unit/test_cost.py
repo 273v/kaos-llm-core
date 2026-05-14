@@ -21,7 +21,7 @@ class TestModelPricing:
 
     def test_known_models_in_pricing(self) -> None:
         assert "anthropic:claude-sonnet-4-6" in PRICING
-        assert "openai:gpt-5.4-nano" in PRICING
+        assert "openai:gpt-4.1-nano" in PRICING
         assert "google:gemini-2.5-flash" in PRICING
 
 
@@ -66,12 +66,12 @@ class TestEstimateCost:
 class TestApplyCostEstimates:
     def test_fills_cost_on_leaf(self) -> None:
         trace = ExecutionTrace(
-            model="openai:gpt-5.4-nano",
+            model="openai:gpt-4.1-nano",
             input_tokens=10000,
             output_tokens=5000,
         )
         apply_cost_estimates(trace)
-        expected = PRICING["openai:gpt-5.4-nano"].estimate(10000, 5000)
+        expected = PRICING["openai:gpt-4.1-nano"].estimate(10000, 5000)
         assert abs(trace.cost_usd - expected) < 1e-10
 
     def test_fills_and_aggregates_program(self) -> None:

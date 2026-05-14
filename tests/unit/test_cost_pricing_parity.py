@@ -72,8 +72,10 @@ def test_provider_alias_shares_identity_with_bare(bare_model: str) -> None:
     """
     provider = infer_provider(bare_model)
     if provider is None:
-        pytest.skip(f"infer_provider returned None for '{bare_model}' — "
-                    f"no provider-qualified alias is generated")
+        pytest.skip(
+            f"infer_provider returned None for '{bare_model}' — "
+            f"no provider-qualified alias is generated"
+        )
     qualified = f"{provider}:{bare_model}"
     assert qualified in CORE_PRICING, (
         f"infer_provider mapped '{bare_model}' to provider '{provider}' "
