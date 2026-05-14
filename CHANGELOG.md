@@ -8,6 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`kaos-llm-core-program-of-thought` MCP tool** (#91, Rec #3). Dedicated
+  wrapper around `ProgramOfThought` that exposes code-as-reasoning over
+  the MCP wire without forcing the agent to construct a full Program v3
+  envelope. Writer LLM emits Python, a subprocess sandbox runs it
+  (POSIX rlimits + tempdir cwd + wall-clock timeout), interpreter LLM
+  parses captured stdout into a typed answer. Returns the answer plus
+  the generated code and raw stdout/stderr for audit. Tool count
+  bumps from 29 → 30.
+- **Two-gate safety model.** Code execution is refused unless **both**
+  the caller passes `allow_code_execution=true` per request **and**
+  the server-side `KAOS_LLM_CORE_ALLOW_CODE_EXECUTION_VIA_MCP=1`
+  environment variable is set. Either gate off and the tool errors
+  before any subprocess spawns. Both default to off — `DANGEROUS BY
+  DEFAULT`.
+- `KaosLLMCoreSettings.allow_code_execution_via_mcp: bool = False`
+  (env: `KAOS_LLM_CORE_ALLOW_CODE_EXECUTION_VIA_MCP`) — the runtime
+  half of the gate.
+
+### Mirrored from monorepo
+
+This release mirrors the monorepo implementation of #91 (Rec #3)
+landed on `273v/kaos-modules` and applies it onto the per-module
+source-of-truth ahead of the next per-module release.
+
 ## [0.1.0a7] — 2026-05-11
 
 ### Changed

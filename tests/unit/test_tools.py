@@ -27,6 +27,7 @@ from kaos_llm_core.integrations.mcp.optimize import KaosLLMCoreOptimizeTool
 from kaos_llm_core.integrations.mcp.optimize_codec import KaosLLMCoreOptimizeCodecTool
 from kaos_llm_core.integrations.mcp.optimize_model import KaosLLMCoreOptimizeModelTool
 from kaos_llm_core.integrations.mcp.pareto import KaosLLMCoreParetoTool
+from kaos_llm_core.integrations.mcp.program_of_thought import KaosLLMCoreProgramOfThoughtTool
 from kaos_llm_core.integrations.mcp.react import KaosLLMCoreReActTool
 from kaos_llm_core.integrations.mcp.recipe_tune import KaosLLMCoreRecipeTuneTool
 from kaos_llm_core.integrations.mcp.refine import KaosLLMCoreRefineTool
@@ -1132,12 +1133,13 @@ class TestSaveLoadTool:
 
 
 class TestRegistration:
-    def test_registration_count_is_29(self) -> None:
-        """register_llm_core_tools should register exactly 29 tools after WS-TR.PR-6f.7.
+    def test_registration_count_is_30(self) -> None:
+        """register_llm_core_tools should register exactly 30 tools after #91.
 
         Tool count history:
         7 (pre-Phase-5) → 11 (5) → 15 (6) → 17 (7) → 18 (15.1) → 22 (15.3)
-        → 23 (17.1) → 29 (WS-TR.PR-6f.7: +6 alpha extractors).
+        → 23 (17.1) → 29 (WS-TR.PR-6f.7: +6 alpha extractors) →
+        30 (#91: +kaos-llm-core-program-of-thought dedicated wrapper).
         """
         from kaos_core import KaosRuntime
 
@@ -1145,7 +1147,7 @@ class TestRegistration:
 
         runtime = KaosRuntime()
         n = register_llm_core_tools(runtime)
-        assert n == 29
+        assert n == 30
         registered = set(runtime.tools.list_tools())
         assert "kaos-llm-core-react" in registered
         assert "kaos-llm-core-refine" in registered
@@ -1159,6 +1161,7 @@ class TestRegistration:
         assert "kaos-llm-core-metric" in registered
         assert "kaos-llm-core-analyze-trial" in registered
         assert "kaos-llm-core-program-execute" in registered
+        assert "kaos-llm-core-program-of-thought" in registered
         assert "kaos-llm-core-batch-create" in registered
         assert "kaos-llm-core-batch-run" in registered
         assert "kaos-llm-core-batch-status" in registered
@@ -1487,3 +1490,144 @@ class TestAnalyzeTrialTool:
         tool = KaosLLMCoreAnalyzeTrialTool()
         result = await tool.execute({"mutation_log_path": "/tmp/does-not-exist-kaos-xyz.jsonl"})
         assert result.isError
+
+
+# ---------------------------------------------------------------------------
+# KaosLLMCoreProgramOfThoughtTool tests
+# ---------------------------------------------------------------------------
+
+
+class TestProgramOfThoughtTool:
+    def test_metadata(self) -> None:
+        tool = KaosLLMCoreProgramOfThoughtTool()
+        meta = tool.metadata
+        assert meta.name == "kaos-llm-core-program-of-thought"
+        assert meta.annotations is not None
+        # Code execution is not read-only — it spawns a subprocess and mutates a tempdir.
+        assert meta.annotations.readOnlyHint is False
+        assert meta.annotations.openWorldHint is True
+        assert meta.category == "integration"
+        assert meta.capability == "analyze"
+        param_names = {p.name for p in meta.input_schema}
+        required = {p.name for p in meta.input_schema if p.required}
+        assert param_names >= {
+            "producer_model",
+            "instruction",
+            "input_text",
+            "output_field",
+            "allow_code_execution",
+            "interpreter_model",
+            "timeout_s",
+            "memory_mb",
+            "cpu_seconds",
+        }
+        assert required == {
+            "producer_model",
+            "instruction",
+            "input_text",
+            "output_field",
+            "allow_code_execution",
+        }
+
+    async def test_missing_required_params(self) -> None:
+        tool = KaosLLMCoreProgramOfThoughtTool()
+        result = await tool.execute({"producer_model": "function-test"})
+        assert result.isError
+        assert "Required" in (result.text or "")
+
+    async def test_refuses_when_allow_code_execution_false(self) -> None:
+        """The wrapper short-circuits before any LLM call when opt-in is false."""
+        tool = KaosLLMCoreProgramOfThoughtTool()
+        result = await tool.execute(
+            {
+                "producer_model": "function-test",
+                "instruction": "Sum the numbers.",
+                "input_text": "1 + 2",
+                "output_field": "answer",
+                "allow_code_execution": False,
+            }
+        )
+        assert result.isError
+        assert "allow_code_execution" in (result.text or "")
+
+    async def test_refuses_when_allow_code_execution_not_bool(self) -> None:
+        tool = KaosLLMCoreProgramOfThoughtTool()
+        result = await tool.execute(
+            {
+                "producer_model": "function-test",
+                "instruction": "Sum.",
+                "input_text": "1 + 2",
+                "output_field": "answer",
+                "allow_code_execution": "yes-please",
+            }
+        )
+        assert result.isError
+        assert "boolean" in (result.text or "")
+
+    async def test_refuses_when_runtime_gate_off(self) -> None:
+        """Caller opt-in alone is not enough — the runtime setting must also be on."""
+        import os
+
+        # Make sure the env var is NOT set for this test.
+        prev = os.environ.pop("KAOS_LLM_CORE_ALLOW_CODE_EXECUTION_VIA_MCP", None)
+        try:
+            tool = KaosLLMCoreProgramOfThoughtTool()
+            result = await tool.execute(
+                {
+                    "producer_model": "function-test",
+                    "instruction": "Sum.",
+                    "input_text": "1 + 2",
+                    "output_field": "answer",
+                    "allow_code_execution": True,
+                }
+            )
+            assert result.isError
+            assert "ALLOW_CODE_EXECUTION_VIA_MCP" in (result.text or "")
+        finally:
+            if prev is not None:
+                os.environ["KAOS_LLM_CORE_ALLOW_CODE_EXECUTION_VIA_MCP"] = prev
+
+    async def test_executes_when_both_gates_open(self) -> None:
+        """With both gates on and a mocked LLM, the tool runs the program end-to-end."""
+        import os
+
+        import kaos_llm_core.programs.call as call_mod
+
+        os.environ["KAOS_LLM_CORE_ALLOW_CODE_EXECUTION_VIA_MCP"] = "1"
+
+        call_count = {"n": 0}
+
+        def handler(messages: list[dict[str, Any]], profile: ModelProfile) -> ProviderResponse:
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                # Code-writer phase: emit a trivial program.
+                return _json_response({"code": "print(3)"})
+            # Interpreter phase: parse stdout into the answer field.
+            return _json_response({"answer": "3"})
+
+        client = FunctionClient(model="function-test", function=handler)
+        original = call_mod.create_client
+        call_mod.create_client = lambda *a, **kw: client  # ty: ignore[invalid-assignment]
+
+        try:
+            tool = KaosLLMCoreProgramOfThoughtTool()
+            result = await tool.execute(
+                {
+                    "producer_model": "function-test",
+                    "instruction": "Write a program that prints 3.",
+                    "input_text": "Compute 1 + 2.",
+                    "output_field": "answer",
+                    "allow_code_execution": True,
+                    "timeout_s": 5.0,
+                }
+            )
+            assert not result.isError, result.text
+            structured = result.require_structured()
+            assert structured["output"] == "3"
+            assert structured["code"] == "print(3)"
+            assert structured["stdout"].strip() == "3"
+            assert structured["return_code"] == 0
+            assert structured["timed_out"] is False
+        finally:
+            call_mod.create_client = original
+            os.environ.pop("KAOS_LLM_CORE_ALLOW_CODE_EXECUTION_VIA_MCP", None)

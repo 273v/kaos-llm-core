@@ -29,6 +29,7 @@ from kaos_llm_core.integrations.mcp.optimize_codec import KaosLLMCoreOptimizeCod
 from kaos_llm_core.integrations.mcp.optimize_model import KaosLLMCoreOptimizeModelTool
 from kaos_llm_core.integrations.mcp.pareto import KaosLLMCoreParetoTool
 from kaos_llm_core.integrations.mcp.program_execute import KaosLLMCoreProgramExecuteTool
+from kaos_llm_core.integrations.mcp.program_of_thought import KaosLLMCoreProgramOfThoughtTool
 from kaos_llm_core.integrations.mcp.react import KaosLLMCoreReActTool
 from kaos_llm_core.integrations.mcp.recipe_tune import KaosLLMCoreRecipeTuneTool
 from kaos_llm_core.integrations.mcp.refine import KaosLLMCoreRefineTool
@@ -63,6 +64,7 @@ def register_llm_core_tools(runtime: KaosRuntime) -> int:
         KaosLLMCoreMetricTool(),
         KaosLLMCoreAnalyzeTrialTool(),
         KaosLLMCoreProgramExecuteTool(),
+        KaosLLMCoreProgramOfThoughtTool(),
         KaosLLMCoreBatchCreateTool(),
         KaosLLMCoreBatchRunTool(),
         KaosLLMCoreBatchStatusTool(),
