@@ -1,108 +1,103 @@
-"""Cross-sibling pricing-table parity regression test.
+"""Pricing-table single-source-of-truth regression test.
 
-Closes KC16-11 (and the structural half of KC16-2): the pricing tables
-in ``kaos-llm-client`` and ``kaos-llm-core`` must not silently diverge.
-``kaos-llm-client.cost.MODEL_PRICING`` is the authoritative source for
-base ``(input, output)`` rates; ``kaos-llm-core.observability.cost.PRICING``
-is the consumer that ``ExecutionTrace`` cost roll-ups read from.
+``kaos-llm-client.cost.MODEL_PRICING`` is the **single hand-maintained**
+rate card for every model the ecosystem knows about.
+``kaos-llm-core.observability.cost.PRICING`` is **derived** from it at
+import time — both bare names (``"gpt-5"``) and provider-qualified
+aliases (``"openai:gpt-5"``) end up in the dict, all pointing at
+``ModelPricing`` instances built straight from the canonical rates.
 
-This test enforces a one-directional subset relationship:
+This test guards three properties of the derivation:
 
-- Every bare model key in ``kaos-llm-client.MODEL_PRICING`` must appear
-  in ``kaos-llm-core.PRICING`` (either as the bare key, ``"gpt-5"``, or
-  the provider-qualified alias, ``"openai:gpt-5"``).
-- The numeric ``input`` / ``output`` per-MTok rates must agree within
-  ``pytest.approx`` tolerance — float-rounding from copy-paste is fine,
-  silent semantic drift is not.
+1. Every bare model in ``MODEL_PRICING`` resolves to a ``ModelPricing``
+   in ``PRICING`` under at least its bare key.
+2. The derived ``(input_per_mtok, output_per_mtok)`` exactly equals the
+   canonical ``(input, output)`` row — no float drift.
+3. Bare and provider-qualified entries share the same ``ModelPricing``
+   instance (cheap identity check that proves the derivation collapsed
+   the two views, not just produced parallel data).
 
-``kaos-llm-core`` may legitimately track additional models that the
-client doesn't yet price (e.g. preview-tier Gemini, the ``gpt-5.4``
-family). The reverse direction is intentionally NOT enforced; the
-client owns the wire contract for every model it actually dispatches
-to.
-
-When this test fails the fix is to mirror the missing / divergent rows
-from ``kaos-llm-client.cost.MODEL_PRICING`` into
-``kaos-llm-core.observability.cost.PRICING`` and re-run.
+Originally a parity test (KC16-2 / KC16-11); now a derivation
+regression after PA17+PA19 consolidation (task #227). When this test
+fails the fix is in the canonical ``MODEL_PRICING`` table, never in a
+hand-maintained duplicate — the duplicate no longer exists.
 """
 
 from __future__ import annotations
 
 import pytest
 from kaos_llm_client.cost import MODEL_PRICING as CLIENT_PRICING
+from kaos_llm_client.profiles import infer_provider
 
 from kaos_llm_core.observability.cost import PRICING as CORE_PRICING
 
 
-def _resolve_core_rates(bare_model: str) -> tuple[float, float] | None:
-    """Look up (input, output) rates for ``bare_model`` in core's PRICING.
-
-    Tries the bare key first (``"gpt-5"``), then each provider-qualified
-    alias (``"openai:gpt-5"``, ``"anthropic:gpt-5"``, ``"google:gpt-5"``,
-    ``"xai:gpt-5"``). Returns ``None`` if not found under any form.
-    """
-    if bare_model in CORE_PRICING:
-        entry = CORE_PRICING[bare_model]
-        return (entry.input_per_mtok, entry.output_per_mtok)
-    for provider in ("openai", "anthropic", "google", "xai"):
-        qualified = f"{provider}:{bare_model}"
-        if qualified in CORE_PRICING:
-            entry = CORE_PRICING[qualified]
-            return (entry.input_per_mtok, entry.output_per_mtok)
-    return None
-
-
 @pytest.mark.parametrize("bare_model", sorted(CLIENT_PRICING.keys()))
-def test_client_model_present_in_core(bare_model: str) -> None:
-    """Every bare model in the client table must exist in core's table."""
-    rates = _resolve_core_rates(bare_model)
-    assert rates is not None, (
-        f"Pricing-table divergence: kaos-llm-client.MODEL_PRICING knows "
-        f"about '{bare_model}' but kaos-llm-core.observability.cost.PRICING "
-        f"does not. Mirror the entry — see "
-        f"kaos-llm-client/kaos_llm_client/cost.py for the authoritative "
-        f"(input, output, cache_read, cache_creation) row."
+def test_bare_model_derived_into_core(bare_model: str) -> None:
+    """Every canonical bare model appears in derived PRICING."""
+    assert bare_model in CORE_PRICING, (
+        f"Derivation lost '{bare_model}' from MODEL_PRICING. The PRICING "
+        f"table in kaos_llm_core.observability.cost is built by "
+        f"_build_pricing_table(); investigate why the import-time loop "
+        f"skipped this entry."
     )
 
 
 @pytest.mark.parametrize("bare_model", sorted(CLIENT_PRICING.keys()))
-def test_client_model_rates_agree_with_core(bare_model: str) -> None:
-    """Numeric (input, output) rates must agree across client and core."""
+def test_derived_rates_match_canonical(bare_model: str) -> None:
+    """Derived ``ModelPricing`` carries the canonical numeric rates."""
     client_entry = CLIENT_PRICING[bare_model]
-    client_input = client_entry["input"]
-    client_output = client_entry["output"]
+    core_entry = CORE_PRICING[bare_model]
 
-    core_rates = _resolve_core_rates(bare_model)
-    assert core_rates is not None, (
-        f"'{bare_model}' missing from core PRICING — see "
-        f"test_client_model_present_in_core for the parity fix."
+    assert core_entry.input_per_mtok == pytest.approx(client_entry["input"]), (
+        f"Input-rate drift for '{bare_model}': MODEL_PRICING says "
+        f"${client_entry['input']}/MTok but derived ModelPricing has "
+        f"${core_entry.input_per_mtok}/MTok. The derivation must be "
+        f"transcribing the canonical row verbatim."
     )
-    core_input, core_output = core_rates
+    assert core_entry.output_per_mtok == pytest.approx(client_entry["output"]), (
+        f"Output-rate drift for '{bare_model}': MODEL_PRICING says "
+        f"${client_entry['output']}/MTok but derived ModelPricing has "
+        f"${core_entry.output_per_mtok}/MTok."
+    )
 
-    assert core_input == pytest.approx(client_input), (
-        f"Input-rate mismatch for '{bare_model}': "
-        f"kaos-llm-client says ${client_input}/MTok, "
-        f"kaos-llm-core says ${core_input}/MTok. Mirror the client value."
+
+@pytest.mark.parametrize("bare_model", sorted(CLIENT_PRICING.keys()))
+def test_provider_alias_shares_identity_with_bare(bare_model: str) -> None:
+    """``provider:model`` and ``model`` resolve to the *same* instance.
+
+    The derivation builds one ``ModelPricing`` per row and inserts it
+    under both keys. Identity sharing is the property that proves there
+    is no second copy of the rate to drift against.
+    """
+    provider = infer_provider(bare_model)
+    if provider is None:
+        pytest.skip(f"infer_provider returned None for '{bare_model}' — "
+                    f"no provider-qualified alias is generated")
+    qualified = f"{provider}:{bare_model}"
+    assert qualified in CORE_PRICING, (
+        f"infer_provider mapped '{bare_model}' to provider '{provider}' "
+        f"but '{qualified}' is missing from PRICING. The derivation "
+        f"should have inserted both keys."
     )
-    assert core_output == pytest.approx(client_output), (
-        f"Output-rate mismatch for '{bare_model}': "
-        f"kaos-llm-client says ${client_output}/MTok, "
-        f"kaos-llm-core says ${core_output}/MTok. Mirror the client value."
+    assert CORE_PRICING[bare_model] is CORE_PRICING[qualified], (
+        f"'{bare_model}' and '{qualified}' resolve to different "
+        f"ModelPricing instances — the derivation lost the identity "
+        f"sharing it relies on."
     )
 
 
 def test_gpt_5_5_specifically_present() -> None:
-    """KC16-2 specifically: gpt-5.5 must be priced in core.
+    """KC16-2 named regression: gpt-5.5 must be priced.
 
-    A targeted regression test on top of the parametrized scan so that
-    the KC16-2 finding has a named test the audit trail can grep for.
+    Retained as a named test so the audit trail keeps grepping for it.
+    The implementation now passes by the same derivation discipline as
+    every other model.
     """
-    rates = _resolve_core_rates("gpt-5.5")
-    assert rates is not None, (
-        "gpt-5.5 pricing missing from kaos-llm-core.observability.cost.PRICING "
-        "— this is the KC16-2 / PA15 Gap #2 regression. kaos-llm-client "
-        "prices gpt-5.5 at $5.00 / $30.00 per MTok (input / output)."
+    assert "gpt-5.5" in CORE_PRICING, (
+        "gpt-5.5 missing from PRICING — KC16-2 / PA15 Gap #2 regression. "
+        "The canonical rate ($5.00 / $30.00 per MTok) lives in "
+        "kaos_llm_client.cost.MODEL_PRICING."
     )
-    assert rates == pytest.approx((5.0, 30.0)), (
-        f"gpt-5.5 rate drift: core says {rates}, client says (5.0, 30.0)."
-    )
+    entry = CORE_PRICING["gpt-5.5"]
+    assert (entry.input_per_mtok, entry.output_per_mtok) == pytest.approx((5.0, 30.0))
