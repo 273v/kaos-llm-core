@@ -344,7 +344,7 @@ class TestCostReportTool:
             "children": [
                 {
                     "call_name": "producer",
-                    "model": "openai:gpt-5.4-nano",
+                    "model": "openai:gpt-4.1-nano",
                     "input_tokens": 500,
                     "output_tokens": 100,
                     "total_tokens": 600,
@@ -376,7 +376,7 @@ class TestCostReportTool:
         tool = KaosLLMCoreCostReportTool()
         trace_dict = {
             "call_name": "TestCall",
-            "model": "openai:gpt-5.4-nano",
+            "model": "openai:gpt-4.1-nano",
             "input_tokens": 100,
             "output_tokens": 50,
             "total_tokens": 150,
@@ -953,7 +953,7 @@ class TestSaveLoadTool:
                     "examples": [],
                     "hyperparameters": {},
                     "codec": "JSONCodec",
-                    "model": "openai:gpt-5.4-nano",
+                    "model": "openai:gpt-4.1-nano",
                 },
             },
         }
