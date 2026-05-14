@@ -1,19 +1,36 @@
 """Cost estimation for LLM calls based on model pricing.
 
-Provides per-model pricing tables and functions to estimate cost from
-token usage. Prices are approximate and updated periodically.
+Provides per-model pricing and functions to estimate cost from token usage.
+
+The canonical hand-maintained pricing table lives in
+:mod:`kaos_llm_client.cost` (``MODEL_PRICING``). This module derives the
+``PRICING`` mapping below from that single source at import time —
+both bare model names (``"gpt-5"``) and provider-qualified aliases
+(``"openai:gpt-5"``) end up in the dict so callers can look up costs
+either way. There is exactly one place where rates are defined, and
+everyone else imports.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
+from kaos_llm_client.cost import MODEL_PRICING
+from kaos_llm_client.profiles import infer_provider
+
 from kaos_llm_core.observability.traces import ExecutionTrace
 
 
 @dataclass(frozen=True, slots=True)
 class ModelPricing:
-    """Per-million-token pricing for a model."""
+    """Per-million-token pricing for a model.
+
+    This is a thin view over the dict-shaped rate card in
+    :data:`kaos_llm_client.cost.MODEL_PRICING`. The client's table also
+    carries ``cache_read`` / ``cache_creation`` columns for providers
+    that publish them, but the trace-level cost roll-ups here only need
+    the (input, output) tuple.
+    """
 
     input_per_mtok: float
     output_per_mtok: float
@@ -26,82 +43,37 @@ class ModelPricing:
         )
 
 
-# Approximate pricing per 1M tokens (USD) as of 2026-05.
-# Source: provider pricing pages. Updated periodically.
-#
-# kaos-llm-client's ``infer_provider`` accepts both ``provider:model``
-# and bare model names (e.g. ``claude-haiku-4-5``). The pricing
-# lookup must support both forms — if a caller passes the bare name,
-# the cost tracker would otherwise return $0.00 silently. Every
-# entry below has a ``provider:model`` key plus a bare alias.
-#
-# Cross-sibling parity: ``kaos-llm-client.cost.MODEL_PRICING`` is the
-# authoritative table for the (input, output) base rates of every
-# model both packages know about. The pricing-parity regression test
-# (``tests/unit/test_cost_pricing_parity.py``) enforces that every
-# bare model name in the client table also exists here with the same
-# numeric (input, output) values. ``kaos-llm-core`` may legitimately
-# track additional bare names that the client doesn't yet price (e.g.
-# the ``gpt-5.4`` family, ``gemini-3*-preview``); the test only asserts
-# the one-directional client → core subset relationship. The
-# ``ModelPricing`` dataclass here is intentionally simpler than the
-# client's dict-with-cache-rates schema — this layer only needs the
-# (input, output) tuple for ExecutionTrace cost roll-ups. Closes
-# KC16-2 / KC16-11 (PA15 cross-provider matrix Gap #2 + Gap #5).
-PRICING: dict[str, ModelPricing] = {
-    # Anthropic
-    "anthropic:claude-opus-4-7": ModelPricing(5.0, 25.0),
-    "anthropic:claude-opus-4-6": ModelPricing(15.0, 75.0),
-    "anthropic:claude-sonnet-4-6": ModelPricing(3.0, 15.0),
-    "anthropic:claude-sonnet-4-5": ModelPricing(3.0, 15.0),
-    "anthropic:claude-haiku-4-5": ModelPricing(0.80, 4.0),
-    "claude-opus-4-7": ModelPricing(5.0, 25.0),
-    "claude-opus-4-6": ModelPricing(15.0, 75.0),
-    "claude-sonnet-4-6": ModelPricing(3.0, 15.0),
-    "claude-sonnet-4-5": ModelPricing(3.0, 15.0),
-    "claude-haiku-4-5": ModelPricing(0.80, 4.0),
-    # OpenAI
-    "openai:gpt-5.5": ModelPricing(5.00, 30.00),
-    "openai:gpt-5.4": ModelPricing(2.50, 10.0),
-    "openai:gpt-5.4-mini": ModelPricing(0.40, 1.60),
-    "openai:gpt-5.4-nano": ModelPricing(0.10, 0.40),
-    "openai:gpt-5": ModelPricing(2.0, 8.0),
-    "openai:gpt-4.1": ModelPricing(2.0, 8.0),
-    "openai:gpt-4.1-mini": ModelPricing(0.40, 1.60),
-    "openai:gpt-4.1-nano": ModelPricing(0.10, 0.40),
-    "openai:gpt-4o": ModelPricing(2.50, 10.0),
-    "openai:gpt-4o-mini": ModelPricing(0.15, 0.60),
-    "openai:o4-mini": ModelPricing(1.10, 4.40),
-    "openai:o3": ModelPricing(2.0, 8.0),
-    "openai:o3-mini": ModelPricing(1.10, 4.40),
-    "gpt-5.5": ModelPricing(5.00, 30.00),
-    "gpt-5.4": ModelPricing(2.50, 10.0),
-    "gpt-5.4-mini": ModelPricing(0.40, 1.60),
-    "gpt-5.4-nano": ModelPricing(0.10, 0.40),
-    "gpt-5": ModelPricing(2.0, 8.0),
-    "gpt-4.1": ModelPricing(2.0, 8.0),
-    "gpt-4.1-mini": ModelPricing(0.40, 1.60),
-    "gpt-4.1-nano": ModelPricing(0.10, 0.40),
-    "gpt-4o": ModelPricing(2.50, 10.0),
-    "gpt-4o-mini": ModelPricing(0.15, 0.60),
-    "o4-mini": ModelPricing(1.10, 4.40),
-    "o3": ModelPricing(2.0, 8.0),
-    "o3-mini": ModelPricing(1.10, 4.40),
-    # Google
-    "google:gemini-3.1-pro-preview": ModelPricing(1.25, 10.0),
-    "google:gemini-3-flash-preview": ModelPricing(0.15, 0.60),
-    "google:gemini-2.5-pro": ModelPricing(1.25, 10.0),
-    "google:gemini-2.5-flash": ModelPricing(0.15, 0.60),
-    "gemini-3.1-pro-preview": ModelPricing(1.25, 10.0),
-    "gemini-3-flash-preview": ModelPricing(0.15, 0.60),
-    "gemini-2.5-pro": ModelPricing(1.25, 10.0),
-    "gemini-2.5-flash": ModelPricing(0.15, 0.60),
-    # xAI
-    "xai:grok-3": ModelPricing(3.0, 15.0),
-    "xai:grok-3-mini": ModelPricing(0.30, 0.50),
-    "grok-3": ModelPricing(3.0, 15.0),
-    "grok-3-mini": ModelPricing(0.30, 0.50),
-}
+def _build_pricing_table() -> dict[str, ModelPricing]:
+    """Derive ``PRICING`` from :data:`kaos_llm_client.cost.MODEL_PRICING`.
+
+    For every entry in the client's canonical table we materialise:
+
+    * the bare model name (``"gpt-5"``)
+    * the provider-qualified alias when one can be inferred
+      (``"openai:gpt-5"``)
+
+    so callers can look up costs by either form. Models whose provider
+    cannot be inferred (rare — covers exotic / custom names) only get
+    the bare entry. Failures to infer a provider are silent because the
+    rate card itself is still authoritative; the alias is convenience.
+    """
+    table: dict[str, ModelPricing] = {}
+    for model, rates in MODEL_PRICING.items():
+        pricing = ModelPricing(
+            input_per_mtok=float(rates["input"]),
+            output_per_mtok=float(rates["output"]),
+        )
+        table[model] = pricing
+        provider = infer_provider(model)
+        if provider is not None:
+            table[f"{provider}:{model}"] = pricing
+    return table
+
+
+# Public pricing table — derived from the kaos-llm-client canonical
+# source. Both bare names and ``provider:model`` aliases resolve to the
+# same ``ModelPricing`` instance.
+PRICING: dict[str, ModelPricing] = _build_pricing_table()
 
 
 def estimate_cost(trace: ExecutionTrace) -> float:
