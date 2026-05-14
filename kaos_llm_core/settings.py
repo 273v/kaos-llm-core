@@ -58,6 +58,13 @@ class KaosLLMCoreSettings(ModuleSettings):
     # below when ``KAOS_LLM_CORE_PROFILE`` is not set.
     profile: ProfileName = "default"
 
+    # Runtime gate for ``kaos-llm-core-program-of-thought``. Off by default
+    # because the underlying ``ProgramOfThought`` program executes
+    # model-generated Python in a subprocess sandbox. The MCP wrapper
+    # refuses unless this is true AND the caller passes
+    # ``allow_code_execution=true`` — both gates must agree.
+    allow_code_execution_via_mcp: bool = False
+
     model_config = SettingsConfigDict(
         env_prefix="KAOS_LLM_CORE_",
         env_file=".env",

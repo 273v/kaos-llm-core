@@ -135,7 +135,7 @@ kaos-llm-core --help                   # admin CLI
 kaos-llm-core-serve --help             # MCP server
 ```
 
-`kaos-llm-core-serve` exposes 29 MCP tools over either transport:
+`kaos-llm-core-serve` exposes 30 MCP tools over either transport:
 
 ```bash
 kaos-llm-core-serve                    # stdio (Claude Code / Desktop)
@@ -149,7 +149,7 @@ Tool surface (all `kaos-llm-core-*`-prefixed):
 | Core programs | `call`, `reason`, `judge`, `ensemble`, `react`, `refine`, `best-of-n` |
 | Evaluation | `evaluate`, `metric`, `cost-report`, `analyze-trial` |
 | Optimization | `optimize`, `optimize-codec`, `optimize-model`, `pareto`, `recipe-tune`, `mipro-v2` |
-| Envelopes | `save-load`, `program-execute` |
+| Envelopes | `save-load`, `program-execute`, `program-of-thought` |
 | Batch | `batch-create`, `batch-run`, `batch-status`, `batch-results` |
 | Alpha extractors | `alpha-date`, `alpha-entity`, `alpha-money`, `alpha-number`, `alpha-percent`, `alpha-duration` |
 
