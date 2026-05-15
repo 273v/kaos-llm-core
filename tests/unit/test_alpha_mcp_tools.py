@@ -244,6 +244,18 @@ class TestAlphaDurationTool:
 # ---------------------------------------------------------------------------
 
 
+_EXPECTED_ALPHA_NAMES = frozenset(
+    [
+        "kaos-llm-core-alpha-date",
+        "kaos-llm-core-alpha-entity",
+        "kaos-llm-core-alpha-money",
+        "kaos-llm-core-alpha-number",
+        "kaos-llm-core-alpha-percent",
+        "kaos-llm-core-alpha-duration",
+    ]
+)
+
+
 class TestRegistration:
     def test_registers_six_alpha_tools(self) -> None:
         """register_llm_core_tools must include all 6 alpha tools."""
@@ -255,19 +267,58 @@ class TestRegistration:
         # singleton; mutating it leaks into other test files.
         runtime = KaosRuntime()
         count = register_llm_core_tools(runtime)
-        # At least 23 (pre-existing) + 6 (alpha) = 29.
-        assert count >= 29
+        # At least 24 (pre-existing programs) + 6 (alpha) = 30.
+        assert count >= 30
         registered = runtime.tools.list_tool_objects()
         registered_names = {t.metadata.name for t in registered}
-        for name in [
-            "kaos-llm-core-alpha-date",
-            "kaos-llm-core-alpha-entity",
-            "kaos-llm-core-alpha-money",
-            "kaos-llm-core-alpha-number",
-            "kaos-llm-core-alpha-percent",
-            "kaos-llm-core-alpha-duration",
-        ]:
+        for name in _EXPECTED_ALPHA_NAMES:
             assert name in registered_names, f"missing tool: {name}"
+
+    def test_register_alpha_tools_subset(self) -> None:
+        """`register_llm_core_alpha_tools` registers only the 6 alpha extractors.
+
+        Pins the SessionToolSet ``programs`` group entry point for
+        deterministic rule-based extractors: a caller that wants only
+        the alpha-* extractors (no Call / ReAct / optimizer surface)
+        gets a clean 6-tool registration.
+        """
+        from kaos_core import KaosRuntime
+
+        from kaos_llm_core.integrations.mcp.registration import (
+            register_llm_core_alpha_tools,
+        )
+
+        runtime = KaosRuntime()
+        count = register_llm_core_alpha_tools(runtime)
+        assert count == 6
+        registered_names = {t.metadata.name for t in runtime.tools.list_tool_objects()}
+        assert registered_names == _EXPECTED_ALPHA_NAMES
+
+    def test_register_program_tools_subset(self) -> None:
+        """`register_llm_core_program_tools` skips the alpha-* extractors.
+
+        Pins the SessionToolSet ``programs`` group entry point for
+        the heavier typed-program wrappers (Call, ReAct, optimizers,
+        codecs, batch ops). The alpha-* extractors are *not* in this
+        subset — they live in their own granular entry point so a
+        SessionToolSet can pull them in without the full program
+        surface.
+        """
+        from kaos_core import KaosRuntime
+
+        from kaos_llm_core.integrations.mcp.registration import (
+            register_llm_core_program_tools,
+        )
+
+        runtime = KaosRuntime()
+        count = register_llm_core_program_tools(runtime)
+        # 24 typed-program / optimizer / batch wrappers — no alpha-*.
+        assert count == 24
+        registered_names = {t.metadata.name for t in runtime.tools.list_tool_objects()}
+        for alpha_name in _EXPECTED_ALPHA_NAMES:
+            assert alpha_name not in registered_names, (
+                f"{alpha_name} leaked into the program tools subset"
+            )
 
 
 # ---------------------------------------------------------------------------

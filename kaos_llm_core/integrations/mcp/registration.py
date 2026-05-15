@@ -1,4 +1,25 @@
-"""register_llm_core_tools — bulk-register every kaos-llm-core MCP tool."""
+"""register_llm_core_tools — bulk-register every kaos-llm-core MCP tool.
+
+The PRD `kaos-modules/docs/internal/dynamic-tool-planning-prd.md` §4
+splits this registration into two granular entry points that match
+the SessionToolSet group taxonomy in kaos-agents:
+
+- :func:`register_llm_core_program_tools` — the 24 typed-program
+  wrappers (Call, ChainOfThought, ReAct, Refine, Judge, Ensemble,
+  Evaluate, optimizers, codecs, MIPRO, batch ops, recipe tuning,
+  metric, cost report, save/load). These are the "programs" group:
+  power-user surfaces denied by default at the ceiling and opted
+  into per-session.
+- :func:`register_llm_core_alpha_tools` — the 6 ``kaos-llm-core-alpha-*``
+  rule-based extractors (date, duration, entity, money, number,
+  percent). Same "programs" group — also denied by default — but
+  separated so a SessionToolSet that wants the deterministic
+  extractors without the heavier program wrappers can opt in
+  selectively.
+
+:func:`register_llm_core_tools` remains the backward-compatible
+union — every existing caller continues to see the same 30 tools.
+"""
 
 from __future__ import annotations
 
@@ -36,15 +57,24 @@ from kaos_llm_core.integrations.mcp.refine import KaosLLMCoreRefineTool
 from kaos_llm_core.integrations.mcp.save_load import KaosLLMCoreSaveLoadTool
 
 
-def register_llm_core_tools(runtime: KaosRuntime) -> int:
-    """Register all kaos-llm-core MCP tools with the runtime.
-
-    Returns the number of tools registered.
-    """
+def _ensure_settings(runtime: KaosRuntime) -> None:
+    """Settings hydration is idempotent across the two split registrations."""
     from kaos_llm_core.settings import KaosLLMCoreSettings
 
-    runtime.module_settings["llm_core"] = KaosLLMCoreSettings()
+    if "llm_core" not in runtime.module_settings:
+        runtime.module_settings["llm_core"] = KaosLLMCoreSettings()
 
+
+def register_llm_core_program_tools(runtime: KaosRuntime) -> int:
+    """Register the 24 typed-program wrapper tools.
+
+    Returns the number of tools registered. Per the PRD this is the
+    "programs" group of the SessionToolSet ceiling — denied by default
+    so that a fresh session does not expose the full optimizer /
+    codec / batch surface to the LLM, but opt-in per-session for
+    power users who want the typed-program callables.
+    """
+    _ensure_settings(runtime)
     tools: list[KaosTool] = [
         KaosLLMCoreCallTool(),
         KaosLLMCoreChainOfThoughtTool(),
@@ -70,7 +100,24 @@ def register_llm_core_tools(runtime: KaosRuntime) -> int:
         KaosLLMCoreBatchStatusTool(),
         KaosLLMCoreBatchResultsTool(),
         KaosLLMCoreMiproV2Tool(),
-        # WS-TR.PR-6f.7 — rule-based extraction primitives.
+    ]
+    for tool in tools:
+        runtime.tools.register_tool(tool)
+    return len(tools)
+
+
+def register_llm_core_alpha_tools(runtime: KaosRuntime) -> int:
+    """Register the 6 deterministic ``kaos-llm-core-alpha-*`` extractors.
+
+    Returns the number of tools registered. Rule-based primitives
+    (date, duration, entity, money, number, percent) — no provider
+    calls, no I/O, no state mutation. Same "programs" group as the
+    typed-program wrappers, denied by default at the SessionToolSet
+    ceiling but registered in the runtime so power-user sessions
+    can opt them in.
+    """
+    _ensure_settings(runtime)
+    tools: list[KaosTool] = [
         KaosLLMCoreAlphaDateTool(),
         KaosLLMCoreAlphaEntityTool(),
         KaosLLMCoreAlphaMoneyTool(),
@@ -78,8 +125,19 @@ def register_llm_core_tools(runtime: KaosRuntime) -> int:
         KaosLLMCoreAlphaPercentTool(),
         KaosLLMCoreAlphaDurationTool(),
     ]
-
     for tool in tools:
         runtime.tools.register_tool(tool)
-
     return len(tools)
+
+
+def register_llm_core_tools(runtime: KaosRuntime) -> int:
+    """Register all kaos-llm-core MCP tools with the runtime.
+
+    Backward-compatible union of
+    :func:`register_llm_core_program_tools` and
+    :func:`register_llm_core_alpha_tools`. Existing callers see the
+    same 30 tools as before — no schema, name, or behavior changes.
+    """
+    count = register_llm_core_program_tools(runtime)
+    count += register_llm_core_alpha_tools(runtime)
+    return count
