@@ -11,7 +11,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-05-12T15:20:50.954675125Z"
+exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
 exclude-newer-span = "PT72H"
 
 [options.exclude-newer-package]
@@ -291,7 +291,7 @@ wheels = [
 
 [[package]]
 name = "kaos-llm-client"
-version = "0.1.0a2"
+version = "0.1.0a3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx", extra = ["http2"] },
@@ -299,9 +299,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "pydantic-settings" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/30/b6/a564b40c0ee6eea6e9c444ce45f32a0d6b6a530e1e01ae1acbf547a98036/kaos_llm_client-0.1.0a2.tar.gz", hash = "sha256:81f28448d54fdf26d7e890d24d281d22937ae51bbd1e6fce24f06e3faa1e9d6b", size = 224643, upload-time = "2026-05-07T16:19:07.704Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d1/fd/159b788666bccb2732f15a3203f7a5e9292d96b9939a8dd9f6a3256a6d2a/kaos_llm_client-0.1.0a3.tar.gz", hash = "sha256:64eb93caccb0af6d68799dc7684d921fd58f744b22de955ef9a78e46a3290ac5", size = 234323, upload-time = "2026-05-11T01:33:35.823Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d8/12/eb00ecbc9bb36781717d9208cc9121f03aece43d7cbe2d02dc18d7149a9d/kaos_llm_client-0.1.0a2-py3-none-any.whl", hash = "sha256:bd6cd8cac47d4c37491306098f98c51a4a5a9b789ba1c332d4ecb5074b42716a", size = 149633, upload-time = "2026-05-07T16:19:06.112Z" },
+    { url = "https://files.pythonhosted.org/packages/4e/b4/78da838e91a8de4e39686e9803f40cf4fe808258145679790561398c1ee1/kaos_llm_client-0.1.0a3-py3-none-any.whl", hash = "sha256:9af292d33188a1225dacf7895f7808c4c8cd961ea89cd14add2c270f10632e1f", size = 149877, upload-time = "2026-05-11T01:33:34.247Z" },
 ]
 
 [[package]]
