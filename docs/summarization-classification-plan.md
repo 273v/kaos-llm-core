@@ -97,7 +97,7 @@ spec, the divergence is called out here.
 | **4 — Classification Programs** | §6.2 | ✅ `ZeroShotClassify`, `FewShotClassify`, `PrototypeClassify` (a10), `MultiLabelClassify`, `ChunkedClassify`, `EnsembleClassify`, `HierarchicalClassify` | ❌ `RetrievalClassify` (Phase 6) |
 | **5 — Neural primitives** | §4 | ✅ `SemanticChunker`, `ExtractiveRanker` (in `kaos-nlp-transformers` 0.2.0a6); ✅ `ExtractiveSummary`, `PrototypeClassify` wrappers (in `kaos-llm-core` 0.1.0a10) | — |
 | **6 — Retrieval-augmented variants** | §8 Phase 6 | — | ❌ All four: `QueryFocusedSummary`, `ClusteredSummary`, `HybridSummary`, `RetrievalClassify`. Existing `RAG` Program + `kaos-content` `SearchableDocument` / `SearchableCorpus` are the foundations. |
-| **7 — Surfaces** | §7 | ⚠️ partial. `starter.summarize_sync` / `classify_sync` exist as thin sync wrappers but **not** the declarative façade in §7.1 (no `long_strategy="auto"` rules, no `query=` route, no `cited=`). 30 MCP program tools exist (`KaosLLMCoreCallTool`, `KaosLLMCoreJudgeTool`, etc.) including a generic `KaosLLMCoreProgramExecuteTool` that can call any Program, but the **specific declarative `summarize` and `classify` MCP tools** in §7.3 are not registered. CLI has `check` / `examples` / `analyze`; no `summarize` / `classify` subcommands yet. | ❌ Declarative starter façade upgrade, CLI subcommands, dedicated MCP tool pair. |
+| **7 — Surfaces** | §7 | ✅ a10 — declarative `starter.summarize_doc` / `classify_doc` (+ `_sync` wrappers) returning the full `Summary[str]` / `Classification` with `long_strategy="auto"` rules + `cited=` + `budget=` + `cache=` + `chunker=`. CLI `summarize` / `classify` subcommands with `--strategy` / `--cited` / `--budget-tokens` / `--budget-usd` / `--pretty` / `--cost`. 32 MCP program tools: the new `KaosLLMCoreSummarizeTool` + `KaosLLMCoreClassifyTool` ship alongside the pre-existing generic `KaosLLMCoreProgramExecuteTool`. | The existing `starter.summarize` / `classify` (plain-string return) coexist for backward compat; the new `*_doc` façades are the canonical Phase-7 surface. `query=` route + dedicated retrieval Programs are Phase 6 (item D). |
 | **8 — Zero-shot NLI** | §8 Phase 8 | — | ❌ Deferred per the original plan. NLI model registration + `ZeroShotNLIClassifier` not built. |
 
 ### Cross-cutting (plan §5.3) — wired in 0.1.0a10
@@ -842,9 +842,9 @@ nothing touches `kaos-nlp-core` or `kaos-nlp-transformers`. Live
 tests gated on `@pytest.mark.live`; unit tests use stub retrievers
 + stub providers.
 
-### E — Phase 7 surfaces
+### E — Phase 7 surfaces — **✅ closed 2026-05-15**
 
-Three deliverables, all in `kaos-llm-core`:
+Three deliverables, all in `kaos-llm-core` 0.1.0a10:
 
 1. **Declarative starter** (`kaos_llm_core.starter.summarize` /
    `classify`): upgrade the async functions (already exist) to the
@@ -862,6 +862,30 @@ Three deliverables, all in `kaos-llm-core`:
    wrap the starter façade. These complement (do not replace) the
    existing `KaosLLMCoreProgramExecuteTool` which can already drive
    any Program by name.
+
+**As shipped (delta from the plan):**
+
+- The new façades are named `summarize_doc` / `classify_doc` (+
+  `_sync` wrappers) rather than upgrading the existing
+  `summarize` / `classify`. The simpler one-shot string-returning
+  functions remain available for back-compat; the new `*_doc`
+  functions are the canonical Phase-7 surface and return the full
+  `Summary[str]` / `Classification`.
+- `long_strategy="auto"` resolves via a deterministic
+  character-count threshold (12 000 chars) — the `_resolve_long_*`
+  helpers in `starter.py`. The plan's "context-window-aware" rule
+  (≤ 70 % of model context) is a refinement deferred to a later
+  release; the current rule is conservative (over-chunks rather
+  than blows up at runtime).
+- 50 unit tests cover the new surfaces:
+  - 13 starter-façade tests (strategy resolution, single/long
+    routing, cited routing, cache/budget threading).
+  - 7 CLI tests (file/stdin, label-list vs LabelSet model_dump,
+    JSON/pretty output, budget flags).
+  - 30 MCP-tool tests across `KaosLLMCoreSummarizeTool` /
+    `KaosLLMCoreClassifyTool` (metadata, happy path, error path,
+    registration in the program-tools group, total tool count
+    bumped 30 → 32).
 
 Live tests behind `@pytest.mark.live`; example scripts under
 `examples/`.

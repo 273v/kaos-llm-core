@@ -10,6 +10,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Phase 7 declarative surfaces** (plan §7.1 + §7.2 + §7.3,
+  §8.6 item E) in three layers:
+
+  - `kaos_llm_core.starter.summarize_doc` and
+    `kaos_llm_core.starter.classify_doc` (+ `_sync` wrappers) — the
+    §7.1 declarative façade. Returns the full `Summary[str]` /
+    `Classification` Pydantic objects with `long_strategy="auto"`
+    rules (12 000-char threshold, single ↔ tree/chunk),
+    `cited=True` routing through `CitedSummary`, plus
+    `cache=`/`budget=`/`chunker=` passthrough to the long-doc
+    Programs.  The simpler one-shot `summarize` / `classify`
+    (plain-string return) are unchanged for back-compat; the new
+    `*_doc` functions are the canonical Phase-7 surface.
+
+  - CLI subcommands `kaos-llm-core summarize <file>` and
+    `kaos-llm-core classify <file> --labels labels.json`. Read
+    from disk or stdin (``-``). Flags: `--strategy`, `--cited`,
+    `--supervision`, `--model`, `--budget-tokens`, `--budget-usd`,
+    `--pretty`, `--cost`. JSON output by default; `--pretty` for
+    human-readable + optional per-result cost line.
+
+  - MCP tools `KaosLLMCoreSummarizeTool` (`kaos-llm-core-summarize`)
+    and `KaosLLMCoreClassifyTool` (`kaos-llm-core-classify`)
+    wrapping the starter façade. Complement (do not replace) the
+    pre-existing `KaosLLMCoreProgramExecuteTool`. Bumps the
+    program-tools registration count 24 → 26 and the full bulk
+    count 30 → 32. `classify` accepts either a flat list of label
+    name strings or a single serialized `LabelSet` in the
+    `labels` array (the second form lets agents pass multi-label
+    or hierarchical taxonomies through MCP).
+
 - **Chunk-result cache + per-Program budget enforcement** (audit
   P1-7 + P1-8, plan §5.3 + §8.5 + §8.6 item C). Three new
   surfaces in `kaos_llm_core.cache.chunk`:

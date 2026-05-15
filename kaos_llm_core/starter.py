@@ -37,7 +37,7 @@ with ``asyncio``.
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from kaos_core.logging import get_logger
 from pydantic import BaseModel
@@ -438,13 +438,392 @@ def summarize_sync(
     )
 
 
+# ---------------------------------------------------------------------------
+# summarize_doc() / classify_doc() — Phase 7 declarative façade
+# ---------------------------------------------------------------------------
+#
+# Plan ``docs/summarization-classification-plan.md`` §7.1. These wrap
+# the Layer-4 Programs from ``kaos_llm_core.programs.summarize`` /
+# ``classify`` so callers get the §1 pyramid endgame: one function,
+# typed input + typed output, smart defaults, no Program-construction
+# boilerplate.
+#
+# The simpler ``summarize`` / ``classify`` above return plain strings
+# and remain the one-liner surface for casual exploration. ``summarize_doc``
+# / ``classify_doc`` return the full ``Summary[str]`` /
+# ``Classification[Label]`` Pydantic objects with provenance, metadata,
+# and (when ``cited=True``) verified source spans.
+
+
+LongSummaryStrategy = Literal["auto", "single", "tree", "refine"]
+"""Strategy for handling long documents in :func:`summarize_doc`."""
+
+LongClassifyStrategy = Literal["auto", "single", "chunk"]
+"""Strategy for handling long documents in :func:`classify_doc`."""
+
+
+# Auto-strategy threshold: when the input fits inside ``threshold_chars``
+# characters (an embedding-free proxy for "fits in one context window"),
+# the auto rule picks the single-shot path. Above the threshold it picks
+# the tree (summarise) or chunk (classify) strategy. The threshold is
+# deliberately conservative — 12k chars ≈ 3k tokens, well below any
+# modern context window — because the single-shot path also has to fit
+# the model's input plus a generated summary plus retries, and we'd
+# rather over-chunk than blow up at runtime.
+_LONG_DOC_CHAR_THRESHOLD: int = 12_000
+
+
+def _resolve_long_summary_strategy(
+    text_len: int,
+    requested: LongSummaryStrategy,
+) -> LongSummaryStrategy:
+    """Resolve ``long_strategy="auto"`` for :func:`summarize_doc`.
+
+    Rule:
+
+    - When ``requested != "auto"``: pass through.
+    - When ``text_len <= _LONG_DOC_CHAR_THRESHOLD``: ``"single"``.
+    - Otherwise: ``"tree"``.
+    """
+    if requested != "auto":
+        return requested
+    if text_len <= _LONG_DOC_CHAR_THRESHOLD:
+        return "single"
+    return "tree"
+
+
+def _resolve_long_classify_strategy(
+    text_len: int,
+    requested: LongClassifyStrategy,
+) -> LongClassifyStrategy:
+    """Resolve ``long_strategy="auto"`` for :func:`classify_doc`."""
+    if requested != "auto":
+        return requested
+    if text_len <= _LONG_DOC_CHAR_THRESHOLD:
+        return "single"
+    return "chunk"
+
+
+async def summarize_doc(
+    doc: str,
+    *,
+    model: str | None = None,
+    long_strategy: LongSummaryStrategy = "auto",
+    cited: bool = False,
+    cache: ChunkCache | None = None,
+    budget: Budget | None = None,
+    chunker: Chunker | None = None,
+    settings: KaosLLMCoreSettings | None = None,
+) -> Summary[str] | Summary[Any]:
+    """Declarative summarization façade (plan §7.1).
+
+    Returns the full
+    :class:`~kaos_llm_core.results.Summary` — not a plain string —
+    so callers see ``method``, ``source_spans``, and ``metadata``
+    (including ``cache.hits``, ``budget.cost_usd``,
+    ``chunks.processed``, and ``budget.exhausted`` when relevant)
+    alongside the summary text.
+
+    Args:
+        doc: Source text.
+        model: Provider model identifier. ``None`` resolves to
+            ``settings.default_model`` /
+            ``KAOS_LLM_CORE_DEFAULT_MODEL``.
+        long_strategy: ``"auto"`` (default) picks
+            ``"single"`` when ``len(doc) <= 12_000`` characters and
+            ``"tree"`` otherwise.  ``"single"`` forces single-call
+            abstractive (optionally cited);  ``"tree"`` forces a
+            :class:`~kaos_llm_core.programs.summarize.HierarchicalSummary`;
+            ``"refine"`` forces a
+            :class:`~kaos_llm_core.programs.summarize.RefineSummary`.
+        cited: When ``True``, route through
+            :class:`~kaos_llm_core.programs.summarize.CitedSummary`
+            for the ``"single"`` strategy. Long-doc strategies emit
+            ``method="abstractive"``; per-leaf citation is a Phase 6
+            feature (``QueryFocusedSummary`` / ``CitedSummary``
+            wrapping reducer levels).
+        cache: Optional :class:`~kaos_llm_core.cache.ChunkCache`
+            threaded into long-doc Programs.
+        budget: Optional :class:`~kaos_llm_core.optimization.budget.Budget`
+            threaded into long-doc Programs.
+        chunker: Optional explicit chunker. ``None`` uses each long-doc
+            Program's default (``ParagraphChunker(max_tokens=1024)``).
+        settings: Optional :class:`KaosLLMCoreSettings`.
+    """
+    from kaos_llm_core.programs.summarize import (
+        AbstractiveSummary,
+        CitedSummary,
+        HierarchicalSummary,
+        RefineSummary,
+    )
+
+    resolved_model = _resolve_default_model(model, settings=settings)
+    resolved_settings = settings or KaosLLMCoreSettings()
+    strategy = _resolve_long_summary_strategy(len(doc), long_strategy)
+
+    if strategy == "single":
+        program_class: type[Any] = CitedSummary if cited else AbstractiveSummary
+        program = program_class(model=resolved_model, core_settings=resolved_settings)
+        result: Summary[Any] = await program(text=doc)
+        # Tag the strategy + façade so downstream code can tell the
+        # Summary came through the declarative path.
+        return result.model_copy(
+            update={
+                "metadata": {
+                    **dict(result.metadata),
+                    "starter.long_strategy": strategy,
+                    "starter.facade": "summarize_doc",
+                },
+            }
+        )
+
+    long_kwargs: dict[str, Any] = {
+        "model": resolved_model,
+        "core_settings": resolved_settings,
+    }
+    if chunker is not None:
+        long_kwargs["chunker"] = chunker
+    if cache is not None:
+        long_kwargs["cache"] = cache
+    if budget is not None:
+        long_kwargs["budget"] = budget
+
+    long_program: HierarchicalSummary | RefineSummary
+    if strategy == "tree":
+        long_program = HierarchicalSummary(**long_kwargs)
+    elif strategy == "refine":
+        long_program = RefineSummary(**long_kwargs)
+    else:  # pragma: no cover - guarded by Literal
+        raise CallError(f"unknown long_strategy: {strategy!r}")
+
+    long_result: Summary[str] = await long_program(text=doc)
+    return long_result.model_copy(
+        update={
+            "metadata": {
+                **dict(long_result.metadata),
+                "starter.long_strategy": strategy,
+                "starter.facade": "summarize_doc",
+            },
+        }
+    )
+
+
+def summarize_doc_sync(
+    doc: str,
+    *,
+    model: str | None = None,
+    long_strategy: LongSummaryStrategy = "auto",
+    cited: bool = False,
+    cache: ChunkCache | None = None,
+    budget: Budget | None = None,
+    chunker: Chunker | None = None,
+    settings: KaosLLMCoreSettings | None = None,
+) -> Summary[str] | Summary[Any]:
+    """Synchronous wrapper around :func:`summarize_doc`."""
+    return asyncio.run(
+        summarize_doc(
+            doc,
+            model=model,
+            long_strategy=long_strategy,
+            cited=cited,
+            cache=cache,
+            budget=budget,
+            chunker=chunker,
+            settings=settings,
+        )
+    )
+
+
+async def classify_doc(
+    doc: str,
+    labels: LabelSet | Sequence[str],
+    *,
+    model: str | None = None,
+    supervision: Literal["zero_shot", "few_shot"] = "zero_shot",
+    examples: Sequence[Any] | None = None,
+    long_strategy: LongClassifyStrategy = "auto",
+    aggregator: Aggregator | None = None,
+    cache: ChunkCache | None = None,
+    budget: Budget | None = None,
+    chunker: Chunker | None = None,
+    settings: KaosLLMCoreSettings | None = None,
+) -> Classification:
+    """Declarative classification façade (plan §7.1).
+
+    Returns the full :class:`~kaos_llm_core.results.Classification`,
+    not a string, so callers see ``labels``, ``scores``, ``abstained``,
+    and the same ``cache.hits`` / ``budget.*`` /
+    ``chunks.processed`` metadata as the long-doc Programs.
+
+    Args:
+        doc: Source text.
+        labels: Either an existing
+            :class:`~kaos_llm_core.labels.LabelSet` (carries
+            ``exclusive`` / ``allow_abstain`` / ``hierarchical``
+            policy flags) or a bare sequence of label names — the
+            façade builds a flat ``LabelSet(exclusive=True,
+            allow_abstain=True)`` from the names.
+        model: Provider model identifier.
+        supervision: ``"zero_shot"`` (default) routes through
+            :class:`~kaos_llm_core.programs.classify.ZeroShotClassify`;
+            ``"few_shot"`` requires ``examples`` and routes through
+            :class:`~kaos_llm_core.programs.classify.FewShotClassify`.
+            ``"prototype"`` (no-LLM) and ``"retrieval"`` (Phase 6)
+            are not yet wired through this façade — construct
+            :class:`~kaos_llm_core.programs.classify.PrototypeClassify`
+            directly when you want the no-LLM path.
+        examples: Required when ``supervision="few_shot"``.
+        long_strategy: ``"auto"`` (default) picks ``"single"`` when
+            ``len(doc) <= 12_000`` characters and ``"chunk"``
+            otherwise. ``"single"`` forces a single classifier call
+            on the whole doc; ``"chunk"`` wraps the chosen classifier
+            in :class:`~kaos_llm_core.programs.classify.ChunkedClassify`.
+        aggregator: Aggregator for the chunked path. ``None`` resolves
+            via :meth:`ChunkedClassify._default_aggregator`.
+        cache / budget / chunker: Threaded into ``ChunkedClassify``
+            when the chunked path is selected. Ignored on the single
+            path.
+        settings: Optional :class:`KaosLLMCoreSettings`.
+    """
+    from kaos_llm_core.labels import LabelSet
+    from kaos_llm_core.programs.classify import (
+        ChunkedClassify,
+        FewShotClassify,
+        ZeroShotClassify,
+    )
+
+    resolved_model = _resolve_default_model(model, settings=settings)
+    resolved_settings = settings or KaosLLMCoreSettings()
+
+    label_set: LabelSet
+    if isinstance(labels, LabelSet):
+        label_set = labels
+    else:
+        names = list(labels)
+        if not names:
+            raise CallError(
+                "classify_doc() requires a non-empty `labels` argument "
+                "(LabelSet or sequence of names)."
+            )
+        label_set = LabelSet.from_names(names)
+
+    leaf_kwargs: dict[str, Any] = {
+        "labels": label_set,
+        "model": resolved_model,
+        "core_settings": resolved_settings,
+    }
+    if supervision == "few_shot":
+        if not examples:
+            raise CallError(
+                "classify_doc(supervision='few_shot') requires a non-empty "
+                "`examples=` sequence. Pass at least one Example or switch "
+                "to supervision='zero_shot'."
+            )
+        leaf_kwargs["examples"] = list(examples)
+        leaf_program: ZeroShotClassify = FewShotClassify(**leaf_kwargs)
+    else:
+        leaf_program = ZeroShotClassify(**leaf_kwargs)
+
+    strategy = _resolve_long_classify_strategy(len(doc), long_strategy)
+    if strategy == "single":
+        single_result: Classification = await leaf_program(text=doc)
+        return single_result.model_copy(
+            update={
+                "metadata": {
+                    **dict(single_result.metadata),
+                    "starter.long_strategy": strategy,
+                    "starter.facade": "classify_doc",
+                    "starter.supervision": supervision,
+                },
+            }
+        )
+
+    chunked_kwargs: dict[str, Any] = {
+        "labels": label_set,
+        "per_chunk": leaf_program,
+    }
+    if chunker is not None:
+        chunked_kwargs["chunker"] = chunker
+    if aggregator is not None:
+        chunked_kwargs["aggregator"] = aggregator
+    if cache is not None:
+        chunked_kwargs["cache"] = cache
+    if budget is not None:
+        chunked_kwargs["budget"] = budget
+    chunked_program = ChunkedClassify(**chunked_kwargs)
+    chunked_result: Classification = await chunked_program(text=doc)
+    return chunked_result.model_copy(
+        update={
+            "metadata": {
+                **dict(chunked_result.metadata),
+                "starter.long_strategy": strategy,
+                "starter.facade": "classify_doc",
+                "starter.supervision": supervision,
+            },
+        }
+    )
+
+
+def classify_doc_sync(
+    doc: str,
+    labels: LabelSet | Sequence[str],
+    *,
+    model: str | None = None,
+    supervision: Literal["zero_shot", "few_shot"] = "zero_shot",
+    examples: Sequence[Any] | None = None,
+    long_strategy: LongClassifyStrategy = "auto",
+    aggregator: Aggregator | None = None,
+    cache: ChunkCache | None = None,
+    budget: Budget | None = None,
+    chunker: Chunker | None = None,
+    settings: KaosLLMCoreSettings | None = None,
+) -> Classification:
+    """Synchronous wrapper around :func:`classify_doc`."""
+    return asyncio.run(
+        classify_doc(
+            doc,
+            labels,
+            model=model,
+            supervision=supervision,
+            examples=examples,
+            long_strategy=long_strategy,
+            aggregator=aggregator,
+            cache=cache,
+            budget=budget,
+            chunker=chunker,
+            settings=settings,
+        )
+    )
+
+
+# Forward refs imported lazily inside the new façades to avoid pulling
+# the long-doc Programs / Budget / ChunkCache at import time. Tests and
+# CLI helpers can import these names from the public package surface.
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from kaos_nlp_core.chunking import Chunker
+
+    from kaos_llm_core.cache import ChunkCache
+    from kaos_llm_core.composition import Aggregator
+    from kaos_llm_core.labels import LabelSet
+    from kaos_llm_core.optimization.budget import Budget
+    from kaos_llm_core.results import Classification, Summary
+
+
 __all__ = [
+    "LongClassifyStrategy",
+    "LongSummaryStrategy",
     "SummaryStyle",
     "classify",
+    "classify_doc",
+    "classify_doc_sync",
     "classify_sync",
     "extract",
     "extract_sync",
     "summarize",
+    "summarize_doc",
+    "summarize_doc_sync",
     "summarize_sync",
     "text",
     "text_sync",

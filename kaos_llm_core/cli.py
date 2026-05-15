@@ -47,6 +47,81 @@ def main(argv: list[str] | None = None) -> None:
     optimize_parser.add_argument("--json", action="store_true", dest="json_output")
     optimize_parser.add_argument("--provider", choices=_providers, default=None)
 
+    # summarize command — plan §7.2 declarative CLI.
+    summarize_parser = subparsers.add_parser(
+        "summarize",
+        help="Summarize a text file using the declarative starter façade",
+    )
+    summarize_parser.add_argument(
+        "file",
+        type=str,
+        help="Path to a UTF-8 text file to summarize. Use '-' for stdin.",
+    )
+    summarize_parser.add_argument(
+        "--model", type=str, default=None, help="Provider model id (overrides settings)."
+    )
+    summarize_parser.add_argument(
+        "--strategy",
+        choices=["auto", "single", "tree", "refine"],
+        default="auto",
+        help="long_strategy passed to summarize_doc (default: auto).",
+    )
+    summarize_parser.add_argument(
+        "--cited", action="store_true", help="Route the single-call path through CitedSummary."
+    )
+    summarize_parser.add_argument(
+        "--budget-tokens",
+        type=int,
+        default=None,
+        help="Token budget cap; processing halts when reached.",
+    )
+    summarize_parser.add_argument(
+        "--budget-usd",
+        type=float,
+        default=None,
+        help="Cost budget cap in USD; processing halts when reached.",
+    )
+    summarize_parser.add_argument("--pretty", action="store_true", help="Human-readable output.")
+    summarize_parser.add_argument(
+        "--cost", action="store_true", help="Print cost / token totals from the Summary metadata."
+    )
+
+    # classify command — plan §7.2 declarative CLI.
+    classify_parser = subparsers.add_parser(
+        "classify",
+        help="Classify a text file against a JSON labels file.",
+    )
+    classify_parser.add_argument(
+        "file", type=str, help="Path to a UTF-8 text file to classify. Use '-' for stdin."
+    )
+    classify_parser.add_argument(
+        "--labels",
+        type=str,
+        required=True,
+        help="Path to a JSON file containing either a list of label names or "
+        "a serialized LabelSet (model_dump).",
+    )
+    classify_parser.add_argument("--model", type=str, default=None)
+    classify_parser.add_argument(
+        "--strategy",
+        choices=["auto", "single", "chunk"],
+        default="auto",
+        help="long_strategy passed to classify_doc (default: auto).",
+    )
+    classify_parser.add_argument(
+        "--supervision",
+        choices=["zero_shot", "few_shot"],
+        default="zero_shot",
+    )
+    classify_parser.add_argument(
+        "--budget-tokens", type=int, default=None, help="Token budget cap."
+    )
+    classify_parser.add_argument(
+        "--budget-usd", type=float, default=None, help="Cost budget cap in USD."
+    )
+    classify_parser.add_argument("--pretty", action="store_true")
+    classify_parser.add_argument("--cost", action="store_true")
+
     # analyze command — Phase 7.3 prerequisite. Loads a MutationLog JSONL,
     # renders trial cards, computes per-strategy contributions, and prints a
     # human-readable report or a --json envelope per docs/guides/cli-standard.md.
@@ -79,6 +154,10 @@ def main(argv: list[str] | None = None) -> None:
         _cmd_examples(args)
     elif args.command == "analyze":
         _cmd_analyze(args)
+    elif args.command == "summarize":
+        _cmd_summarize(args)
+    elif args.command == "classify":
+        _cmd_classify(args)
 
 
 def _cmd_check(args: argparse.Namespace) -> None:
@@ -258,3 +337,112 @@ def _jsonify(value: Any) -> Any:
     if isinstance(value, list):
         return [_jsonify(v) for v in value]
     return value
+
+
+# ---------------------------------------------------------------------------
+# summarize / classify — plan §7.2 declarative CLI
+# ---------------------------------------------------------------------------
+
+
+def _read_text(path: str) -> str:
+    """Read UTF-8 text from a file or stdin (``-``)."""
+    if path == "-":
+        return sys.stdin.read()
+    from pathlib import Path
+
+    return Path(path).expanduser().read_text(encoding="utf-8")
+
+
+def _load_labels(path: str):
+    """Load a JSON labels file into a :class:`LabelSet`.
+
+    Accepts either a list of strings or a serialized LabelSet (the
+    same shape `LabelSet.model_dump()` produces).
+    """
+    import json
+    from pathlib import Path
+
+    from kaos_llm_core.labels import LabelSet
+
+    raw = json.loads(Path(path).expanduser().read_text(encoding="utf-8"))
+    if isinstance(raw, list):
+        return LabelSet.from_names(raw)
+    return LabelSet.model_validate(raw)
+
+
+def _resolve_budget(tokens: int | None, usd: float | None):
+    """Return a :class:`Budget` for the supplied caps, or ``None``."""
+    if tokens is None and usd is None:
+        return None
+    from kaos_llm_core.optimization.budget import Budget
+
+    return Budget(max_tokens=tokens, max_cost_usd=usd)
+
+
+def _cmd_summarize(args: argparse.Namespace) -> None:
+    """``kaos-llm-core summarize <file>`` — plan §7.2."""
+    import asyncio
+    import json
+
+    from kaos_llm_core.starter import summarize_doc
+
+    text = _read_text(args.file)
+    budget = _resolve_budget(args.budget_tokens, args.budget_usd)
+    result = asyncio.run(
+        summarize_doc(
+            text,
+            model=args.model,
+            long_strategy=args.strategy,
+            cited=args.cited,
+            budget=budget,
+        )
+    )
+
+    if args.pretty:
+        print(result.text)
+        if args.cost:
+            print()
+            strategy_used = result.metadata.get("starter.long_strategy")
+            print(f"strategy: {strategy_used}")
+            cost = result.metadata.get("budget.cost_usd")
+            tokens = result.metadata.get("budget.tokens")
+            if cost is not None or tokens is not None:
+                print(f"cost: ${cost or 0.0:.6f}    tokens: {tokens or 0}")
+        return
+    print(json.dumps(result.model_dump(mode="json"), indent=2))
+
+
+def _cmd_classify(args: argparse.Namespace) -> None:
+    """``kaos-llm-core classify <file> --labels labels.json`` — plan §7.2."""
+    import asyncio
+    import json
+
+    from kaos_llm_core.starter import classify_doc
+
+    text = _read_text(args.file)
+    labels = _load_labels(args.labels)
+    budget = _resolve_budget(args.budget_tokens, args.budget_usd)
+    result = asyncio.run(
+        classify_doc(
+            text,
+            labels,
+            model=args.model,
+            supervision=args.supervision,
+            long_strategy=args.strategy,
+            budget=budget,
+        )
+    )
+
+    if args.pretty:
+        top = result.top_label or "(abstained)"
+        print(top)
+        for name in result.names:
+            score = result.scores.get(name)
+            print(f"  - {name}    score={score!r}")
+        if args.cost:
+            print()
+            cost = result.metadata.get("budget.cost_usd")
+            tokens = result.metadata.get("budget.tokens")
+            print(f"cost: ${cost or 0.0:.6f}    tokens: {tokens or 0}")
+        return
+    print(json.dumps(result.model_dump(mode="json"), indent=2))
