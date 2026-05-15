@@ -1,0 +1,15 @@
+{
+  "program": "ChunkedClassify",
+  "model": "anthropic:claude-haiku-4-5",
+  "chunks_count": 5,
+  "label_histogram": {
+    "boilerplate": 2,
+    "definition": 3
+  },
+  "elapsed_seconds": 3.65,
+  "result_labels": [
+    "boilerplate"
+  ],
+  "abstained": false,
+  "total_cost_usd": 0.006163
+}

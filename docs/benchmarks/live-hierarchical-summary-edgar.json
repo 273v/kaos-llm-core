@@ -1,0 +1,9 @@
+{
+  "program": "HierarchicalSummary",
+  "model": "anthropic:claude-haiku-4-5",
+  "elapsed_seconds": 29.98,
+  "chunks_count": 45,
+  "depth_applied": 3,
+  "total_cost_usd": 0.076365,
+  "summary_head": "A Real Property Purchase and Sale Agreement dated October 29, 2021, between Jewel's Real Estate 1086"
+}

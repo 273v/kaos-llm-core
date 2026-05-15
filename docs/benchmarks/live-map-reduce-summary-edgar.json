@@ -1,0 +1,10 @@
+{
+  "program": "MapReduceSummary",
+  "model": "anthropic:claude-haiku-4-5",
+  "elapsed_seconds": 16.35,
+  "chunks_count": 33,
+  "total_input_tokens": 26416,
+  "total_output_tokens": 6258,
+  "total_cost_usd": 0.046165,
+  "summary_head": "This Real Property Purchase and Sale Agreement, dated October 29, 2021, is between Jewel's Real Esta"
+}

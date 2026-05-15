@@ -27,6 +27,24 @@ classes, the recipe layer, and the Pareto frontier helpers.
 from kaos_llm_core._version import __version__
 from kaos_llm_core.cache import SemanticCache
 from kaos_llm_core.codecs import ChatCodec, Codec, JSONCodec, XMLCodec
+from kaos_llm_core.composition import (
+    Aggregator,
+    IntersectionAggregator,
+    MajorityAggregator,
+    MapReduce,
+    MaxScoreAggregator,
+    Reducer,
+    Tree,
+    UnionAggregator,
+    VoteAggregator,
+    WeightedAggregator,
+)
+
+# NOTE: ``kaos_llm_core.composition.Refine`` (a reducer) intentionally
+# is not re-exported here — the existing ``kaos_llm_core.programs.Refine``
+# (an iterative-refinement Program) holds the short ``Refine`` name on
+# the public top-level surface. Reach the reducer via
+# ``kaos_llm_core.composition.Refine``.
 from kaos_llm_core.errors import (
     CallError,
     CodecError,
@@ -34,6 +52,7 @@ from kaos_llm_core.errors import (
     SignatureError,
     ValidationRetryExhaustedError,
 )
+from kaos_llm_core.labels import ABSTAIN_LABEL, Label, LabelSet
 from kaos_llm_core.observability import ExecutionTrace
 from kaos_llm_core.observability.collectors import collect_traces, push_trace
 from kaos_llm_core.observability.cost import apply_cost_estimates, estimate_cost, format_cost_report
@@ -124,11 +143,34 @@ from kaos_llm_core.programs import (
     tabular_rows_input_source,
 )
 from kaos_llm_core.programs.chain_of_thought import ChainOfThought
+from kaos_llm_core.programs.classify import (
+    ChunkedClassify,
+    EnsembleClassify,
+    FewShotClassify,
+    HierarchicalClassify,
+    MultiLabelClassify,
+    ZeroShotClassify,
+)
 from kaos_llm_core.programs.ensemble import Ensemble
 from kaos_llm_core.programs.grounded import Grounded, GroundedResult
 from kaos_llm_core.programs.judge import Judge, JudgedResult
 from kaos_llm_core.programs.react import Iteration, ReAct, ReActResult, ToolObservation
 from kaos_llm_core.programs.reranker import JudgeReranker
+from kaos_llm_core.programs.summarize import (
+    AbstractiveSummary,
+    AbstractiveSummarySignature,
+    CitedSummary,
+    HierarchicalSummary,
+    MapReduceSummary,
+    RefineSummary,
+    StructuredSummary,
+)
+from kaos_llm_core.results import (
+    Classification,
+    SourceSpan,
+    Summary,
+    SummaryMethod,
+)
 from kaos_llm_core.router import CascadeRouter, Router, Rule, RuleRouter
 from kaos_llm_core.settings import KaosLLMCoreSettings
 from kaos_llm_core.signatures import (
@@ -154,7 +196,11 @@ from kaos_llm_core.starter import (
 from kaos_llm_core.types import Example
 
 __all__ = [
+    "ABSTAIN_LABEL",
     "RAG",
+    "AbstractiveSummary",
+    "AbstractiveSummarySignature",
+    "Aggregator",
     "Audio",
     "BatchError",
     "BatchInputSource",
@@ -176,7 +222,10 @@ __all__ = [
     "CascadeRouter",
     "ChainOfThought",
     "ChatCodec",
+    "ChunkedClassify",
     "Cited",
+    "CitedSummary",
+    "Classification",
     "ClientSpec",
     "CoOptimizer",
     "Codec",
@@ -187,20 +236,25 @@ __all__ = [
     "CostAwareModelSelector",
     "Document",
     "Ensemble",
+    "EnsembleClassify",
     "EnvelopeStep",
     "EvalResult",
     "Example",
     "ExampleFirstTuner",
     "ExecutionTrace",
+    "FewShotClassify",
     "FriendlyPromptTuner",
     "Grounded",
     "GroundedResult",
     "HasOutputs",
+    "HierarchicalClassify",
+    "HierarchicalSummary",
     "HyperparameterOptimizer",
     "Image",
     "InputField",
     "InputSpec",
     "InstructionOptimizer",
+    "IntersectionAggregator",
     "Invocation",
     "Iteration",
     "JSONCodec",
@@ -211,7 +265,13 @@ __all__ = [
     "JudgedResult",
     "KaosLLMCoreError",
     "KaosLLMCoreSettings",
+    "Label",
+    "LabelSet",
     "ListInputSource",
+    "MajorityAggregator",
+    "MapReduce",
+    "MapReduceSummary",
+    "MaxScoreAggregator",
     "MiproLiteOptimizer",
     "MiproLiteResult",
     "MiproV2Config",
@@ -221,6 +281,7 @@ __all__ = [
     "ModelOptimizer",
     "MultiChainComparison",
     "MultiChainComparisonResult",
+    "MultiLabelClassify",
     "Mutation",
     "MutationLog",
     "OutputField",
@@ -238,9 +299,11 @@ __all__ = [
     "RAGResult",
     "ReAct",
     "ReActResult",
+    "Reducer",
     "Refine",
     "RefineHistoryEntry",
     "RefineResult",
+    "RefineSummary",
     "ReflectiveOptimizer",
     "Router",
     "Rule",
@@ -248,14 +311,23 @@ __all__ = [
     "SemanticCache",
     "Signature",
     "SignatureError",
+    "SourceSpan",
     "StopReason",
+    "StructuredSummary",
+    "Summary",
+    "SummaryMethod",
     "TabularRowsInputSource",
     "TokenUsage",
     "Tool",
     "ToolObservation",
+    "Tree",
     "Tunable",
+    "UnionAggregator",
     "ValidationRetryExhaustedError",
+    "VoteAggregator",
+    "WeightedAggregator",
     "XMLCodec",
+    "ZeroShotClassify",
     "__version__",
     "apply_cost_estimates",
     "batch_run",
