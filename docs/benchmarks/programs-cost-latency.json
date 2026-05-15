@@ -1,0 +1,92 @@
+{
+  "captured_at": "2026-05-15",
+  "source": "kaos-llm-core/docs/benchmarks/live-*.json",
+  "note": "Single-source perf summary for kaos-llm-core Programs. Generated from live-LLM runs in tests/scale/test_programs_live.py. Refresh by running that scale-test (requires KAOS_LLM_LIVE_PROVIDER + credentials) and re-running tests/bench_programs.py.",
+  "programs": [
+    {
+      "source": "live-abstractive-summary-usc.json",
+      "program": "AbstractiveSummary",
+      "model": "anthropic:claude-haiku-4-5",
+      "elapsed_seconds": 6.61,
+      "total_cost_usd": 0.003971,
+      "total_input_tokens": 2394,
+      "total_output_tokens": 514,
+      "n_documents_or_chunks": 3,
+      "ms_per_doc": 2203.33,
+      "usd_per_doc": 0.001324,
+      "input_tokens_per_doc": 798.0,
+      "output_tokens_per_doc": 171.3,
+      "tokens_per_second": 439.9
+    },
+    {
+      "source": "live-chunked-classify-edgar.json",
+      "program": "ChunkedClassify",
+      "model": "anthropic:claude-haiku-4-5",
+      "elapsed_seconds": 3.65,
+      "total_cost_usd": 0.006163,
+      "total_input_tokens": 0,
+      "total_output_tokens": 0,
+      "n_documents_or_chunks": 5,
+      "ms_per_doc": 730.0,
+      "usd_per_doc": 0.001233,
+      "input_tokens_per_doc": 0.0,
+      "output_tokens_per_doc": 0.0,
+      "tokens_per_second": 0.0
+    },
+    {
+      "source": "live-hierarchical-summary-edgar.json",
+      "program": "HierarchicalSummary",
+      "model": "anthropic:claude-haiku-4-5",
+      "elapsed_seconds": 29.98,
+      "total_cost_usd": 0.076365,
+      "total_input_tokens": 0,
+      "total_output_tokens": 0,
+      "n_documents_or_chunks": 45,
+      "ms_per_doc": 666.22,
+      "usd_per_doc": 0.001697,
+      "input_tokens_per_doc": 0.0,
+      "output_tokens_per_doc": 0.0,
+      "tokens_per_second": 0.0
+    },
+    {
+      "source": "live-map-reduce-summary-edgar.json",
+      "program": "MapReduceSummary",
+      "model": "anthropic:claude-haiku-4-5",
+      "elapsed_seconds": 16.35,
+      "total_cost_usd": 0.046165,
+      "total_input_tokens": 26416,
+      "total_output_tokens": 6258,
+      "n_documents_or_chunks": 33,
+      "ms_per_doc": 495.45,
+      "usd_per_doc": 0.001399,
+      "input_tokens_per_doc": 800.5,
+      "output_tokens_per_doc": 189.6,
+      "tokens_per_second": 1998.4
+    },
+    {
+      "source": "live-multi-label-classify-edgar.json",
+      "program": "MultiLabelClassify",
+      "model": "anthropic:claude-haiku-4-5",
+      "elapsed_seconds": 0.0,
+      "total_cost_usd": 0.002855,
+      "total_input_tokens": 0,
+      "total_output_tokens": 0,
+      "n_documents_or_chunks": null
+    },
+    {
+      "source": "live-zero-shot-classify-usc.json",
+      "program": "ZeroShotClassify",
+      "model": "anthropic:claude-haiku-4-5",
+      "elapsed_seconds": 26.09,
+      "total_cost_usd": 0.018895,
+      "total_input_tokens": 0,
+      "total_output_tokens": 0,
+      "n_documents_or_chunks": 12,
+      "ms_per_doc": 2174.17,
+      "usd_per_doc": 0.001575,
+      "input_tokens_per_doc": 0.0,
+      "output_tokens_per_doc": 0.0,
+      "tokens_per_second": 0.0
+    }
+  ]
+}

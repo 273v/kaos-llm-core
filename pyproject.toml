@@ -177,6 +177,12 @@ exclude = [
     "tests/integration/test_rag_ecfr_tax.py",
     "tests/integration/test_rag_edgar_10k.py",
     "tests/integration/test_rag_federal_register.py",
+    # Quality eval harnesses (P1-2/P1-3/P1-4) -- runtime-imported via
+    # pytest.importorskip from `datasets`, `rouge_score`, `sklearn`,
+    # all of which are dev-extras the harness doesn't require in the
+    # base install. ty can't resolve them statically.
+    "tests/quality/test_billsum_rouge.py",
+    "tests/quality/test_ledgar_f1.py",
 ]
 
 [tool.uv]
