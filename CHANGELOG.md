@@ -8,6 +8,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Per-Program cost / latency bench** at `tests/bench_programs.py`.
+  Distills the 6 ``docs/benchmarks/live-*.json`` snapshots captured
+  by ``tests/scale/test_programs_live.py`` into a single
+  ``docs/benchmarks/programs-cost-latency.json`` with per-Program
+  ms/doc, $/doc, and tokens/sec. No new live LLM calls -- the
+  bench reshapes existing snapshots so downstream consumers
+  (kelvin-training, kaos-compliance) have a single source of
+  truth for what each Program costs at the captured model.
+- **CUAD span-verification harness** at
+  `tests/quality/test_cuad_grounding.py` (audit task P1-4).
+  Runs `CitedSummary` over the vendored 5-contract x 5-clause CUAD
+  sample (CC-BY-4.0; sourced from
+  `kaos-nlp-core/tests/fixtures/cuad-sample/`) and reports the
+  per-cell verified-span count, the fraction of cells where any
+  verified span contains the gold answer, and the overall
+  verified-claim rate. Gated on ``KAOS_LLM_LIVE_PROVIDER``;
+  emits ``docs/benchmarks/quality-cuad-grounding.json``.
+- **BillSum ROUGE harness** at
+  `tests/quality/test_billsum_rouge.py` (audit task P1-2). Runs
+  ``AbstractiveSummary`` / ``HierarchicalSummary`` /
+  ``MapReduceSummary`` over the BillSum test split (Apache-2.0;
+  downloaded at runtime via HuggingFace ``datasets``) and reports
+  ROUGE-1 / ROUGE-2 / ROUGE-L F-scores per program + aggregate
+  mean. Skips cleanly when ``datasets`` / ``rouge-score`` aren't
+  installed. Emits ``docs/benchmarks/quality-billsum-rouge.json``.
+- **LEDGAR F1 harness** at `tests/quality/test_ledgar_f1.py`
+  (audit task P1-3). Runs ``ZeroShotClassify`` over a stratified
+  slice of the LEDGAR test split (CC-BY-NC-SA-4.0; **not**
+  vendored, downloaded at runtime) with a 100-class LabelSet and
+  reports F1-macro / F1-micro / accuracy + per-class precision /
+  recall / support. Skips when ``datasets`` / ``scikit-learn``
+  aren't installed. Emits ``docs/benchmarks/quality-ledgar-f1.json``.
+  License note: the harness output is evaluation metadata only,
+  not a redistribution of the underlying dataset.
+
+### Documentation
+
+- ty exclude list extended for the two harnesses that runtime-import
+  optional libraries (``datasets``, ``rouge_score``, ``scikit-learn``)
+  via ``pytest.importorskip``; ty resolves modules statically so
+  these need the same exclude treatment the integration tests use.
+
+
 
 ## [0.1.0a9] — 2026-05-15
 
