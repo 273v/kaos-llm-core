@@ -45,11 +45,14 @@ dependencies = [
   "kaos-core>=0.1.0a3,<0.2",
   "kaos-llm-client>=0.1.0a2,<0.2",
   # 0.1.0a5 added kaos_nlp_core.{chunking,aggregation,similarity}
-  # consumed by Programs/composition; bumping the floor ensures
-  # downstream wheels resolve a kaos-nlp-core that exposes them.
-  # (The 0.1.0a4 tag exists but its release run failed at the
+  # consumed by Programs/composition. 0.1.0a6 added the
+  # SIMD-dispatched ``cosine_one_to_many_normalized`` /
+  # ``l2_normalize_in_place`` primitives consumed by
+  # ``PrototypeClassify`` (Phase-5 deliverable). Bumping the floor
+  # ensures downstream wheels resolve a kaos-nlp-core that exposes
+  # them. (The 0.1.0a4 tag exists but its release run failed at the
   # wheels matrix and never published to PyPI.)
-  "kaos-nlp-core>=0.1.0a5,<0.2",
+  "kaos-nlp-core>=0.1.0a6,<0.2",
   "pydantic>=2.11.0",
 ]
 
