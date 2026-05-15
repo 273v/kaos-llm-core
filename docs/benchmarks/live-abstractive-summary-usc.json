@@ -1,0 +1,14 @@
+{
+  "program": "AbstractiveSummary",
+  "model": "anthropic:claude-haiku-4-5",
+  "documents": 3,
+  "elapsed_seconds": 6.61,
+  "total_input_tokens": 2394,
+  "total_output_tokens": 514,
+  "total_cost_usd": 0.003971,
+  "sample_summaries": [
+    "Section 1038 authorizes crediting of service in the Women's Army Auxiliary Corps (WAAC) toward active service computations for female armed forces members. WAAC service performed between May 13, 1942,",
+    "\u00a71044c establishes that advance medical directives executed by eligible military members and dependents must be given legal effect by states regardless of state form or procedural requirements. An adv",
+    "\u00a710501 establishes the National Guard Bureau as a joint activity within the Department of Defense. The bureau serves as the official channel of communications between the Departments of the Army and A"
+  ]
+}

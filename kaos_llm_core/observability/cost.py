@@ -9,16 +9,34 @@ both bare model names (``"gpt-5"``) and provider-qualified aliases
 (``"openai:gpt-5"``) end up in the dict so callers can look up costs
 either way. There is exactly one place where rates are defined, and
 everyone else imports.
+
+Unknown-model handling
+----------------------
+When :func:`apply_cost_estimates` (or :func:`estimate_cost`) is invoked
+with a trace whose ``model`` is **not** in :data:`PRICING`, the
+function logs a one-shot warning naming the unknown model and falls
+through to ``cost_usd=0.0``. This was previously silent — which let
+the entire cost-rollup pipeline report ``$0.00`` end-to-end whenever
+the installed ``kaos-llm-client`` lockfile lagged the model rate
+card. The warning is rate-limited per-model so a long-running batch
+doesn't flood logs.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
+from kaos_core.logging import get_logger
 from kaos_llm_client.cost import MODEL_PRICING
 from kaos_llm_client.profiles import infer_provider
 
 from kaos_llm_core.observability.traces import ExecutionTrace
+
+logger = get_logger(__name__)
+
+# Rate-limit the unknown-model warning to one log line per model name
+# per process. Reset only on a fresh import.
+_warned_unknown_models: set[str] = set()
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,11 +111,31 @@ def estimate_cost(trace: ExecutionTrace) -> float:
     pricing = PRICING.get(trace.model)
     if pricing:
         own_cost = pricing.estimate(trace.input_tokens, trace.output_tokens)
+    elif trace.input_tokens > 0 and trace.model not in {"(program)", ""}:
+        _warn_unknown_model(trace.model)
 
     # Recursive: sum child costs
     child_cost = sum(estimate_cost(child) for child in trace.children)
 
     return own_cost + child_cost
+
+
+def _warn_unknown_model(model: str) -> None:
+    """Log a one-shot warning for an unknown pricing key.
+
+    The warning is rate-limited to once per model name per process so
+    a long-running batch doesn't flood logs. The empty-string model
+    name is silently ignored (some trace shapes record it as a
+    placeholder).
+    """
+    if not model or model in _warned_unknown_models:
+        return
+    _warned_unknown_models.add(model)
+    logger.warning(
+        "Cost estimation: no pricing entry for model %r — cost_usd will be 0.0. "
+        "Update kaos_llm_client.cost.MODEL_PRICING or refresh the lockfile.",
+        model,
+    )
 
 
 def apply_cost_estimates(trace: ExecutionTrace) -> None:
@@ -114,6 +152,8 @@ def apply_cost_estimates(trace: ExecutionTrace) -> None:
     pricing = PRICING.get(trace.model)
     if pricing:
         trace.cost_usd = pricing.estimate(trace.input_tokens, trace.output_tokens)
+    elif trace.input_tokens > 0 and trace.model not in {"(program)", ""}:
+        _warn_unknown_model(trace.model)
 
     # If this is a program-level trace (has children), aggregate
     if trace.children and trace.model == "(program)":

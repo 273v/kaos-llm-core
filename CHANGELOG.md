@@ -8,7 +8,219 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [0.1.0a8] — 2026-05-15
+
+### Documentation
+
+- **Use, data-handling, and AI-authorship disclosure** added to the
+  README and to the ``programs/summarize/__init__.py`` /
+  ``programs/classify/__init__.py`` module docstrings. The new
+  language: (1) statistical-approximation warning + "not legal/
+  financial/medical advice without expert review"; (2) explicit note
+  that every Program transmits text to the configured LLM provider
+  and that privileged / PHI / customer-confidential data needs an
+  enterprise DPA; (3) AI-assisted authorship disclosure (Claude,
+  Anthropic; human-reviewed).
+
+### Fixed
+
+- **Cost telemetry no longer silently reports `$0.00` for unknown models.**
+  Previously ``apply_cost_estimates`` / ``estimate_cost`` looked up
+  ``trace.model`` in ``PRICING`` with a plain ``dict.get`` and fell
+  through to ``cost_usd=0`` when the model was missing — with no log,
+  no warning, no test signal. Every live-scale benchmark JSON under
+  ``docs/benchmarks/live-*.json`` reported ``$0.00`` despite real
+  provider calls, because the installed ``kaos-llm-client`` lockfile
+  lagged the model rate card and ``gpt-5.4-nano`` (and friends) were
+  not in the pricing table. The fix is two parts:
+  1. The lockfile is refreshed so the current rate card lands. After
+     refresh, ``gpt-5.4-nano`` resolves correctly to ``$0.10/$0.40``
+     per M tokens.
+  2. ``apply_cost_estimates`` / ``estimate_cost`` now emit a
+     one-shot warning naming the unknown model when a leaf trace
+     has ``input_tokens > 0`` and no pricing entry — making the
+     silent-zero failure visible. The warning is rate-limited via
+     a module-level ``_warned_unknown_models`` set so long batches
+     don't flood logs. The ``(program)`` placeholder and
+     zero-token traces are explicitly excluded.
+  - New regression test suite ``tests/unit/test_cost_unknown_model.py``
+    asserts the warned-set side-effect (the canonical signal —
+    pytest's ``caplog`` doesn't capture the ``kaos`` logger hierarchy
+    by default). Includes a defensive "lockfile health check" that
+    asserts at least one current-gen cheap model (``gpt-5.4-nano`` /
+    ``gemini-2.5-flash`` / ``claude-haiku-4-5``) is in the installed
+    pricing table.
+
+### Security / Faithfulness
+
+- **`CitedSummary` now verifies every claim against the source at
+  runtime.** Previously the Program populated
+  ``Summary.source_spans`` directly from the LLM's
+  ``supporting_spans`` without checking whether the quoted substring
+  actually appeared in the source — a hallucinated quote was
+  indistinguishable from a real one. ``CitedSummary.forward`` now
+  calls :meth:`Answer.verify` (already in
+  ``kaos_llm_core.signatures.grounding``) and includes only spans
+  from fully-verified claims in ``source_spans``. The full
+  ``GroundedAnswer`` payload is preserved unmodified on
+  ``Summary.payload`` so callers can inspect what failed.
+  - New constructor parameters: ``verify_strategies`` (tuple of
+    :class:`MatchStrategy`, default ``DEFAULT_MATCH_STRATEGIES`` =
+    ``STRICT`` + ``SUBSTRING``), ``verify_threshold`` (float, default
+    ``0.9``, for fuzzy strategies), ``refuse_below`` (float in
+    ``[0.0, 1.0]``, default ``0.0``).
+  - When the verified-claim fraction is strictly below
+    ``refuse_below``, the summary text and ``source_spans`` are
+    collapsed to empty and ``metadata["cited.refused"]`` is set to
+    ``True``. Default ``0.0`` preserves prior behavior (never
+    refuse) while making the gate explicit.
+  - New metadata fields:
+    ``cited.verified_claim_count``,
+    ``cited.unverified_claim_count``,
+    ``cited.verified_ratio``,
+    ``cited.refused``,
+    ``cited.verify_strategies``,
+    ``cited.error_reasons``.
+
 ### Added
+
+- **`kaos_llm_core.labels`** — new module defining the canonical label
+  space type for classification programs. Phase 0 of the
+  summarization/classification cross-module plan; concrete classifier
+  programs follow in Phase 4.
+  - `Label` — Pydantic model with ``name``, ``description``,
+    ``examples``, optional ``parent`` for hierarchies, and a
+    ``prompt_text`` convenience property.
+  - `LabelSet` — Pydantic model wrapping ``labels`` plus the
+    ``exclusive`` / ``allow_abstain`` / ``hierarchical`` policy flags.
+    Container protocol (``__iter__`` / ``__len__`` / ``__contains__``),
+    ``names`` / ``by_name`` / ``children`` / ``roots`` accessors, and
+    ``validate_picks`` / ``assert_picks`` helpers. Construction-time
+    validation rejects duplicate names, the reserved ``__abstain__``
+    name, unknown hierarchical parents, and parent-graph cycles.
+  - ``LabelSet.from_names(...)`` for the flag-free flat-set case.
+  - `ABSTAIN_LABEL` — reserved sentinel name (``"__abstain__"``).
+- **`kaos_llm_core.results`** — new module defining the canonical
+  result containers.
+  - `Summary[T]` — generic Pydantic model with ``text``, optional
+    typed ``payload``, ``method`` tag (``abstractive`` / ``extractive``
+    / ``hybrid``), ``depth``, ``chunks_used``, ``source_spans``, and
+    free-form ``metadata``.
+  - `Classification[L]` — generic Pydantic model parameterized over
+    ``Label | str`` carrying ``labels``, optional ``scores``,
+    ``abstained``, optional ``rationale``, plus the same provenance
+    fields. ``names`` / ``top_label`` convenience accessors.
+  - `SourceSpan` — lightweight positional ``(start, end, source_id)``
+    reference. Complements the rich
+    :class:`~kaos_llm_core.signatures.grounding.Span` used inside
+    ``Cited[T]`` payloads.
+  - `SummaryMethod` — exported ``Literal`` for the method tag.
+- All seven new names (``ABSTAIN_LABEL``, ``Label``, ``LabelSet``,
+  ``Summary``, ``SummaryMethod``, ``Classification``, ``SourceSpan``)
+  are re-exported from the top-level ``kaos_llm_core`` package and
+  listed in ``__all__``.
+
+- **`kaos_llm_core.composition`** — new composition layer for
+  summarization and classification programs. Phase 2 of the cross-module
+  plan.
+  - **Aggregator strategies** (single source of truth: pure
+    aggregation functions in
+    ``kaos_nlp_core.aggregation``):
+    - `Aggregator` — runtime-checkable Protocol.
+    - `VoteAggregator`, `MajorityAggregator(threshold=…)` — exclusive
+      strategies.
+    - `UnionAggregator`, `IntersectionAggregator` — multi-label
+      strategies.
+    - `WeightedAggregator(threshold, chunk_weight=…)` — single or
+      multi-label, honors per-chunk weights/scores.
+    - `MaxScoreAggregator(threshold=…)` — pools per-chunk score maps
+      by max.
+    - All strategies operate on
+      :class:`~kaos_llm_core.results.Classification` instances plus
+      a :class:`~kaos_llm_core.labels.LabelSet`, pool provenance
+      (chunks_used/source_spans), and emit a label histogram in the
+      returned metadata.
+  - **Reducer strategies** (LLM-free orchestration; caller supplies
+    an async ``merge_fn``):
+    - `Reducer` — runtime-checkable Protocol with async
+      ``reduce(leaves, merge_fn)``.
+    - `MapReduce` — single merge call across all leaves.
+    - `Refine` (in ``composition.reduce`` — not at the top level
+      to avoid colliding with the existing :class:`Refine` Program).
+    - `Tree(branching=4, max_depth=8)` — k-ary bottom-up merge with
+      concurrent sibling merges and tail-singleton folding.
+  - All composition classes are re-exported from
+    ``kaos_llm_core.composition`` and (with the exception of
+    ``Refine``) from the top-level ``kaos_llm_core`` package.
+
+- **`kaos_llm_core.programs.summarize`** — new summarization Programs.
+  Phase 3 of the cross-module plan. Each Program returns a
+  :class:`Summary` (or :class:`Summary[T]` for the typed payload
+  variant); routing, caching, batching, retries, observability, and
+  cost are inherited from the base
+  :class:`~kaos_llm_core.programs.call.Call` /
+  :class:`~kaos_llm_core.programs.base.Program` infrastructure.
+  - **Single-doc**:
+    - `AbstractiveSummary` — single LLM call, plain ``str`` payload.
+    - `StructuredSummary(schema=…)` — builds a Signature at runtime
+      around the caller's Pydantic schema; the LLM produces both a
+      plain-text summary and a typed structured payload.
+    - `CitedSummary` — emits a
+      :class:`~kaos_llm_core.signatures.grounding.GroundedAnswer`
+      payload; pools supporting spans into
+      :class:`Summary.source_spans` for downstream verification.
+    - `AbstractiveSummarySignature` — public Signature class for the
+      plain abstractive shape; reusable by callers wiring their own
+      Call instances or optimizing prompts.
+  - **Long-doc** (consume any
+    :class:`kaos_nlp_core.chunking.Chunker`; default
+    :class:`ParagraphChunker(max_tokens=1024)`):
+    - `MapReduceSummary` — parallel per-chunk leaves +
+      :class:`~kaos_llm_core.composition.MapReduce` reduce.
+    - `RefineSummary` — sequential left-to-right
+      :class:`~kaos_llm_core.composition.reduce.Refine` reduce.
+    - `HierarchicalSummary(branching=4, max_depth=8)` — k-ary
+      :class:`~kaos_llm_core.composition.Tree` reduce.
+  - All seven names re-exported from the top-level ``kaos_llm_core``
+    package and listed in ``__all__``.
+  - Tests use the offline :class:`FunctionClient` stub provider to
+    keep the unit gate deterministic; live integration coverage is
+    expected via downstream callers.
+
+- **`kaos_llm_core.programs.classify`** — new classification Programs.
+  Phase 4 of the cross-module plan. Every Program returns a
+  :class:`Classification[Label]` regardless of whether the underlying
+  decision is from one LLM, a chunked vote, a hierarchical walk, or
+  an ensemble.
+  - `ZeroShotClassify(labels=…)` — single-label LLM classification.
+    Constructs a Signature at Program-init with a Literal-typed
+    ``label`` output field so providers that support constrained
+    decoding push the constraint to the wire format.
+  - `FewShotClassify(labels=…, examples=…)` — :class:`ZeroShotClassify`
+    that requires a non-empty :class:`Example` pool.
+  - `MultiLabelClassify(labels=…)` — emits a *subset* of label names
+    plus per-label confidence. Requires
+    ``LabelSet.exclusive=False``; preserves canonical label order in
+    the result.
+  - `HierarchicalClassify(labels=…)` — coarse-to-fine walk over a
+    ``hierarchical=True``
+    :class:`LabelSet`. Returns the leaf-most label plus the full
+    path in ``metadata["hierarchical.path"]``.
+  - `ChunkedClassify(labels=…, per_chunk=…, chunker=…, aggregator=…)`
+    — long-document wrapper: chunks the input via any
+    :class:`kaos_nlp_core.chunking.Chunker`, runs the per-chunk
+    classifier in parallel, and combines results via any
+    :class:`~kaos_llm_core.composition.Aggregator` (defaults:
+    :class:`MajorityAggregator` for exclusive sets,
+    :class:`UnionAggregator` for multi-label).
+  - `EnsembleClassify(labels=…, members=…, aggregator=…)` — runs
+    multiple member classifiers concurrently over the same input and
+    combines them via an aggregator. Children are exposed via a
+    ``named_calls`` override so the trace tree captures every
+    member.
+  - All six names re-exported from the top-level ``kaos_llm_core``
+    package and listed in ``__all__``.
 
 - **`kaos-llm-core-program-of-thought` MCP tool** (#91, Rec #3). Dedicated
   wrapper around `ProgramOfThought` that exposes code-as-reasoning over

@@ -1,0 +1,19 @@
+{
+  "program": "ZeroShotClassify",
+  "model": "anthropic:claude-haiku-4-5",
+  "documents": 12,
+  "accuracy": 1.0,
+  "confusion": {
+    "armed_forces": {
+      "armed_forces": 4
+    },
+    "crimes": {
+      "crimes": 4
+    },
+    "internal_revenue": {
+      "internal_revenue": 4
+    }
+  },
+  "elapsed_seconds": 26.09,
+  "total_cost_usd": 0.018895
+}

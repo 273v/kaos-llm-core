@@ -1,0 +1,14 @@
+{
+  "program": "MultiLabelClassify",
+  "model": "anthropic:claude-haiku-4-5",
+  "picked_labels": [
+    "termination",
+    "payment"
+  ],
+  "scores": {
+    "termination": 0.85,
+    "payment": 0.95
+  },
+  "rationale": "The document contains substantial payment-related provisions, including the purchase price of $541,3",
+  "total_cost_usd": 0.002855
+}
