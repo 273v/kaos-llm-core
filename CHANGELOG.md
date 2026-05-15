@@ -10,6 +10,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Chunk-result cache + per-Program budget enforcement** (audit
+  P1-7 + P1-8, plan §5.3 + §8.5 + §8.6 item C). Three new
+  surfaces in `kaos_llm_core.cache.chunk`:
+  - `ChunkCacheKey` — public on-disk key shape
+    `(chunk_id, program_name, model_hint)`.
+  - `ChunkCache` — async Protocol for caller-supplied
+    implementations.
+  - `InMemoryChunkCache` — default process-local FIFO with
+    bounded `max_entries` (default 10k) and hit/miss counters.
+
+  Wired through `_LongDocBase` (= `HierarchicalSummary` /
+  `MapReduceSummary` / `RefineSummary`) and `ChunkedClassify`
+  via new `cache: ChunkCache | None` / `budget: Budget | None`
+  constructor params. On a cache hit the per-chunk Program
+  invocation is skipped; on budget exhaustion processing halts
+  and the aggregated result carries `metadata["partial"] = True`
+  plus `metadata["budget.exhausted"]`. The aggregated result
+  also reports `metadata["cache.hits"]`,
+  `metadata["chunks.processed"]`, and (when a budget tracker
+  ran) `metadata["budget.cost_usd"]` /
+  `metadata["budget.tokens"]`.
+
+  The pre-existing `SemanticCache` (Call-level, embedding-keyed)
+  is unchanged and complements `ChunkCache` (Program-level,
+  chunk-id-keyed); both can coexist.
 - **`ExtractiveSummary` Program** (Phase-5 leftover from
   `docs/summarization-classification-plan.md` §6.1) at
   `kaos_llm_core.programs.summarize.ExtractiveSummary`. Wraps any
