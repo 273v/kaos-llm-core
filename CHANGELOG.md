@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [0.1.0a9] — 2026-05-15
+
+### Added — granular MCP-tool registration entry points (PRD PR 1)
+
+- **`register_llm_core_program_tools(runtime)`** — registers the
+  24 typed-program / optimizer / codec / batch / metric wrappers
+  (Call, ChainOfThought, ReAct, Refine, Judge, Ensemble, Evaluate,
+  Optimize, OptimizeCodec, OptimizeModel, Pareto, RecipeTune,
+  CostReport, BestOfN, SaveLoad, Metric, AnalyzeTrial,
+  ProgramExecute, ProgramOfThought, BatchCreate, BatchRun,
+  BatchStatus, BatchResults, MiproV2).
+- **`register_llm_core_alpha_tools(runtime)`** — registers only
+  the 6 deterministic ``kaos-llm-core-alpha-*`` rule-based
+  extractors (date, duration, entity, money, number, percent).
+- **`register_llm_core_tools(runtime)`** is now a backward-compatible
+  union of the two — every existing caller continues to see the
+  same 30 tools with the same names and schemas.
+
+These granular entry points let kaos-agents (PR 2) wire the
+SessionToolSet ``programs`` group to either or both subsets
+independently — a session can opt into the cheap rule-based
+extractors without exposing the full optimizer / batch surface,
+or vice versa. Motivated by
+`kaos-modules/docs/internal/dynamic-tool-planning-prd.md` §4
+("PR 1 — catalog expansion"). Purely additive: no tool name,
+schema, or behavior changes.
+
+
 ## [0.1.0a8] — 2026-05-15
 
 ### Documentation
