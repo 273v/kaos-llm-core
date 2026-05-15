@@ -84,7 +84,7 @@ spec, the divergence is called out here.
 |---|---|---|
 | `kaos-nlp-core` | **0.1.0a6** | Layer-0 `Chunk`, Layer-1 deterministic chunkers (5), label aggregation primitives (6), dense-vector similarity kernels (NumKong-design SIMD ported into Rust at `rust/core/similarity/kernels.rs`; AVX-512F / AVX2+FMA / NEON / scalar with runtime ISA dispatch; pre-normalised fast-path variants for unit-norm inputs). |
 | `kaos-nlp-transformers` | **0.2.0a6** | Layer-2 `SemanticChunker` + `ExtractiveRanker`, both wired to the pre-normalised SIMD fast paths. End-to-end throughput benches under `tests/bench_*.py`. |
-| `kaos-llm-core` | **0.1.0a9** (Q3–Q6 dev tooling on `main` for next release) | Layer-0 `Label` / `LabelSet` / `Summary[T]` / `Classification[L]` / `SourceSpan`. Layer-3 `Reducer` protocol + 3 of 4 reducers + `Aggregator` protocol + 6 strategies. Layer-4 summarization Programs (6 of 10) + classification Programs (6 of 8). MCP registration split into `register_llm_core_program_tools` + `register_llm_core_alpha_tools` (a9; PRD §4 PR-1) — orthogonal to this plan but worth noting because §7.3 talks about MCP. |
+| `kaos-llm-core` | **0.1.0a10** (in flight; Phase-5 leftovers + Q3–Q6 dev tooling on `main`) | Layer-0 `Label` / `LabelSet` / `Summary[T]` / `Classification[L]` / `SourceSpan`. Layer-3 `Reducer` protocol + 3 of 4 reducers + `Aggregator` protocol + 6 strategies. Layer-4 summarization Programs (7 of 10) + classification Programs (7 of 8). 0.1.0a10 closes the Phase-5 leftover gap with `ExtractiveSummary` + `PrototypeClassify` (both no-LLM); 0.1.0a9 (shipped) carries the MCP registration split into `register_llm_core_program_tools` + `register_llm_core_alpha_tools` (PRD §4 PR-1) — orthogonal to this plan but worth noting because §7.3 talks about MCP. |
 
 ### Per-phase ledger
 
@@ -93,9 +93,9 @@ spec, the divergence is called out here.
 | **0 — Foundation types** | §2 | ✅ all 5 types | — |
 | **1 — Deterministic chunkers** | §3 | ✅ 5 chunkers + aggregators | — |
 | **2 — Composers** | §5 | ✅ `Reducer` + `MapReduce` / `Refine` / `Tree`; `Aggregator` + 6 strategies | ❌ `Cluster` reducer (one of four named in §5.1) |
-| **3 — Summarization Programs** | §6.1 | ✅ `AbstractiveSummary`, `StructuredSummary`, `CitedSummary`, `MapReduceSummary`, `RefineSummary`, `HierarchicalSummary` | ❌ `ExtractiveSummary` (Phase-5 deliverable — see below), `QueryFocusedSummary` / `ClusteredSummary` / `HybridSummary` (Phase 6) |
-| **4 — Classification Programs** | §6.2 | ✅ `ZeroShotClassify`, `FewShotClassify`, `MultiLabelClassify`, `ChunkedClassify`, `EnsembleClassify`, `HierarchicalClassify` | ❌ `PrototypeClassify` (Phase-5 deliverable — see below), `RetrievalClassify` (Phase 6) |
-| **5 — Neural primitives** | §4 | ✅ `SemanticChunker`, `ExtractiveRanker` | ❌ `ExtractiveSummary` + `PrototypeClassify` in `kaos-llm-core` (these are the LLM-free wrappers that delegate to nlp-transformers; the plan ships them under Phase 5, but they were missed during execution) |
+| **3 — Summarization Programs** | §6.1 | ✅ `AbstractiveSummary`, `ExtractiveSummary` (a10), `StructuredSummary`, `CitedSummary`, `MapReduceSummary`, `RefineSummary`, `HierarchicalSummary` | ❌ `QueryFocusedSummary` / `ClusteredSummary` / `HybridSummary` (Phase 6) |
+| **4 — Classification Programs** | §6.2 | ✅ `ZeroShotClassify`, `FewShotClassify`, `PrototypeClassify` (a10), `MultiLabelClassify`, `ChunkedClassify`, `EnsembleClassify`, `HierarchicalClassify` | ❌ `RetrievalClassify` (Phase 6) |
+| **5 — Neural primitives** | §4 | ✅ `SemanticChunker`, `ExtractiveRanker` (in `kaos-nlp-transformers` 0.2.0a6); ✅ `ExtractiveSummary`, `PrototypeClassify` wrappers (in `kaos-llm-core` 0.1.0a10) | — |
 | **6 — Retrieval-augmented variants** | §8 Phase 6 | — | ❌ All four: `QueryFocusedSummary`, `ClusteredSummary`, `HybridSummary`, `RetrievalClassify`. Existing `RAG` Program + `kaos-content` `SearchableDocument` / `SearchableCorpus` are the foundations. |
 | **7 — Surfaces** | §7 | ⚠️ partial. `starter.summarize_sync` / `classify_sync` exist as thin sync wrappers but **not** the declarative façade in §7.1 (no `long_strategy="auto"` rules, no `query=` route, no `cited=`). 30 MCP program tools exist (`KaosLLMCoreCallTool`, `KaosLLMCoreJudgeTool`, etc.) including a generic `KaosLLMCoreProgramExecuteTool` that can call any Program, but the **specific declarative `summarize` and `classify` MCP tools** in §7.3 are not registered. CLI has `check` / `examples` / `analyze`; no `summarize` / `classify` subcommands yet. | ❌ Declarative starter façade upgrade, CLI subcommands, dedicated MCP tool pair. |
 | **8 — Zero-shot NLI** | §8 Phase 8 | — | ❌ Deferred per the original plan. NLI model registration + `ZeroShotNLIClassifier` not built. |
@@ -456,7 +456,7 @@ counting math.
 | Program | Method | Long-doc | Faithfulness | Status (2026-05-15) | Notes |
 |---|---|---|---|---|---|
 | `AbstractiveSummary` | abstractive | no | free | ✅ shipped | Single-shot, optional schema. |
-| `ExtractiveSummary` | extractive | no | extractive-only | ❌ pending (Phase-5 leftover) | Wraps `ExtractiveRanker`; **no LLM call** in pure-extractive mode. |
+| `ExtractiveSummary` | extractive | no | extractive-only | ✅ shipped (a10) | Wraps any `Ranker`-protocol object (canonical: `ExtractiveRanker`); **no LLM call**. Picks re-ordered by source offset; score-ordered picks preserved in metadata. |
 | `CitedSummary` | abstractive | no | cited | ✅ shipped | Abstractive + `Grounded`. Verifies spans via `grounded.verify()`; unverified spans dropped; optional `refuse_below` threshold (audit P0-1). |
 | `StructuredSummary[T]` | abstractive | no | free or cited | ✅ shipped | Pydantic output schema (`T`). |
 | `MapReduceSummary` | abstractive | yes | free | ✅ shipped | Chunk → per-chunk summary → reduce. |
@@ -480,7 +480,7 @@ Each takes:
 |---|---|---|---|---|
 | `ZeroShotClassify` | zero-shot | LLM | ✅ shipped | Schema-constrained decode against `LabelSet`. |
 | `FewShotClassify` | few-shot | LLM | ✅ shipped | Adds `Example` pool to the prompt. Subclass of `ZeroShotClassify`. |
-| `PrototypeClassify` | zero-shot | embedding | ❌ pending (Phase-5 leftover) | Cosine vs label-description embeddings. **No LLM.** Plan §4.2.2 ships this alongside `ExtractiveRanker`; the program wrapper in `kaos-llm-core` was missed. |
+| `PrototypeClassify` | zero-shot | embedding | ✅ shipped (a10) | Cosine vs label-description embeddings via `cosine_one_to_many_normalized`. **No LLM.** Lazy prototype cache; exclusive (argmax + optional `min_score` floor) and multi-label (threshold) modes supported. |
 | `RetrievalClassify` | many-shot | embedding + LLM | ❌ pending (Phase 6) | kNN over labeled corpus + vote, optionally LLM tie-break. Builds on existing `RAG` + `SearchableCorpus`. |
 | `HierarchicalClassify` | any | nested classifiers | ✅ shipped | Coarse-to-fine taxonomy walk. |
 | `MultiLabelClassify` | zero/few-shot | LLM | ✅ shipped | Emits subset with per-label confidence. |
@@ -769,24 +769,31 @@ shippable once its predecessors land.
 - **Output:** three new JSON artifacts under
   `kaos-llm-core/docs/benchmarks/`.
 
-### B — Phase-5 leftovers (`ExtractiveSummary` + `PrototypeClassify`)
+### B — Phase-5 leftovers (`ExtractiveSummary` + `PrototypeClassify`) — **✅ closed 2026-05-15**
 
-- **What:** add the two missing Programs in `kaos-llm-core`. Both
-  are pure-Python wrappers; neither makes an LLM call. They
-  delegate to `kaos_nlp_transformers.ExtractiveRanker` and the
-  embedding model, respectively.
-- **`ExtractiveSummary`:** segment → embed → rank via centroid (or
-  optional query) → emit top-k `Segment`s as a `Summary[str]` whose
-  `text` is the joined picks. Acceptance criteria same as Phase 3.
-- **`PrototypeClassify`:** embed input + each label description →
-  cosine via `cosine_one_to_many_normalized` → pick argmax (single)
-  or threshold (multi). No LLM. Acceptance criteria same as Phase 4.
-- **Why now:** plan §6.1 / §6.2 list these as Layer-4 Programs;
-  they're the no-LLM paths the plan's "what success looks like"
-  section explicitly relies on; also blocks `HybridSummary` in
-  Phase 6.
-- **Surface change:** additive; bump `kaos-llm-core` to
-  `0.1.0a10` (next available alpha after the in-flight 0.1.0a9).
+- **What landed:** both Programs in `kaos-llm-core` 0.1.0a10. Neither
+  makes an LLM call. They accept caller-supplied objects conforming
+  to local `Ranker` / `Embedder` protocols (canonical implementations:
+  `kaos_nlp_transformers.ExtractiveRanker` and `EmbeddingModel`), so
+  `kaos-llm-core` stays free of a hard dep on `kaos-nlp-transformers`.
+- **`ExtractiveSummary`:** segment via
+  `kaos_nlp_core.segmentation.segment_sentences` → call
+  `ranker.rank(...)` → re-sort picks by source offset for narrative
+  readability → emit a `Summary[str]` whose `text` is the joined
+  picks. Score-ordered picks preserved in `metadata["picks"]`.
+- **`PrototypeClassify`:** lazy one-time embedding of every
+  `Label.prompt_text` → per-call embed of the input → cosine via
+  `cosine_one_to_many_normalized` (SIMD fast path) → argmax + optional
+  `min_score` abstention floor (exclusive `LabelSet`) or threshold
+  (multi-label `LabelSet`). All embed rows are defensively
+  L2-normalised in place by default.
+- **Tests:** 13 unit cases for `ExtractiveSummary`, 14 for
+  `PrototypeClassify`. All offline; ranker / embedder stubs
+  substitute for the canonical implementations.
+- **Surface change:** additive; `kaos-llm-core` floor on
+  `kaos-nlp-core` bumped to `>=0.1.0a6` so callers resolve a wheel
+  exposing `cosine_one_to_many_normalized` /
+  `l2_normalize_in_place`.
 
 ### C — P1-7 + P1-8 wiring (see §8.5)
 

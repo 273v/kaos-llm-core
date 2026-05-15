@@ -1,12 +1,16 @@
 """Classification Programs.
 
-Six Programs landing in Phase 4 of the cross-module summarization /
-classification plan:
+Phases 4 and 5 of the cross-module summarization / classification plan
+land seven Programs here:
 
 - :class:`ZeroShotClassify` — single LLM call against a
   :class:`~kaos_llm_core.labels.LabelSet`; constrained decode.
 - :class:`FewShotClassify` — :class:`ZeroShotClassify` with a few-shot
   example pool prepended to the prompt.
+- :class:`PrototypeClassify` — no-LLM classifier driven by embedding
+  cosine against label prototypes (canonical embedder:
+  ``kaos_nlp_transformers.EmbeddingModel``); the §6.2 Phase-5
+  deliverable that landed alongside ``ExtractiveRanker``.
 - :class:`MultiLabelClassify` — LLM emits a *subset* of labels plus
   per-label confidence; consumes a multi-label
   :class:`~kaos_llm_core.labels.LabelSet`.
@@ -43,6 +47,10 @@ from kaos_llm_core.programs.classify.chunked import ChunkedClassify
 from kaos_llm_core.programs.classify.ensemble import EnsembleClassify
 from kaos_llm_core.programs.classify.hierarchical import HierarchicalClassify
 from kaos_llm_core.programs.classify.multi_label import MultiLabelClassify
+from kaos_llm_core.programs.classify.prototype import (
+    Embedder,
+    PrototypeClassify,
+)
 from kaos_llm_core.programs.classify.zero_shot import (
     FewShotClassify,
     ZeroShotClassify,
@@ -50,9 +58,11 @@ from kaos_llm_core.programs.classify.zero_shot import (
 
 __all__ = [
     "ChunkedClassify",
+    "Embedder",
     "EnsembleClassify",
     "FewShotClassify",
     "HierarchicalClassify",
     "MultiLabelClassify",
+    "PrototypeClassify",
     "ZeroShotClassify",
 ]

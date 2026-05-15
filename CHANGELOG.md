@@ -10,6 +10,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`ExtractiveSummary` Program** (Phase-5 leftover from
+  `docs/summarization-classification-plan.md` §6.1) at
+  `kaos_llm_core.programs.summarize.ExtractiveSummary`. Wraps any
+  object conforming to the new local ``Ranker`` protocol (canonical
+  implementation: ``kaos_nlp_transformers.extraction.ExtractiveRanker``)
+  to produce no-LLM extractive summaries. Forward signature:
+  ``await program(text, query=None, top_k=None, parent_id=None)``;
+  returns a ``Summary[str]`` with ``method="extractive"``, picks
+  re-ordered by source offset for narrative readability, and
+  per-pick ``rank``/``score`` preserved in
+  ``metadata["picks"]``. Zero LLM cost — the Program holds no
+  ``Call`` children and ``Program.invoke`` builds a childless trace
+  with zero token usage.
+- **`PrototypeClassify` Program** (Phase-5 leftover from plan §6.2)
+  at `kaos_llm_core.programs.classify.PrototypeClassify`. Embeds the
+  input plus each ``Label.prompt_text`` via the supplied ``Embedder``
+  (protocol matching ``kaos_nlp_transformers.EmbeddingModel.embed``),
+  scores via the SIMD-dispatched
+  ``kaos_nlp_core.similarity.cosine_one_to_many_normalized`` fast
+  path, and applies an argmax (exclusive ``LabelSet``) or threshold
+  rule (multi-label ``LabelSet``). Label prototypes are embedded
+  once and cached. Optional ``min_score`` floor abstains when the
+  top cosine falls below the threshold and the LabelSet permits
+  abstention. Combines with ``ChunkedClassify`` and
+  ``UnionAggregator`` to produce a fully no-LLM multi-label
+  long-document classifier; see plan §11 endgame example.
 - **Per-Program cost / latency bench** at `tests/bench_programs.py`.
   Distills the 6 ``docs/benchmarks/live-*.json`` snapshots captured
   by ``tests/scale/test_programs_live.py`` into a single

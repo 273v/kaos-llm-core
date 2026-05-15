@@ -1,10 +1,14 @@
 """Summarization Programs.
 
-Six Programs landing in Phase 3 of the cross-module summarization /
-classification plan:
+Phases 3 and 5 of the cross-module summarization / classification plan
+land seven Programs here:
 
 - :class:`AbstractiveSummary` — single-shot abstractive summary, plain
   string output.
+- :class:`ExtractiveSummary` — no-LLM extractive summary wrapping a
+  :class:`Ranker` (canonical implementation:
+  ``kaos_nlp_transformers.extraction.ExtractiveRanker``); the §6.1
+  Phase-5 deliverable that landed alongside ``ExtractiveRanker``.
 - :class:`StructuredSummary` — schema-driven abstractive summary; the
   output payload is an arbitrary Pydantic model supplied by the
   caller.
@@ -54,6 +58,11 @@ from kaos_llm_core.programs.summarize.abstractive import (
     AbstractiveSummarySignature,
     CitedSummary,
 )
+from kaos_llm_core.programs.summarize.extractive import (
+    ExtractiveSummary,
+    RankedSegment,
+    Ranker,
+)
 from kaos_llm_core.programs.summarize.long_doc import (
     HierarchicalSummary,
     MapReduceSummary,
@@ -65,8 +74,11 @@ __all__ = [
     "AbstractiveSummary",
     "AbstractiveSummarySignature",
     "CitedSummary",
+    "ExtractiveSummary",
     "HierarchicalSummary",
     "MapReduceSummary",
+    "RankedSegment",
+    "Ranker",
     "RefineSummary",
     "StructuredSummary",
 ]
