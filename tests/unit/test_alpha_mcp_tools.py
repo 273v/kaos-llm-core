@@ -312,8 +312,10 @@ class TestRegistration:
 
         runtime = KaosRuntime()
         count = register_llm_core_program_tools(runtime)
-        # 24 typed-program / optimizer / batch wrappers — no alpha-*.
-        assert count == 24
+        # 24 typed-program / optimizer / batch wrappers + 2 declarative
+        # façade tools (kaos-llm-core-summarize / -classify, 0.1.0a10
+        # plan §7.3) = 26. None of the alpha-* tools land here.
+        assert count == 26
         registered_names = {t.metadata.name for t in runtime.tools.list_tool_objects()}
         for alpha_name in _EXPECTED_ALPHA_NAMES:
             assert alpha_name not in registered_names, (

@@ -4,7 +4,7 @@ The PRD `kaos-modules/docs/internal/dynamic-tool-planning-prd.md` §4
 splits this registration into two granular entry points that match
 the SessionToolSet group taxonomy in kaos-agents:
 
-- :func:`register_llm_core_program_tools` — the 24 typed-program
+- :func:`register_llm_core_program_tools` — the 26 typed-program
   wrappers (Call, ChainOfThought, ReAct, Refine, Judge, Ensemble,
   Evaluate, optimizers, codecs, MIPRO, batch ops, recipe tuning,
   metric, cost report, save/load). These are the "programs" group:
@@ -18,7 +18,7 @@ the SessionToolSet group taxonomy in kaos-agents:
   selectively.
 
 :func:`register_llm_core_tools` remains the backward-compatible
-union — every existing caller continues to see the same 30 tools.
+union — every existing caller continues to see the same 32 tools.
 """
 
 from __future__ import annotations
@@ -39,6 +39,7 @@ from kaos_llm_core.integrations.mcp.batch_status import KaosLLMCoreBatchStatusTo
 from kaos_llm_core.integrations.mcp.best_of_n import KaosLLMCoreBestOfNTool
 from kaos_llm_core.integrations.mcp.call import KaosLLMCoreCallTool
 from kaos_llm_core.integrations.mcp.chain_of_thought import KaosLLMCoreChainOfThoughtTool
+from kaos_llm_core.integrations.mcp.classify import KaosLLMCoreClassifyTool
 from kaos_llm_core.integrations.mcp.cost_report import KaosLLMCoreCostReportTool
 from kaos_llm_core.integrations.mcp.ensemble import KaosLLMCoreEnsembleTool
 from kaos_llm_core.integrations.mcp.evaluate import KaosLLMCoreEvaluateTool
@@ -55,6 +56,7 @@ from kaos_llm_core.integrations.mcp.react import KaosLLMCoreReActTool
 from kaos_llm_core.integrations.mcp.recipe_tune import KaosLLMCoreRecipeTuneTool
 from kaos_llm_core.integrations.mcp.refine import KaosLLMCoreRefineTool
 from kaos_llm_core.integrations.mcp.save_load import KaosLLMCoreSaveLoadTool
+from kaos_llm_core.integrations.mcp.summarize import KaosLLMCoreSummarizeTool
 
 
 def _ensure_settings(runtime: KaosRuntime) -> None:
@@ -66,7 +68,7 @@ def _ensure_settings(runtime: KaosRuntime) -> None:
 
 
 def register_llm_core_program_tools(runtime: KaosRuntime) -> int:
-    """Register the 24 typed-program wrapper tools.
+    """Register the 26 typed-program wrapper tools.
 
     Returns the number of tools registered. Per the PRD this is the
     "programs" group of the SessionToolSet ceiling — denied by default
@@ -100,6 +102,15 @@ def register_llm_core_program_tools(runtime: KaosRuntime) -> int:
         KaosLLMCoreBatchStatusTool(),
         KaosLLMCoreBatchResultsTool(),
         KaosLLMCoreMiproV2Tool(),
+        # §7.3 declarative façade tools — plan
+        # `docs/summarization-classification-plan.md` §7.1 wrapped as
+        # dedicated MCP tools. Complement (do not replace)
+        # ``KaosLLMCoreProgramExecuteTool``: those Programs are
+        # accessible by name through it, but ``summarize`` /
+        # ``classify`` give a smaller, declarative surface that picks
+        # the right Program for the input size automatically.
+        KaosLLMCoreSummarizeTool(),
+        KaosLLMCoreClassifyTool(),
     ]
     for tool in tools:
         runtime.tools.register_tool(tool)
@@ -136,7 +147,7 @@ def register_llm_core_tools(runtime: KaosRuntime) -> int:
     Backward-compatible union of
     :func:`register_llm_core_program_tools` and
     :func:`register_llm_core_alpha_tools`. Existing callers see the
-    same 30 tools as before — no schema, name, or behavior changes.
+    same 32 tools as before — no schema, name, or behavior changes.
     """
     count = register_llm_core_program_tools(runtime)
     count += register_llm_core_alpha_tools(runtime)
