@@ -58,25 +58,31 @@ from kaos_llm_core.programs.summarize.abstractive import (
     AbstractiveSummarySignature,
     CitedSummary,
 )
+from kaos_llm_core.programs.summarize.clustered import ClusteredSummary
 from kaos_llm_core.programs.summarize.extractive import (
     ExtractiveSummary,
     RankedSegment,
     Ranker,
 )
+from kaos_llm_core.programs.summarize.hybrid import HybridSummary
 from kaos_llm_core.programs.summarize.long_doc import (
     HierarchicalSummary,
     MapReduceSummary,
     RefineSummary,
 )
+from kaos_llm_core.programs.summarize.query_focused import QueryFocusedSummary
 from kaos_llm_core.programs.summarize.structured import StructuredSummary
 
 __all__ = [
     "AbstractiveSummary",
     "AbstractiveSummarySignature",
     "CitedSummary",
+    "ClusteredSummary",
     "ExtractiveSummary",
     "HierarchicalSummary",
+    "HybridSummary",
     "MapReduceSummary",
+    "QueryFocusedSummary",
     "RankedSegment",
     "Ranker",
     "RefineSummary",

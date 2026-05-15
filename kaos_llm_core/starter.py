@@ -639,8 +639,11 @@ async def classify_doc(
     labels: LabelSet | Sequence[str],
     *,
     model: str | None = None,
-    supervision: Literal["zero_shot", "few_shot"] = "zero_shot",
+    supervision: Literal["zero_shot", "few_shot", "prototype", "retrieval", "nli"] = "zero_shot",
     examples: Sequence[Any] | None = None,
+    embedder: Any = None,
+    corpus: Sequence[tuple[str, str]] | None = None,
+    nli_scorer: Any = None,
     long_strategy: LongClassifyStrategy = "auto",
     aggregator: Aggregator | None = None,
     cache: ChunkCache | None = None,
@@ -663,16 +666,33 @@ async def classify_doc(
             policy flags) or a bare sequence of label names — the
             façade builds a flat ``LabelSet(exclusive=True,
             allow_abstain=True)`` from the names.
-        model: Provider model identifier.
-        supervision: ``"zero_shot"`` (default) routes through
-            :class:`~kaos_llm_core.programs.classify.ZeroShotClassify`;
-            ``"few_shot"`` requires ``examples`` and routes through
-            :class:`~kaos_llm_core.programs.classify.FewShotClassify`.
-            ``"prototype"`` (no-LLM) and ``"retrieval"`` (Phase 6)
-            are not yet wired through this façade — construct
-            :class:`~kaos_llm_core.programs.classify.PrototypeClassify`
-            directly when you want the no-LLM path.
+        model: Provider model identifier. Required only for LLM
+            supervision modes (``zero_shot`` / ``few_shot``).
+        supervision: One of five modes (plan §7.1):
+
+            - ``"zero_shot"`` (default) → :class:`ZeroShotClassify`.
+            - ``"few_shot"`` → :class:`FewShotClassify`. Requires
+              ``examples``.
+            - ``"prototype"`` → no-LLM :class:`PrototypeClassify`.
+              Requires ``embedder``.
+            - ``"retrieval"`` → no-LLM (or LLM-tie-broken)
+              :class:`RetrievalClassify`. Requires ``embedder`` +
+              ``corpus``.
+            - ``"nli"`` → no-LLM
+              :class:`ZeroShotNLIClassifier`. Requires ``nli_scorer``.
+
         examples: Required when ``supervision="few_shot"``.
+        embedder: Required when
+            ``supervision in {"prototype", "retrieval"}``. Object
+            conforming to
+            :class:`~kaos_llm_core.programs.classify.Embedder`
+            (canonical: ``kaos_nlp_transformers.EmbeddingModel``).
+        corpus: Required when ``supervision="retrieval"``. List of
+            ``(example_text, label_name)`` pairs.
+        nli_scorer: Required when ``supervision="nli"``. Object
+            conforming to
+            :class:`~kaos_llm_core.programs.classify.NLIScorer`
+            (canonical: a future ``kaos_nlp_transformers.NliModel``).
         long_strategy: ``"auto"`` (default) picks ``"single"`` when
             ``len(doc) <= 12_000`` characters and ``"chunk"``
             otherwise. ``"single"`` forces a single classifier call
@@ -689,10 +709,12 @@ async def classify_doc(
     from kaos_llm_core.programs.classify import (
         ChunkedClassify,
         FewShotClassify,
+        PrototypeClassify,
+        RetrievalClassify,
         ZeroShotClassify,
+        ZeroShotNLIClassifier,
     )
 
-    resolved_model = _resolve_default_model(model, settings=settings)
     resolved_settings = settings or KaosLLMCoreSettings()
 
     label_set: LabelSet
@@ -707,22 +729,53 @@ async def classify_doc(
             )
         label_set = LabelSet.from_names(names)
 
-    leaf_kwargs: dict[str, Any] = {
-        "labels": label_set,
-        "model": resolved_model,
-        "core_settings": resolved_settings,
-    }
-    if supervision == "few_shot":
-        if not examples:
+    # Resolve the leaf Program by supervision mode.
+    leaf_program: Any
+    if supervision in {"zero_shot", "few_shot"}:
+        resolved_model = _resolve_default_model(model, settings=settings)
+        leaf_kwargs: dict[str, Any] = {
+            "labels": label_set,
+            "model": resolved_model,
+            "core_settings": resolved_settings,
+        }
+        if supervision == "few_shot":
+            if not examples:
+                raise CallError(
+                    "classify_doc(supervision='few_shot') requires a non-empty "
+                    "`examples=` sequence. Pass at least one Example or switch "
+                    "to supervision='zero_shot'."
+                )
+            leaf_kwargs["examples"] = list(examples)
+            leaf_program = FewShotClassify(**leaf_kwargs)
+        else:
+            leaf_program = ZeroShotClassify(**leaf_kwargs)
+    elif supervision == "prototype":
+        if embedder is None:
             raise CallError(
-                "classify_doc(supervision='few_shot') requires a non-empty "
-                "`examples=` sequence. Pass at least one Example or switch "
-                "to supervision='zero_shot'."
+                "classify_doc(supervision='prototype') requires an `embedder=` "
+                "argument (any object conforming to the Embedder protocol)."
             )
-        leaf_kwargs["examples"] = list(examples)
-        leaf_program: ZeroShotClassify = FewShotClassify(**leaf_kwargs)
-    else:
-        leaf_program = ZeroShotClassify(**leaf_kwargs)
+        leaf_program = PrototypeClassify(labels=label_set, embedder=embedder)
+    elif supervision == "retrieval":
+        if embedder is None or corpus is None:
+            raise CallError(
+                "classify_doc(supervision='retrieval') requires both `embedder=` "
+                "and `corpus=` arguments."
+            )
+        leaf_program = RetrievalClassify(
+            labels=label_set,
+            embedder=embedder,
+            corpus=list(corpus),
+        )
+    elif supervision == "nli":
+        if nli_scorer is None:
+            raise CallError(
+                "classify_doc(supervision='nli') requires an `nli_scorer=` "
+                "argument (any object conforming to the NLIScorer protocol)."
+            )
+        leaf_program = ZeroShotNLIClassifier(labels=label_set, scorer=nli_scorer)
+    else:  # pragma: no cover - guarded by Literal
+        raise CallError(f"unknown supervision mode: {supervision!r}")
 
     strategy = _resolve_long_classify_strategy(len(doc), long_strategy)
     if strategy == "single":
@@ -769,8 +822,11 @@ def classify_doc_sync(
     labels: LabelSet | Sequence[str],
     *,
     model: str | None = None,
-    supervision: Literal["zero_shot", "few_shot"] = "zero_shot",
+    supervision: Literal["zero_shot", "few_shot", "prototype", "retrieval", "nli"] = "zero_shot",
     examples: Sequence[Any] | None = None,
+    embedder: Any = None,
+    corpus: Sequence[tuple[str, str]] | None = None,
+    nli_scorer: Any = None,
     long_strategy: LongClassifyStrategy = "auto",
     aggregator: Aggregator | None = None,
     cache: ChunkCache | None = None,
@@ -786,6 +842,9 @@ def classify_doc_sync(
             model=model,
             supervision=supervision,
             examples=examples,
+            embedder=embedder,
+            corpus=corpus,
+            nli_scorer=nli_scorer,
             long_strategy=long_strategy,
             aggregator=aggregator,
             cache=cache,

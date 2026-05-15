@@ -10,6 +10,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Phase 6 retrieval-augmented Programs** (plan §6.1, §6.2,
+  §8.6 item D). Four new Programs in `kaos-llm-core` 0.1.0a10:
+
+  - `kaos_llm_core.programs.summarize.QueryFocusedSummary` —
+    segment + embed + cosine-rank (via the SIMD
+    `cosine_one_to_many_normalized` fast path) → top-k → routed
+    through `CitedSummary` by default. Accepts the same
+    `Embedder` protocol as `PrototypeClassify`.
+
+  - `kaos_llm_core.programs.summarize.ClusteredSummary` — long-doc
+    summarizer specialising `_LongDocBase` with the new `Cluster`
+    reducer. Keeps the cache + budget wiring from §8.5.
+
+  - `kaos_llm_core.programs.summarize.HybridSummary` —
+    extractive top-k pre-filter then `CitedSummary` (default) or
+    `AbstractiveSummary` over the picks. `method="hybrid"`.
+
+  - `kaos_llm_core.programs.classify.RetrievalClassify` — kNN over
+    a labeled corpus + weighted majority vote, optional LLM
+    tie-break via a caller-supplied `tie_break` Program. Closes
+    plan §11's no-LLM-many-shot endgame.
+
+- **`Cluster` reducer** (`kaos_llm_core.composition.Cluster`,
+  plan §5.1 Phase-2 leftover). Spherical k-means in cosine space
+  with deterministic seed. `k="auto"` resolves to
+  `max(2, min(round(sqrt(n)), 8))`. Required by
+  `ClusteredSummary` and exposed for direct use through
+  `kaos_llm_core.composition`. The `ClusterEmbedder` protocol
+  mirrors the existing `Embedder` shape.
+
+- **Phase 8 zero-shot NLI classifier** (plan §4.2.3, §8 Phase 8,
+  §8.6 item F — `kaos-llm-core` half):
+
+  - `kaos_llm_core.programs.classify.ZeroShotNLIClassifier`
+    formulates each label as a natural-language hypothesis via
+    `hypothesis_template.format(label.prompt_text)` (default
+    `"This text is about {}."`) and picks the label maximising
+    `P(entailment)`. Optional `min_score` abstention floor.
+  - `NLIScorer` / `NLIScore` Protocols mirror the
+    `Ranker` / `Embedder` pattern; any object producing three
+    probabilities per hypothesis satisfies the contract. The
+    canonical `kaos_nlp_transformers.NliModel` is a separate
+    follow-up.
+  - `classify_doc` now accepts five `supervision` modes
+    (`zero_shot`, `few_shot`, `prototype`, `retrieval`, `nli`)
+    with per-mode required kwargs (`examples=` / `embedder=` /
+    `corpus=` / `nli_scorer=`). Each branch validates its
+    requirements with a `CallError`.
+
 - **Phase 7 declarative surfaces** (plan §7.1 + §7.2 + §7.3,
   §8.6 item E) in three layers:
 

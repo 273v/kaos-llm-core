@@ -284,6 +284,32 @@ class TestClassifyDocSingle:
                 supervision="few_shot",
             )
 
+    @pytest.mark.asyncio
+    async def test_prototype_requires_embedder(self) -> None:
+        with pytest.raises(CallError, match="embedder"):
+            await classify_doc("x", _LABEL_NAMES, supervision="prototype")
+
+    @pytest.mark.asyncio
+    async def test_retrieval_requires_corpus(self) -> None:
+        class _Emb:
+            def embed(self, texts, *, batch_size=32):
+                import numpy as np
+
+                return np.zeros((len(list(texts)), 2), dtype=np.float32)
+
+        with pytest.raises(CallError, match="corpus"):
+            await classify_doc(
+                "x",
+                _LABEL_NAMES,
+                supervision="retrieval",
+                embedder=_Emb(),
+            )
+
+    @pytest.mark.asyncio
+    async def test_nli_requires_scorer(self) -> None:
+        with pytest.raises(CallError, match="nli_scorer"):
+            await classify_doc("x", _LABEL_NAMES, supervision="nli")
+
 
 class TestClassifyDocLong:
     @pytest.mark.asyncio
