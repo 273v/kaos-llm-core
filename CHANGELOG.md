@@ -10,6 +10,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **First live quality-harness run** (plan §8.6 item A) against
+  `anthropic:claude-haiku-4-5`. Three new artifacts under
+  `docs/benchmarks/`:
+
+  - `quality-cuad-grounding.json` — 25 (contract × clause) cells,
+    100 % verified-claim rate, 68 % cells with ≥1 verified span, 0
+    refusals, 20 % cells with a gold-clause match.
+  - `quality-billsum-rouge.json` — 60 cells (20 bills × 3 programs).
+    `AbstractiveSummary` ROUGE-1 / 2 / L = 0.48 / 0.21 / 0.31;
+    `HierarchicalSummary` 0.46 / 0.20 / 0.28; `MapReduceSummary`
+    0.46 / 0.20 / 0.28. 0 errors.
+  - `quality-ledgar-f1.json` — 100 clauses, 100-class taxonomy,
+    68 classes seen. F1-macro 0.54, F1-micro / accuracy 0.66
+    (top of the harness's expected 0.30–0.55 band).
+
+### Fixed
+
+- `tests/quality/test_cuad_grounding.py` referenced
+  `summary.refused`, which is not a field on the :class:`Summary`
+  Pydantic model — the refusal state lives in
+  `metadata["cited.refused"]`. Fixed; the live CUAD harness now
+  runs clean.
+- `tests/quality/test_billsum_rouge.py` called
+  `rouge_score.rouge_scorer.RougeScorer` without explicitly
+  importing the `rouge_scorer` submodule. Fixed with a one-line
+  `from rouge_score import rouge_scorer` after the
+  `importorskip`.
+
+### Added
+
 - **Phase 6 retrieval-augmented Programs** (plan §6.1, §6.2,
   §8.6 item D). Four new Programs in `kaos-llm-core` 0.1.0a10:
 

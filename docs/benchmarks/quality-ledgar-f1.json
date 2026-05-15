@@ -1,0 +1,1195 @@
+{
+  "harness": "LEDGAR ZeroShotClassify F1",
+  "dataset": "lex_glue/ledgar test split (CC-BY-NC-SA-4.0 -- not vendored)",
+  "n_label_names": 100,
+  "captured_at": "2026-05-15",
+  "aggregate": {
+    "n_clauses": 100,
+    "n_scored": 100,
+    "n_errors": 0,
+    "f1_macro": 0.5413,
+    "f1_micro": 0.66,
+    "accuracy": 0.66,
+    "n_classes_seen": 68
+  },
+  "per_class": [
+    {
+      "label": "Agreements",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 1
+    },
+    {
+      "label": "Amendments",
+      "precision": 0.75,
+      "recall": 1.0,
+      "f1": 0.8571,
+      "support": 3
+    },
+    {
+      "label": "Anti-Corruption Laws",
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1": 0.6667,
+      "support": 1
+    },
+    {
+      "label": "Applicable Laws",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 2
+    },
+    {
+      "label": "Approvals",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 0
+    },
+    {
+      "label": "Arbitration",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 0
+    },
+    {
+      "label": "Assignments",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 1
+    },
+    {
+      "label": "Authority",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 1
+    },
+    {
+      "label": "Base Salary",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 2
+    },
+    {
+      "label": "Binding Effects",
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1": 0.6667,
+      "support": 1
+    },
+    {
+      "label": "Capitalization",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 1
+    },
+    {
+      "label": "Change In Control",
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1": 0.6667,
+      "support": 1
+    },
+    {
+      "label": "Closings",
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1": 0.6667,
+      "support": 1
+    },
+    {
+      "label": "Compliance With Laws",
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1": 0.6667,
+      "support": 2
+    },
+    {
+      "label": "Confidentiality",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 3
+    },
+    {
+      "label": "Consents",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 2
+    },
+    {
+      "label": "Construction",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 1
+    },
+    {
+      "label": "Costs",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 0
+    },
+    {
+      "label": "Counterparts",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 3
+    },
+    {
+      "label": "Death",
+      "precision": 1.0,
+      "recall": 0.6667,
+      "f1": 0.8,
+      "support": 3
+    },
+    {
+      "label": "Defined Terms",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 0
+    },
+    {
+      "label": "Disability",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 1
+    },
+    {
+      "label": "Disclosures",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 1
+    },
+    {
+      "label": "Employment",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 1
+    },
+    {
+      "label": "Entire Agreements",
+      "precision": 0.75,
+      "recall": 1.0,
+      "f1": 0.8571,
+      "support": 3
+    },
+    {
+      "label": "Expenses",
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1": 0.6667,
+      "support": 2
+    },
+    {
+      "label": "Fees",
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1": 0.6667,
+      "support": 2
+    },
+    {
+      "label": "Financial Statements",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 1
+    },
+    {
+      "label": "Forfeitures",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 0
+    },
+    {
+      "label": "Further Assurances",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 2
+    },
+    {
+      "label": "General",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 3
+    },
+    {
+      "label": "Governing Laws",
+      "precision": 0.5,
+      "recall": 0.6667,
+      "f1": 0.5714,
+      "support": 3
+    },
+    {
+      "label": "Headings",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 3
+    },
+    {
+      "label": "Indemnifications",
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1": 0.6667,
+      "support": 1
+    },
+    {
+      "label": "Insurances",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 1
+    },
+    {
+      "label": "Integration",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 2
+    },
+    {
+      "label": "Interests",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 1
+    },
+    {
+      "label": "Interpretations",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 1
+    },
+    {
+      "label": "Jurisdictions",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 0
+    },
+    {
+      "label": "Liens",
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1": 0.6667,
+      "support": 2
+    },
+    {
+      "label": "Litigations",
+      "precision": 1.0,
+      "recall": 0.3333,
+      "f1": 0.5,
+      "support": 3
+    },
+    {
+      "label": "Miscellaneous",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 1
+    },
+    {
+      "label": "Modifications",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 1
+    },
+    {
+      "label": "No Conflicts",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 1
+    },
+    {
+      "label": "No Defaults",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 1
+    },
+    {
+      "label": "No Waivers",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 1
+    },
+    {
+      "label": "Non-Disparagement",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 1
+    },
+    {
+      "label": "Notices",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 3
+    },
+    {
+      "label": "Organizations",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 1
+    },
+    {
+      "label": "Participations",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 1
+    },
+    {
+      "label": "Payments",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 0
+    },
+    {
+      "label": "Remedies",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 3
+    },
+    {
+      "label": "Representations",
+      "precision": 0.125,
+      "recall": 1.0,
+      "f1": 0.2222,
+      "support": 1
+    },
+    {
+      "label": "Sanctions",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 1
+    },
+    {
+      "label": "Severability",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 3
+    },
+    {
+      "label": "Solvency",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 2
+    },
+    {
+      "label": "Subsidiaries",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 1
+    },
+    {
+      "label": "Survival",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 3
+    },
+    {
+      "label": "Tax Withholdings",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 0
+    },
+    {
+      "label": "Taxes",
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1": 0.6667,
+      "support": 2
+    },
+    {
+      "label": "Terminations",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 1
+    },
+    {
+      "label": "Terms",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 2
+    },
+    {
+      "label": "Titles",
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1": 0.6667,
+      "support": 2
+    },
+    {
+      "label": "Use Of Proceeds",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 1
+    },
+    {
+      "label": "Vesting",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 0
+    },
+    {
+      "label": "Waiver Of Jury Trials",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 1
+    },
+    {
+      "label": "Waivers",
+      "precision": 0.6667,
+      "recall": 0.6667,
+      "f1": 0.6667,
+      "support": 3
+    },
+    {
+      "label": "Warranties",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 1
+    }
+  ],
+  "per_cell": [
+    {
+      "index": 0,
+      "gold": "Employment",
+      "predicted": "Employment",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 1,
+      "gold": "Remedies",
+      "predicted": "Forfeitures",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 2,
+      "gold": "Interpretations",
+      "predicted": "Defined Terms",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 3,
+      "gold": "Capitalization",
+      "predicted": "Disclosures",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 4,
+      "gold": "Subsidiaries",
+      "predicted": "Subsidiaries",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 5,
+      "gold": "Compliance With Laws",
+      "predicted": "Compliance With Laws",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 6,
+      "gold": "Further Assurances",
+      "predicted": "Further Assurances",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 7,
+      "gold": "Change In Control",
+      "predicted": "Change In Control",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 8,
+      "gold": "Counterparts",
+      "predicted": "Counterparts",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 9,
+      "gold": "Warranties",
+      "predicted": "Representations",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 10,
+      "gold": "Survival",
+      "predicted": "Survival",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 11,
+      "gold": "Binding Effects",
+      "predicted": "Binding Effects",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 12,
+      "gold": "Applicable Laws",
+      "predicted": "Governing Laws",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 13,
+      "gold": "Waivers",
+      "predicted": "Waivers",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 14,
+      "gold": "Governing Laws",
+      "predicted": "Governing Laws",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 15,
+      "gold": "Notices",
+      "predicted": "Notices",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 16,
+      "gold": "Waiver Of Jury Trials",
+      "predicted": "Waiver Of Jury Trials",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 17,
+      "gold": "Agreements",
+      "predicted": "Binding Effects",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 18,
+      "gold": "No Waivers",
+      "predicted": "Waivers",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 19,
+      "gold": "Severability",
+      "predicted": "Severability",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 20,
+      "gold": "Solvency",
+      "predicted": "Solvency",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 21,
+      "gold": "Interests",
+      "predicted": "Interests",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 22,
+      "gold": "Death",
+      "predicted": "Death",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 23,
+      "gold": "Terms",
+      "predicted": "Terms",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 24,
+      "gold": "Litigations",
+      "predicted": "Litigations",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 25,
+      "gold": "Amendments",
+      "predicted": "Amendments",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 26,
+      "gold": "Insurances",
+      "predicted": "Insurances",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 27,
+      "gold": "Headings",
+      "predicted": "Headings",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 28,
+      "gold": "Financial Statements",
+      "predicted": "Financial Statements",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 29,
+      "gold": "Counterparts",
+      "predicted": "Counterparts",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 30,
+      "gold": "Counterparts",
+      "predicted": "Counterparts",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 31,
+      "gold": "Integration",
+      "predicted": "Approvals",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 32,
+      "gold": "Assignments",
+      "predicted": "Assignments",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 33,
+      "gold": "Base Salary",
+      "predicted": "Base Salary",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 34,
+      "gold": "Headings",
+      "predicted": "Headings",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 35,
+      "gold": "Severability",
+      "predicted": "Severability",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 36,
+      "gold": "Compliance With Laws",
+      "predicted": "Tax Withholdings",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 37,
+      "gold": "Litigations",
+      "predicted": "Approvals",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 38,
+      "gold": "Applicable Laws",
+      "predicted": "Governing Laws",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 39,
+      "gold": "Construction",
+      "predicted": "Construction",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 40,
+      "gold": "Fees",
+      "predicted": "Fees",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 41,
+      "gold": "Headings",
+      "predicted": "Headings",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 42,
+      "gold": "Waivers",
+      "predicted": "No Waivers",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 43,
+      "gold": "Liens",
+      "predicted": "Representations",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 44,
+      "gold": "Authority",
+      "predicted": "Arbitration",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 45,
+      "gold": "Integration",
+      "predicted": "Entire Agreements",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 46,
+      "gold": "Severability",
+      "predicted": "Severability",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 47,
+      "gold": "General",
+      "predicted": "Payments",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 48,
+      "gold": "Participations",
+      "predicted": "Participations",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 49,
+      "gold": "Notices",
+      "predicted": "Notices",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 50,
+      "gold": "Modifications",
+      "predicted": "Modifications",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 51,
+      "gold": "Governing Laws",
+      "predicted": "Governing Laws",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 52,
+      "gold": "No Conflicts",
+      "predicted": "No Conflicts",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 53,
+      "gold": "Miscellaneous",
+      "predicted": "Amendments",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 54,
+      "gold": "Amendments",
+      "predicted": "Amendments",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 55,
+      "gold": "Entire Agreements",
+      "predicted": "Entire Agreements",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 56,
+      "gold": "Further Assurances",
+      "predicted": "Further Assurances",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 57,
+      "gold": "Liens",
+      "predicted": "Liens",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 58,
+      "gold": "Indemnifications",
+      "predicted": "Indemnifications",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 59,
+      "gold": "Solvency",
+      "predicted": "Solvency",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 60,
+      "gold": "Confidentiality",
+      "predicted": "Confidentiality",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 61,
+      "gold": "Consents",
+      "predicted": "Approvals",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 62,
+      "gold": "Governing Laws",
+      "predicted": "Jurisdictions",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 63,
+      "gold": "Survival",
+      "predicted": "Survival",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 64,
+      "gold": "Anti-Corruption Laws",
+      "predicted": "Anti-Corruption Laws",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 65,
+      "gold": "Notices",
+      "predicted": "Notices",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 66,
+      "gold": "Confidentiality",
+      "predicted": "Confidentiality",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 67,
+      "gold": "Base Salary",
+      "predicted": "Base Salary",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 68,
+      "gold": "Terms",
+      "predicted": "Terms",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 69,
+      "gold": "Taxes",
+      "predicted": "Tax Withholdings",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 70,
+      "gold": "Titles",
+      "predicted": "Representations",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 71,
+      "gold": "Amendments",
+      "predicted": "Amendments",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 72,
+      "gold": "Litigations",
+      "predicted": "Representations",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 73,
+      "gold": "Fees",
+      "predicted": "Closings",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 74,
+      "gold": "Terminations",
+      "predicted": "Terminations",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 75,
+      "gold": "Expenses",
+      "predicted": "Expenses",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 76,
+      "gold": "Expenses",
+      "predicted": "Costs",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 77,
+      "gold": "Death",
+      "predicted": "Death",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 78,
+      "gold": "Organizations",
+      "predicted": "Authority",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 79,
+      "gold": "No Defaults",
+      "predicted": "Representations",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 80,
+      "gold": "Taxes",
+      "predicted": "Taxes",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 81,
+      "gold": "Disclosures",
+      "predicted": "Representations",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 82,
+      "gold": "Remedies",
+      "predicted": "Forfeitures",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 83,
+      "gold": "Representations",
+      "predicted": "Representations",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 84,
+      "gold": "Disability",
+      "predicted": "Disability",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 85,
+      "gold": "Closings",
+      "predicted": "Closings",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 86,
+      "gold": "Confidentiality",
+      "predicted": "Confidentiality",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 87,
+      "gold": "Entire Agreements",
+      "predicted": "Entire Agreements",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 88,
+      "gold": "General",
+      "predicted": "Vesting",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 89,
+      "gold": "Sanctions",
+      "predicted": "Anti-Corruption Laws",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 90,
+      "gold": "Use Of Proceeds",
+      "predicted": "Use Of Proceeds",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 91,
+      "gold": "Non-Disparagement",
+      "predicted": "Non-Disparagement",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 92,
+      "gold": "Waivers",
+      "predicted": "Waivers",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 93,
+      "gold": "Survival",
+      "predicted": "Survival",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 94,
+      "gold": "Entire Agreements",
+      "predicted": "Entire Agreements",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 95,
+      "gold": "Remedies",
+      "predicted": "Indemnifications",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 96,
+      "gold": "Death",
+      "predicted": "Change In Control",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 97,
+      "gold": "Titles",
+      "predicted": "Titles",
+      "abstained": false,
+      "correct": true
+    },
+    {
+      "index": 98,
+      "gold": "General",
+      "predicted": "Vesting",
+      "abstained": false,
+      "correct": false
+    },
+    {
+      "index": 99,
+      "gold": "Consents",
+      "predicted": "Representations",
+      "abstained": false,
+      "correct": false
+    }
+  ]
+}

@@ -1,0 +1,369 @@
+{
+  "harness": "CUAD span-verification",
+  "model": "(provider default)",
+  "fixture": "kaos-nlp-core/tests/fixtures/cuad-sample (CC-BY-4.0)",
+  "captured_at": "2026-05-15",
+  "aggregate": {
+    "n_cells": 25,
+    "n_cells_with_any_verified_span": 17,
+    "n_cells_refused": 0,
+    "n_cells_with_gold_in_verified_spans": 5,
+    "fraction_with_any_verified_span": 0.68,
+    "fraction_refused": 0.0,
+    "fraction_with_gold_match": 0.2,
+    "overall_verified_claim_rate": 1.0
+  },
+  "per_cell": [
+    {
+      "summary_head": "This Sponsorship Agreement is entered into on February 17, 1999, between Tickets.com, Inc., a Delaware corporation locat",
+      "refused": false,
+      "n_verified_spans": 2,
+      "n_total_claims": 2,
+      "n_verified_claims": 2,
+      "doc_id": "ticketscominc-06-22-1999-ex-10-22-sponsorship-agreement",
+      "clause": "Parties",
+      "gold_count": 4,
+      "gold_in_verified_spans": false,
+      "verified_span_heads": [
+        "                                       San Diego, CA 92191                                                                   (619) 558-9390\n\n                   ",
+        "red into on February 17, 1999 (\"Effective Date\"), by and bet"
+      ]
+    },
+    {
+      "summary_head": "The Agreement Date clause identifies that this Sponsorship Agreement was made and entered into on February 17, 1999, whi",
+      "refused": false,
+      "n_verified_spans": 1,
+      "n_total_claims": 1,
+      "n_verified_claims": 1,
+      "doc_id": "ticketscominc-06-22-1999-ex-10-22-sponsorship-agreement",
+      "clause": "Agreement Date",
+      "gold_count": 1,
+      "gold_in_verified_spans": false,
+      "verified_span_heads": [
+        "                                                                P.O. BOX 910091                           "
+      ]
+    },
+    {
+      "summary_head": "The Governing Law clause states that the Agreement shall be governed by and construed in accordance with the laws of the",
+      "refused": false,
+      "n_verified_spans": 2,
+      "n_total_claims": 2,
+      "n_verified_claims": 2,
+      "doc_id": "ticketscominc-06-22-1999-ex-10-22-sponsorship-agreement",
+      "clause": "Governing Law",
+      "gold_count": 1,
+      "gold_in_verified_spans": false,
+      "verified_span_heads": [
+        "uent to the Effective Date, provided however, that Tickets may terminate this Agreement for any reason upon thirty (30) days' notice to MP",
+        ". com at any time prior to the expiration of sixty (60) days subsequent to the Effective Date. Furthermore, for a thirty (30) day period, beginning thirty (30) "
+      ]
+    },
+    {
+      "summary_head": "The agreement contains a termination for convenience provision that allows Tickets to terminate the sponsorship agreemen",
+      "refused": false,
+      "n_verified_spans": 3,
+      "n_total_claims": 3,
+      "n_verified_claims": 3,
+      "doc_id": "ticketscominc-06-22-1999-ex-10-22-sponsorship-agreement",
+      "clause": "Termination For Convenience",
+      "gold_count": 1,
+      "gold_in_verified_spans": true,
+      "verified_span_heads": [
+        "the Effective Date; (ii) $[***] payable on or before one month subsequent to the Effective Date; (iii) $[***] payable on or before two m",
+        "he Effective Date; (iv) $[***] payable on or before three months subsequent to the Effective Date; (v) $[***] payable on or before four months subsequent",
+        "to the Effective Date; (vi) $[***] payable on or before five months subsequent to the Ef"
+      ]
+    },
+    {
+      "summary_head": "",
+      "refused": false,
+      "n_verified_spans": 0,
+      "n_total_claims": 0,
+      "n_verified_claims": 0,
+      "doc_id": "ticketscominc-06-22-1999-ex-10-22-sponsorship-agreement",
+      "clause": "Cap On Liability",
+      "gold_count": 1,
+      "gold_in_verified_spans": false,
+      "verified_span_heads": []
+    },
+    {
+      "summary_head": "The Parties to this Co-Branding Agreement are Lucent Technologies Inc., a Delaware corporation with principal place of b",
+      "refused": false,
+      "n_verified_spans": 3,
+      "n_total_claims": 3,
+      "n_verified_claims": 3,
+      "doc_id": "mphasetechnologiesinc-20030911-10-k-ex-10-15-1560667-ex-10-1",
+      "clause": "Parties",
+      "gold_count": 5,
+      "gold_in_verified_spans": true,
+      "verified_span_heads": [
+        " 2003 by and between Lucent Technologies Inc., a Delaware corporation having a principal place of business at 600 Mountain Avenue, M",
+        " Hill, New Jersey 07974 (\"Lucent\") and mPhase Technologies Inc., a New Jersey corporation located at 587 Con",
+        "eement is made this 21st day of Januar"
+      ]
+    },
+    {
+      "summary_head": "The Agreement Date clause is not present in this co-branding agreement. However, the agreement itself is dated the 21st ",
+      "refused": false,
+      "n_verified_spans": 2,
+      "n_total_claims": 2,
+      "n_verified_claims": 2,
+      "doc_id": "mphasetechnologiesinc-20030911-10-k-ex-10-15-1560667-ex-10-1",
+      "clause": "Agreement Date",
+      "gold_count": 1,
+      "gold_in_verified_spans": true,
+      "verified_span_heads": [
+        "EXHIBIT 10.15\n\nCO-BRANDING AGREEMENT\n\nThis Agreement is made this 21st day of January 2003 by and be",
+        "003 by and between Lucent Technologies Inc., a"
+      ]
+    },
+    {
+      "summary_head": "",
+      "refused": false,
+      "n_verified_spans": 0,
+      "n_total_claims": 0,
+      "n_verified_claims": 0,
+      "doc_id": "mphasetechnologiesinc-20030911-10-k-ex-10-15-1560667-ex-10-1",
+      "clause": "Governing Law",
+      "gold_count": 1,
+      "gold_in_verified_spans": false,
+      "verified_span_heads": []
+    },
+    {
+      "summary_head": "",
+      "refused": false,
+      "n_verified_spans": 0,
+      "n_total_claims": 0,
+      "n_verified_claims": 0,
+      "doc_id": "mphasetechnologiesinc-20030911-10-k-ex-10-15-1560667-ex-10-1",
+      "clause": "Termination For Convenience",
+      "gold_count": 1,
+      "gold_in_verified_spans": false,
+      "verified_span_heads": []
+    },
+    {
+      "summary_head": "",
+      "refused": false,
+      "n_verified_spans": 0,
+      "n_total_claims": 0,
+      "n_verified_claims": 0,
+      "doc_id": "mphasetechnologiesinc-20030911-10-k-ex-10-15-1560667-ex-10-1",
+      "clause": "Cap On Liability",
+      "gold_count": 1,
+      "gold_in_verified_spans": false,
+      "verified_span_heads": []
+    },
+    {
+      "summary_head": "The 'Parties' clause identifies the two contracting entities: Modus Media International (MMI), located at Landdrostlaan ",
+      "refused": false,
+      "n_verified_spans": 2,
+      "n_total_claims": 2,
+      "n_verified_claims": 2,
+      "doc_id": "dragonsystemsinc-01-08-1999-ex-10-17-outsourcing-agreement",
+      "clause": "Parties",
+      "gold_count": 4,
+      "gold_in_verified_spans": true,
+      "verified_span_heads": [
+        "tial Materials omitted and filed separately with the         Securities and Exchange Commission. Asterisks denote omissions.",
+        "            OUTSOURCING AGREEMENT\n\n                                 BETWEEN:\n\n                         MODUS M"
+      ]
+    },
+    {
+      "summary_head": "",
+      "refused": false,
+      "n_verified_spans": 0,
+      "n_total_claims": 0,
+      "n_verified_claims": 0,
+      "doc_id": "dragonsystemsinc-01-08-1999-ex-10-17-outsourcing-agreement",
+      "clause": "Agreement Date",
+      "gold_count": 1,
+      "gold_in_verified_spans": false,
+      "verified_span_heads": []
+    },
+    {
+      "summary_head": "The Governing Law clause specifies that any lawsuit relating to matters arising under this Agreement may be initiated in",
+      "refused": false,
+      "n_verified_spans": 2,
+      "n_total_claims": 2,
+      "n_verified_claims": 2,
+      "doc_id": "dragonsystemsinc-01-08-1999-ex-10-17-outsourcing-agreement",
+      "clause": "Governing Law",
+      "gold_count": 1,
+      "gold_in_verified_spans": false,
+      "verified_span_heads": [
+        " comply with the s",
+        "cification set out by Dragon \\s\\ JB. The Services are deemed to be accepted if MMI does not receive a notification within "
+      ]
+    },
+    {
+      "summary_head": "The contract includes a termination provision under Section 12 (Term and Termination). The agreement is valid for an ind",
+      "refused": false,
+      "n_verified_spans": 3,
+      "n_total_claims": 3,
+      "n_verified_claims": 3,
+      "doc_id": "dragonsystemsinc-01-08-1999-ex-10-17-outsourcing-agreement",
+      "clause": "Termination For Convenience",
+      "gold_count": 1,
+      "gold_in_verified_spans": false,
+      "verified_span_heads": [
+        "ems. Should MMI not supply the Services as agreed",
+        "r should the Services become defective within 6 months from their delivery t",
+        "rform the Services within a reasonable period of time, rescind the contract or refuse payment of the com"
+      ]
+    },
+    {
+      "summary_head": "",
+      "refused": false,
+      "n_verified_spans": 0,
+      "n_total_claims": 0,
+      "n_verified_claims": 0,
+      "doc_id": "dragonsystemsinc-01-08-1999-ex-10-17-outsourcing-agreement",
+      "clause": "Cap On Liability",
+      "gold_count": 1,
+      "gold_in_verified_spans": false,
+      "verified_span_heads": []
+    },
+    {
+      "summary_head": "This Web Site Hosting Agreement is entered into by Centrack International, a Florida corporation (the Customer), and i-o",
+      "refused": false,
+      "n_verified_spans": 4,
+      "n_total_claims": 4,
+      "n_verified_claims": 4,
+      "doc_id": "centrackinternationalinc-10-29-1999-ex-10-3-web-site-hosting",
+      "clause": "Parties",
+      "gold_count": 6,
+      "gold_in_verified_spans": false,
+      "verified_span_heads": [
+        "avenida del sol, boca raton, florida, 33432\n\nWEB SITE HOSTING AGREEMENT\n\nThis WEB SITE HOSTING AGREEMENT (\"this Agreement\") is entered into this 6t",
+        "394.9484 o 561.394-9773 fax 173",
+        "          proper environmental conditions in the area(s) where the Hosting             Comput",
+        "          proper environmental conditions in the area(s) where the Hosting             Comput"
+      ]
+    },
+    {
+      "summary_head": "This Web Site Hosting Agreement was entered into on April 6, 1999 between Centrack International and i-on interactive. T",
+      "refused": false,
+      "n_verified_spans": 2,
+      "n_total_claims": 2,
+      "n_verified_claims": 2,
+      "doc_id": "centrackinternationalinc-10-29-1999-ex-10-3-web-site-hosting",
+      "clause": "Agreement Date",
+      "gold_count": 1,
+      "gold_in_verified_spans": false,
+      "verified_span_heads": [
+        " 10.3\n\nI-on. (LOGO) www.i-on.com 561.394.9484 o 561.394-9773 fax 1733 av",
+        "r #5 above;\n\n      11. access to the Hosted Site via the ftp protocol to an administrative              account d"
+      ]
+    },
+    {
+      "summary_head": "The Governing Law clause establishes that this Agreement is governed by the laws of the State of Florida. The agreement'",
+      "refused": false,
+      "n_verified_spans": 1,
+      "n_total_claims": 1,
+      "n_verified_claims": 1,
+      "doc_id": "centrackinternationalinc-10-29-1999-ex-10-3-web-site-hosting",
+      "clause": "Governing Law",
+      "gold_count": 1,
+      "gold_in_verified_spans": false,
+      "verified_span_heads": [
+        "eport of user activity on the Hosted Site.\n\nRESPONSIBILITIES OF THE CUSTOMER\n\nThe Customer is responsible for paying i-on the recurring monthly fee in the amoun"
+      ]
+    },
+    {
+      "summary_head": "The Web Site Hosting Agreement contains a termination provision allowing either party to terminate without cause upon th",
+      "refused": false,
+      "n_verified_spans": 2,
+      "n_total_claims": 2,
+      "n_verified_claims": 2,
+      "doc_id": "centrackinternationalinc-10-29-1999-ex-10-3-web-site-hosting",
+      "clause": "Termination For Convenience",
+      "gold_count": 1,
+      "gold_in_verified_spans": false,
+      "verified_span_heads": [
+        "        Computer;\n\n      4. an emergency electrical power backup system for the Hosti",
+        "ng             Computer;\n\n      5. up to 150 MB of mirrored computer storage on the Hosting Computer;\n\n      6. arc"
+      ]
+    },
+    {
+      "summary_head": "The Web Site Hosting Agreement contains a 'Limitation of Liability' clause that restricts i-on's liability in two ways: ",
+      "refused": false,
+      "n_verified_spans": 2,
+      "n_total_claims": 2,
+      "n_verified_claims": 2,
+      "doc_id": "centrackinternationalinc-10-29-1999-ex-10-3-web-site-hosting",
+      "clause": "Cap On Liability",
+      "gold_count": 1,
+      "gold_in_verified_spans": false,
+      "verified_span_heads": [
+        " Hosting Computer;\n\n      8.  use of the Microsoft Windows NT Server 4.0 or higher operating              system software for t",
+        "he Hosting Computer and the Hosted Site;\n\n      9.  use of the Microsoft Internet Information Service (IIS) 3.0 or              higher Web server software fo"
+      ]
+    },
+    {
+      "summary_head": "The 'Parties' clause identifies the agreement as a Distributor Agreement between Lucid Inc., a New York corporation loca",
+      "refused": false,
+      "n_verified_spans": 1,
+      "n_total_claims": 1,
+      "n_verified_claims": 1,
+      "doc_id": "lucidinc-04-15-2011-ex-10-9-distributor-agreement",
+      "clause": "Parties",
+      "gold_count": 3,
+      "gold_in_verified_spans": true,
+      "verified_span_heads": [
+        "EXHIBIT 10.9    DISTRIBUTOR AGREEMENT     This Distributor Agreement (the 'Agreement') dated [*] is between     Lucid Inc., a New York corporation, havin"
+      ]
+    },
+    {
+      "summary_head": "",
+      "refused": false,
+      "n_verified_spans": 0,
+      "n_total_claims": 0,
+      "n_verified_claims": 0,
+      "doc_id": "lucidinc-04-15-2011-ex-10-9-distributor-agreement",
+      "clause": "Agreement Date",
+      "gold_count": 1,
+      "gold_in_verified_spans": false,
+      "verified_span_heads": []
+    },
+    {
+      "summary_head": "The Governing Law clause specifies that the agreement shall be governed by and interpreted in accordance with the laws o",
+      "refused": false,
+      "n_verified_spans": 0,
+      "n_total_claims": 0,
+      "n_verified_claims": 0,
+      "doc_id": "lucidinc-04-15-2011-ex-10-9-distributor-agreement",
+      "clause": "Governing Law",
+      "gold_count": 1,
+      "gold_in_verified_spans": false,
+      "verified_span_heads": []
+    },
+    {
+      "summary_head": "The agreement contains a termination provision in Section 16 that allows either party to terminate by providing written ",
+      "refused": false,
+      "n_verified_spans": 1,
+      "n_total_claims": 1,
+      "n_verified_claims": 1,
+      "doc_id": "lucidinc-04-15-2011-ex-10-9-distributor-agreement",
+      "clause": "Termination For Convenience",
+      "gold_count": 1,
+      "gold_in_verified_spans": false,
+      "verified_span_heads": [
+        "minimum one full-time Lucid dedicated Product Manager sales p"
+      ]
+    },
+    {
+      "summary_head": "The agreement contains a limitation of liability clause (Section 19) that caps Lucid's liability to the Distributor. Luc",
+      "refused": false,
+      "n_verified_spans": 1,
+      "n_total_claims": 1,
+      "n_verified_claims": 1,
+      "doc_id": "lucidinc-04-15-2011-ex-10-9-distributor-agreement",
+      "clause": "Cap On Liability",
+      "gold_count": 4,
+      "gold_in_verified_spans": false,
+      "verified_span_heads": [
+        "ions as forecasted by the "
+      ]
+    }
+  ]
+}
