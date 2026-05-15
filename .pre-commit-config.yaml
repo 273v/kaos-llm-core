@@ -84,7 +84,7 @@ repos:
           - --min-confidence
           - "100"
           - --ignore-names
-          - client_id,scopes,authorization_endpoint,token_endpoint,device_authorization_endpoint,url,open_ch,container_tag,message_id,parent_message_id,kwargs,context_id,frame,signum,exc_type,tb
+          - client_id,scopes,authorization_endpoint,token_endpoint,device_authorization_endpoint,url,open_ch,container_tag,message_id,parent_message_id,kwargs,context_id,frame,signum,exc_type,tb,batch_size,premise
         language: system
         types: [python]
         pass_filenames: false
