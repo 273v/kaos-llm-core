@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0a10] — 2026-05-15
+
+Plan-driven release closing `docs/summarization-classification-plan.md`
+§8.6 items A, B, C, D, E, F. The plan's pyramid is now fully built on
+the `kaos-llm-core` side; only the `kaos-nlp-transformers` NLI
+checkpoint registration (plan §8 Phase 8 lower half) remains as a
+separate follow-up.
+
 ### Added
 
 - **First live quality-harness run** (plan §8.6 item A) against
