@@ -194,8 +194,12 @@ def test_billsum_rouge(billsum_pairs, rouge_scorer_fixture) -> None:
             aggregate[program_name] = {"n": 0, "errors": len(rows)}
             continue
 
-        def _mean(key: str) -> float:
-            return round(sum(r[key] for r in scored) / len(scored), 4)
+        def _mean(key: str, rows: list[dict] = scored) -> float:
+            # Default-arg binding snapshots ``scored`` so ruff's B023
+            # (closure-captures-loop-variable) doesn't fire -- the
+            # closure is consumed within this iteration, but explicit
+            # binding makes that obvious.
+            return round(sum(r[key] for r in rows) / len(rows), 4)
 
         aggregate[program_name] = {
             "n": len(scored),
