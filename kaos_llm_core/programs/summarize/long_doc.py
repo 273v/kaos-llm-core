@@ -14,6 +14,11 @@ the chunking step. The default is a paragraph chunker. The leaf
 summarizer is an :class:`~kaos_llm_core.programs.summarize.abstractive.AbstractiveSummary`;
 the merge step is its own :class:`Call` configured with a merge-aware
 signature.
+
+Phase-5 wiring (0.1.0a10): each Program accepts an optional
+``cache: ChunkCache`` and ``budget: Budget`` so callers can reuse
+per-chunk summaries across runs and bound end-to-end LLM cost.
+Plan §5.3 + §6.1 + §8.5 P1-7 / P1-8.
 """
 
 from __future__ import annotations
@@ -26,9 +31,11 @@ from kaos_llm_client import BaseProviderClient
 from kaos_llm_client.settings import KaosLLMSettings
 from kaos_nlp_core.chunking import Chunk, Chunker, ParagraphChunker
 
+from kaos_llm_core.cache.chunk import ChunkCache, ChunkCacheKey
 from kaos_llm_core.codecs.base import Codec
 from kaos_llm_core.composition import MapReduce, Reducer, Tree
 from kaos_llm_core.composition.reduce import Refine as RefineReducer
+from kaos_llm_core.optimization.budget import Budget, BudgetTracker
 from kaos_llm_core.programs.base import Program
 from kaos_llm_core.programs.call import Call
 from kaos_llm_core.programs.summarize.abstractive import AbstractiveSummary
@@ -36,6 +43,24 @@ from kaos_llm_core.results import Summary
 from kaos_llm_core.settings import KaosLLMCoreSettings
 from kaos_llm_core.signatures import InputField, OutputField, Signature
 from kaos_llm_core.types import Example
+
+
+def _model_hint(program: Program) -> str:
+    """Best-effort opaque model identifier for cache discrimination.
+
+    Reads the leaf program's ``summarizer`` / ``classifier`` /
+    ``cited_summarizer`` :class:`Call` attribute and returns the
+    ``_model`` string. Returns ``""`` when no Call child is present
+    (e.g. a no-LLM ``ExtractiveSummary``) — the cache key still works,
+    just without a per-model discriminator.
+    """
+    for attr in ("summarizer", "classifier", "cited_summarizer"):
+        sub = getattr(program, attr, None)
+        if sub is not None:
+            model = getattr(sub, "_model", None)
+            if model:
+                return str(model)
+    return ""
 
 
 class _MergeSummariesSignature(Signature):
@@ -83,10 +108,14 @@ class _LongDocBase(Program):
         max_retries: int | None = None,
         leaf_summarizer: AbstractiveSummary | None = None,
         max_concurrency: int = 8,
+        cache: ChunkCache | None = None,
+        budget: Budget | None = None,
         **kwargs: Any,
     ) -> None:
         self._chunker: Chunker = chunker or ParagraphChunker(max_tokens=1024)
         self._max_concurrency = max_concurrency
+        self._cache = cache
+        self._budget = budget
         # The leaf summarizer is reused per chunk. Auto-registered as
         # a Program child via __setattr__.
         self.summarize_chunk = leaf_summarizer or AbstractiveSummary(
@@ -122,27 +151,121 @@ class _LongDocBase(Program):
         chunks = self._chunker.chunk(text, parent_id=parent_id)
         return chunks
 
-    async def _summarize_chunks(self, chunks: Sequence[Chunk]) -> list[Summary[str]]:
-        """Run the leaf summarizer over each chunk with bounded concurrency."""
-        sem = asyncio.Semaphore(self._max_concurrency)
+    def _chunk_cache_key(self, chunk: Chunk) -> ChunkCacheKey:
+        return ChunkCacheKey(
+            chunk_id=chunk.chunk_id,
+            program_name=type(self.summarize_chunk).__name__,
+            model_hint=_model_hint(self.summarize_chunk),
+        )
 
-        async def _one(chunk: Chunk) -> Summary[str]:
-            async with sem:
-                summary = await self.summarize_chunk(text=chunk.text, parent_id=chunk.chunk_id)
-                # Tag chunk-level metadata for downstream provenance.
-                return summary.model_copy(
+    async def _summarize_one_chunk(
+        self,
+        chunk: Chunk,
+        budget_tracker: BudgetTracker | None,
+    ) -> tuple[Summary[str], bool]:
+        """Summarise a single chunk with cache + budget instrumentation.
+
+        Returns ``(summary, from_cache)``. ``from_cache=True`` means
+        the leaf invocation was skipped because the cache hit; the
+        budget tracker is not consumed in that case.
+        """
+        cache = self._cache
+        cache_key = self._chunk_cache_key(chunk) if cache is not None else None
+
+        if cache is not None and cache_key is not None:
+            cached = await cache.get(cache_key)
+            if cached is not None:
+                # Cached payloads come back as either a Summary (when
+                # the same in-memory cache was used in this process)
+                # or a dict (when round-tripped through a JSON cache).
+                if isinstance(cached, Summary):
+                    summary_cached: Summary[str] = cached
+                else:
+                    summary_cached = Summary[str].model_validate(cached)
+                summary_cached = summary_cached.model_copy(
                     update={
-                        "chunks_used": [chunk.chunk_id, *summary.chunks_used],
                         "metadata": {
-                            **dict(summary.metadata),
-                            "chunk.parent_id": chunk.parent_id,
-                            "chunk.start": chunk.start,
-                            "chunk.end": chunk.end,
+                            **dict(summary_cached.metadata),
+                            "cache.hit": True,
                         },
                     }
                 )
+                return self._tag_chunk_metadata(summary_cached, chunk), True
 
-        return await asyncio.gather(*(_one(chunk) for chunk in chunks))
+        # Cache miss (or no cache). Use ``invoke`` so we get usage for
+        # the budget tracker.
+        invocation = await self.summarize_chunk.invoke(
+            text=chunk.text,
+            parent_id=chunk.chunk_id,
+        )
+        summary = invocation.output
+
+        if budget_tracker is not None:
+            budget_tracker.consume(
+                trials=0,
+                cost_usd=float(invocation.usage.cost_usd or 0.0),
+                tokens=int(invocation.usage.total_tokens or 0),
+            )
+
+        if cache is not None and cache_key is not None:
+            await cache.set(cache_key, summary)
+
+        return self._tag_chunk_metadata(summary, chunk), False
+
+    @staticmethod
+    def _tag_chunk_metadata(summary: Summary[str], chunk: Chunk) -> Summary[str]:
+        """Decorate a leaf summary with chunk-level provenance."""
+        if chunk.chunk_id in summary.chunks_used:
+            chunks_used = summary.chunks_used
+        else:
+            chunks_used = [chunk.chunk_id, *summary.chunks_used]
+        return summary.model_copy(
+            update={
+                "chunks_used": chunks_used,
+                "metadata": {
+                    **dict(summary.metadata),
+                    "chunk.parent_id": chunk.parent_id,
+                    "chunk.start": chunk.start,
+                    "chunk.end": chunk.end,
+                },
+            }
+        )
+
+    async def _summarize_chunks(
+        self,
+        chunks: Sequence[Chunk],
+        budget_tracker: BudgetTracker | None,
+    ) -> tuple[list[Summary[str]], int, int]:
+        """Run the leaf summarizer over each chunk with bounded concurrency.
+
+        Returns ``(leaves, cache_hits, n_processed)``. When the
+        ``budget_tracker`` reports exhausted, processing stops early
+        and ``n_processed`` is strictly less than ``len(chunks)`` — the
+        caller materialises a partial summary and tags the metadata.
+        """
+        if budget_tracker is None:
+            sem = asyncio.Semaphore(self._max_concurrency)
+
+            async def _one(chunk: Chunk) -> tuple[Summary[str], bool]:
+                async with sem:
+                    return await self._summarize_one_chunk(chunk, None)
+
+            paired = await asyncio.gather(*(_one(chunk) for chunk in chunks))
+            return [p[0] for p in paired], sum(1 for p in paired if p[1]), len(paired)
+
+        # With a budget tracker, drop to serial-with-early-exit so the
+        # tracker can short-circuit on the very next leaf after the cap
+        # is reached. ``max_concurrency`` is honoured implicitly (=1).
+        leaves: list[Summary[str]] = []
+        cache_hits = 0
+        for chunk in chunks:
+            if budget_tracker.exhausted() is not None:
+                break
+            summary, from_cache = await self._summarize_one_chunk(chunk, budget_tracker)
+            leaves.append(summary)
+            if from_cache:
+                cache_hits += 1
+        return leaves, cache_hits, len(leaves)
 
     async def _merge_group(self, group: Sequence[Summary[str]]) -> Summary[str]:
         """Async merge callback that the Reducer calls."""
@@ -176,15 +299,46 @@ class _LongDocBase(Program):
                     "chunks.count": 0,
                 },
             )
-        leaves = await self._summarize_chunks(chunks)
+        tracker = self._budget.make_tracker() if self._budget is not None else None
+        leaves, cache_hits, n_processed = await self._summarize_chunks(chunks, tracker)
+        if not leaves:
+            # Budget was already exhausted before the first leaf
+            # finished, or every chunk hit the cache and returned no
+            # rows (shouldn't happen — defensive). Return an empty
+            # Summary tagged with the stop reason.
+            stop_reason = tracker.exhausted() if tracker is not None else None
+            return Summary[str](
+                text="",
+                method="abstractive",
+                metadata={
+                    "program": self.program_name,
+                    "chunks.count": len(chunks),
+                    "chunks.processed": 0,
+                    "chunker": type(self._chunker).__name__,
+                    "cache.hits": cache_hits,
+                    **({"budget.exhausted": str(stop_reason)} if stop_reason is not None else {}),
+                },
+            )
         reduced = await self._reducer().reduce(leaves, self._merge_group)
+        stop_reason = tracker.exhausted() if tracker is not None else None
+        meta_extras: dict[str, Any] = {
+            "program": self.program_name,
+            "chunks.count": len(chunks),
+            "chunks.processed": n_processed,
+            "chunker": type(self._chunker).__name__,
+            "cache.hits": cache_hits,
+        }
+        if tracker is not None:
+            meta_extras["budget.cost_usd"] = round(tracker.cost_usd, 6)
+            meta_extras["budget.tokens"] = tracker.tokens
+        if stop_reason is not None:
+            meta_extras["budget.exhausted"] = str(stop_reason)
+            meta_extras["partial"] = True
         return reduced.model_copy(
             update={
                 "metadata": {
                     **dict(reduced.metadata),
-                    "program": self.program_name,
-                    "chunks.count": len(chunks),
-                    "chunker": type(self._chunker).__name__,
+                    **meta_extras,
                 },
             }
         )

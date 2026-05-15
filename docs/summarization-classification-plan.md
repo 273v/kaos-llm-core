@@ -100,21 +100,16 @@ spec, the divergence is called out here.
 | **7 — Surfaces** | §7 | ⚠️ partial. `starter.summarize_sync` / `classify_sync` exist as thin sync wrappers but **not** the declarative façade in §7.1 (no `long_strategy="auto"` rules, no `query=` route, no `cited=`). 30 MCP program tools exist (`KaosLLMCoreCallTool`, `KaosLLMCoreJudgeTool`, etc.) including a generic `KaosLLMCoreProgramExecuteTool` that can call any Program, but the **specific declarative `summarize` and `classify` MCP tools** in §7.3 are not registered. CLI has `check` / `examples` / `analyze`; no `summarize` / `classify` subcommands yet. | ❌ Declarative starter façade upgrade, CLI subcommands, dedicated MCP tool pair. |
 | **8 — Zero-shot NLI** | §8 Phase 8 | — | ❌ Deferred per the original plan. NLI model registration + `ZeroShotNLIClassifier` not built. |
 
-### Cross-cutting (plan §5.3) — built-but-not-wired
+### Cross-cutting (plan §5.3) — wired in 0.1.0a10
 
-These primitives **exist** in `kaos-llm-core` but are **not yet
-threaded through `Program.invoke`**, so callers who construct a
-Program don't get the benefit by default:
-
-| Primitive | Lives at | Wired into `Program.invoke`? |
+| Primitive | Lives at | Wired? |
 |---|---|---|
-| `Budget` / `BudgetTracker` | `kaos_llm_core.optimization.budget` | ❌ no — `Program.invoke` in `programs/base.py` doesn't reference `budget` or `Budget` |
-| `SemanticCache` | `kaos_llm_core.cache.semantic` | ❌ no — long-doc Programs (`HierarchicalSummary`, `MapReduceSummary`) don't accept or consult a cache |
+| `Budget` / `BudgetTracker` | `kaos_llm_core.optimization.budget` | ✅ a10 — `cache` and `budget` constructor params on `_LongDocBase` (`HierarchicalSummary` / `MapReduceSummary` / `RefineSummary`) and `ChunkedClassify`. With a budget, processing drops to serial-with-early-exit; once the tracker reports exhausted, the Program halts and returns a partial result tagged with `metadata["budget.exhausted"]` + `metadata["partial"] = True`. |
+| `ChunkCache` (chunk-id-keyed) | `kaos_llm_core.cache.chunk` | ✅ a10 — new `ChunkCache` Protocol + default `InMemoryChunkCache` (process-local FIFO). Keyed by `(chunk_id, program_name, model_hint)`. On hit, the per-chunk Program invocation is skipped; the aggregated result reports `metadata["cache.hits"]`. The pre-existing `SemanticCache` (`kaos_llm_core.cache.semantic`) is a *different* shape (Call-level, embedding-keyed) and is unchanged — callers that want LLM-Call dedup wire `SemanticCache` at the `Call` level; callers that want chunk-summary dedup wire `ChunkCache` at the Program level. Both can coexist. |
 
-The integration work is tracked as P1-7 (cache) and P1-8 (budget) in
-the audit follow-up list. Without them, the §6.1 promise that "each
-long-doc Program respects the passed `Budget`" is **aspirational, not
-implemented**.
+The audit follow-ups P1-7 (cache) and P1-8 (budget) are closed by
+the §8.6 item C work. The §6.1 promise that "each long-doc Program
+respects the passed `Budget`" is now backed by code + tests.
 
 ### Audit-driven follow-ups (Q1–Q6) — closed 2026-05-15
 
@@ -795,10 +790,29 @@ shippable once its predecessors land.
   exposing `cosine_one_to_many_normalized` /
   `l2_normalize_in_place`.
 
-### C — P1-7 + P1-8 wiring (see §8.5)
+### C — P1-7 + P1-8 wiring (see §8.5) — **✅ closed 2026-05-15**
 
-- One PR per concern; or both in one if the diffs stay small.
-- Bump `kaos-llm-core` once they land.
+- **What landed:** `_LongDocBase` (and via it,
+  `HierarchicalSummary` / `MapReduceSummary` / `RefineSummary`) and
+  `ChunkedClassify` now accept optional `cache: ChunkCache` and
+  `budget: Budget` constructor params (kaos-llm-core 0.1.0a10).
+- **Cache:** new `kaos_llm_core.cache.chunk.ChunkCache` Protocol +
+  default `InMemoryChunkCache` (process-local FIFO). Keyed by
+  `(chunk_id, program_name, model_hint)`; on hit, the per-chunk
+  Program invocation is skipped. The aggregated result reports
+  `metadata["cache.hits"]`. The pre-existing `SemanticCache` is
+  unchanged — it's a *different* cache shape (Call-level,
+  embedding-keyed); both can coexist.
+- **Budget:** when a `Budget` is supplied, a fresh `BudgetTracker`
+  is created per `forward()` call. Processing drops to serial so the
+  tracker can short-circuit after each leaf. Once exhausted, the
+  Program halts and returns a partial result tagged with
+  `metadata["budget.exhausted"]` (the StopReason) and
+  `metadata["partial"] = True`. The leaf-invocation path uses
+  `program.invoke()` (not `__call__`) so token usage is available
+  for `BudgetTracker.consume()`.
+- **Tests:** 13 unit cases (7 for `InMemoryChunkCache`, 6 for the
+  wiring) all offline via `FunctionClient`.
 
 ### D — Phase 6 retrieval-augmented variants
 
