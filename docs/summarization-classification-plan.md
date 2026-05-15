@@ -92,13 +92,13 @@ spec, the divergence is called out here.
 |---|---|---|---|
 | **0 — Foundation types** | §2 | ✅ all 5 types | — |
 | **1 — Deterministic chunkers** | §3 | ✅ 5 chunkers + aggregators | — |
-| **2 — Composers** | §5 | ✅ `Reducer` + `MapReduce` / `Refine` / `Tree`; `Aggregator` + 6 strategies | ❌ `Cluster` reducer (one of four named in §5.1) |
-| **3 — Summarization Programs** | §6.1 | ✅ `AbstractiveSummary`, `ExtractiveSummary` (a10), `StructuredSummary`, `CitedSummary`, `MapReduceSummary`, `RefineSummary`, `HierarchicalSummary` | ❌ `QueryFocusedSummary` / `ClusteredSummary` / `HybridSummary` (Phase 6) |
-| **4 — Classification Programs** | §6.2 | ✅ `ZeroShotClassify`, `FewShotClassify`, `PrototypeClassify` (a10), `MultiLabelClassify`, `ChunkedClassify`, `EnsembleClassify`, `HierarchicalClassify` | ❌ `RetrievalClassify` (Phase 6) |
+| **2 — Composers** | §5 | ✅ `Reducer` + `MapReduce` / `Refine` / `Tree` / `Cluster` (a10); `Aggregator` + 6 strategies | — |
+| **3 — Summarization Programs** | §6.1 | ✅ `AbstractiveSummary`, `ExtractiveSummary` (a10), `StructuredSummary`, `CitedSummary`, `MapReduceSummary`, `RefineSummary`, `HierarchicalSummary`, `QueryFocusedSummary` (a10), `ClusteredSummary` (a10), `HybridSummary` (a10) | — |
+| **4 — Classification Programs** | §6.2 | ✅ `ZeroShotClassify`, `FewShotClassify`, `PrototypeClassify` (a10), `MultiLabelClassify`, `ChunkedClassify`, `EnsembleClassify`, `HierarchicalClassify`, `RetrievalClassify` (a10) | — |
 | **5 — Neural primitives** | §4 | ✅ `SemanticChunker`, `ExtractiveRanker` (in `kaos-nlp-transformers` 0.2.0a6); ✅ `ExtractiveSummary`, `PrototypeClassify` wrappers (in `kaos-llm-core` 0.1.0a10) | — |
-| **6 — Retrieval-augmented variants** | §8 Phase 6 | — | ❌ All four: `QueryFocusedSummary`, `ClusteredSummary`, `HybridSummary`, `RetrievalClassify`. Existing `RAG` Program + `kaos-content` `SearchableDocument` / `SearchableCorpus` are the foundations. |
-| **7 — Surfaces** | §7 | ✅ a10 — declarative `starter.summarize_doc` / `classify_doc` (+ `_sync` wrappers) returning the full `Summary[str]` / `Classification` with `long_strategy="auto"` rules + `cited=` + `budget=` + `cache=` + `chunker=`. CLI `summarize` / `classify` subcommands with `--strategy` / `--cited` / `--budget-tokens` / `--budget-usd` / `--pretty` / `--cost`. 32 MCP program tools: the new `KaosLLMCoreSummarizeTool` + `KaosLLMCoreClassifyTool` ship alongside the pre-existing generic `KaosLLMCoreProgramExecuteTool`. | The existing `starter.summarize` / `classify` (plain-string return) coexist for backward compat; the new `*_doc` façades are the canonical Phase-7 surface. `query=` route + dedicated retrieval Programs are Phase 6 (item D). |
-| **8 — Zero-shot NLI** | §8 Phase 8 | — | ❌ Deferred per the original plan. NLI model registration + `ZeroShotNLIClassifier` not built. |
+| **6 — Retrieval-augmented variants** | §8 Phase 6 | ✅ a10 — all four (`QueryFocusedSummary`, `ClusteredSummary`, `HybridSummary`, `RetrievalClassify`) built on the local `Ranker` / `Embedder` protocols + the new `Cluster` reducer. | — |
+| **7 — Surfaces** | §7 | ✅ a10 — declarative `starter.summarize_doc` / `classify_doc` (+ `_sync` wrappers) returning the full `Summary[str]` / `Classification` with `long_strategy="auto"` rules + `cited=` + `budget=` + `cache=` + `chunker=`. ``classify_doc`` accepts all five `supervision` modes (`zero_shot`, `few_shot`, `prototype`, `retrieval`, `nli`); the no-LLM modes take `embedder=` / `corpus=` / `nli_scorer=` rather than `model=`. CLI `summarize` / `classify` subcommands. 32 MCP program tools: `KaosLLMCoreSummarizeTool` + `KaosLLMCoreClassifyTool` ship alongside the pre-existing generic `KaosLLMCoreProgramExecuteTool`. | The existing `starter.summarize` / `classify` (plain-string return) coexist for backward compat; the new `*_doc` façades are the canonical Phase-7 surface. |
+| **8 — Zero-shot NLI** | §8 Phase 8 | ✅ a10 (`kaos-llm-core` half) — `ZeroShotNLIClassifier` + `NLIScorer` / `NLIScore` protocols + default hypothesis template + integration with `classify_doc(supervision="nli")`. | ⚠️ `kaos-nlp-transformers` `NliModel` — license-audited NLI checkpoint registration is a separate follow-up; once it ships any caller can replace their stub scorer transparently. |
 
 ### Cross-cutting (plan §5.3) — wired in 0.1.0a10
 
@@ -457,9 +457,9 @@ counting math.
 | `MapReduceSummary` | abstractive | yes | free | ✅ shipped | Chunk → per-chunk summary → reduce. |
 | `RefineSummary` | abstractive | yes | free | ✅ shipped | Sequential running summary. |
 | `HierarchicalSummary` | abstractive | yes | free or cited | ✅ shipped | Tree reducer; the general workhorse. |
-| `QueryFocusedSummary` | abstractive | yes | cited | ❌ pending (Phase 6) | BM25 + dense rerank → summarize top-k. Builds on existing `RAG` + `kaos-content.SearchableDocument`. |
-| `ClusteredSummary` | abstractive | yes | free | ❌ pending (Phase 6) | Cluster reducer (good for multi-doc). Also gated on the missing `Cluster` reducer in `composition/reduce.py`. |
-| `HybridSummary` | hybrid | yes | cited | ❌ pending (Phase 6) | Extractive top-k → abstractive over those. Depends on the missing `ExtractiveSummary`. |
+| `QueryFocusedSummary` | abstractive | yes | cited | ✅ shipped (a10) | Embed sentences + query, cosine-rank via `cosine_one_to_many_normalized`, summarize the top-k joined passages through `CitedSummary` for span-verified output. |
+| `ClusteredSummary` | abstractive | yes | free | ✅ shipped (a10) | Long-doc summarizer that swaps the default reducer for the new `Cluster` reducer — embeds leaf summaries, spherical k-means in cosine space, per-cluster merge then final merge. Good for multi-doc inputs. |
+| `HybridSummary` | hybrid | yes | cited | ✅ shipped (a10) | Extractive top-k via `ExtractiveSummary` → `CitedSummary` (default) over the joined picks. Caps abstractive cost at O(top_k) sentences regardless of source length. |
 
 Each takes:
 - `chunker: Chunker | None` (long-doc programs only)
@@ -476,7 +476,7 @@ Each takes:
 | `ZeroShotClassify` | zero-shot | LLM | ✅ shipped | Schema-constrained decode against `LabelSet`. |
 | `FewShotClassify` | few-shot | LLM | ✅ shipped | Adds `Example` pool to the prompt. Subclass of `ZeroShotClassify`. |
 | `PrototypeClassify` | zero-shot | embedding | ✅ shipped (a10) | Cosine vs label-description embeddings via `cosine_one_to_many_normalized`. **No LLM.** Lazy prototype cache; exclusive (argmax + optional `min_score` floor) and multi-label (threshold) modes supported. |
-| `RetrievalClassify` | many-shot | embedding + LLM | ❌ pending (Phase 6) | kNN over labeled corpus + vote, optionally LLM tie-break. Builds on existing `RAG` + `SearchableCorpus`. |
+| `RetrievalClassify` | many-shot | embedding + LLM | ✅ shipped (a10) | Embed input + labeled corpus, kNN by cosine, weighted majority vote. Optional LLM tie-break via a caller-supplied `tie_break` Program (typical: `ZeroShotClassify`). |
 | `HierarchicalClassify` | any | nested classifiers | ✅ shipped | Coarse-to-fine taxonomy walk. |
 | `MultiLabelClassify` | zero/few-shot | LLM | ✅ shipped | Emits subset with per-label confidence. |
 | `ChunkedClassify` | any | wrapper | ✅ shipped | Chunk → per-chunk classify → aggregator. |
@@ -814,33 +814,60 @@ shippable once its predecessors land.
 - **Tests:** 13 unit cases (7 for `InMemoryChunkCache`, 6 for the
   wiring) all offline via `FunctionClient`.
 
-### D — Phase 6 retrieval-augmented variants
+### D — Phase 6 retrieval-augmented variants — **✅ closed 2026-05-15**
 
-- **`QueryFocusedSummary`:** input = `(text, query)`. Build (or
-  accept) a `SearchableDocument` from `kaos-content`; retrieve the
-  top-k passages matching `query` (BM25 by default, optional dense
-  rerank using `kaos_nlp_core.similarity.cosine_one_to_many_normalized`);
-  summarise the joined passages via `CitedSummary` so spans tie
-  back to the source. Acceptance criteria: ≥80% of returned spans
-  must verify against the source via `grounded.verify()`.
-- **`ClusteredSummary`:** requires `Cluster` reducer first (Phase-2
-  leftover). Embed chunks, cluster by k-means (small numpy
-  implementation per plan §10 decision), per-cluster summarise,
-  emit `Summary[str]` per cluster + an over-all rollup.
-- **`HybridSummary`:** extractive top-k via `ExtractiveSummary`
-  (depends on B), then abstractive over the picks via
-  `CitedSummary`. The "what" of `HybridSummary` is "rank first,
-  then summarise the survivors so the cost is bounded by the
-  pick-rate, not the doc length".
-- **`RetrievalClassify`:** input = `(text, labeled_corpus)`. Embed
-  text + every labeled example, retrieve k-nearest by cosine, take
-  majority vote weighted by similarity. Optional LLM tie-break for
-  ties or low-confidence. Builds on `RAG` + `SearchableCorpus`.
+Prerequisite landed first:
 
-All four ship as **new Program classes in `kaos-llm-core`**;
-nothing touches `kaos-nlp-core` or `kaos-nlp-transformers`. Live
-tests gated on `@pytest.mark.live`; unit tests use stub retrievers
-+ stub providers.
+- **`Cluster` reducer** in
+  `kaos_llm_core.composition.reduce.Cluster` (the Phase-2 leftover
+  that gated `ClusteredSummary`). Spherical k-means in cosine space
+  with a deterministic seed; ``k="auto"`` resolves to
+  ``max(2, min(round(sqrt(n)), 8))``. Embeds each leaf summary's
+  text via a `ClusterEmbedder` protocol-typed argument, runs
+  Lloyd's algorithm (max 25 iters by default), then per-cluster
+  merge + final merge through the supplied `merge_fn`. 8 unit
+  tests cover the assignment, the auto-k heuristic, the
+  cap-at-n / single-leaf / empty-leaves edge cases, and validation.
+
+Four Programs landed on top:
+
+- **`QueryFocusedSummary`** at
+  `kaos_llm_core.programs.summarize.query_focused`. Segments via
+  `kaos_nlp_core.segmentation.segment_sentences`, embeds + cosine-
+  scores via the SIMD `cosine_one_to_many_normalized` fast path,
+  picks top-k in source order, and routes the joined passages
+  through `CitedSummary` by default. 5 unit tests cover
+  query-biased pick selection, multi-pick source order, and
+  empty-input handling.
+
+- **`ClusteredSummary`** at
+  `kaos_llm_core.programs.summarize.clustered`. Thin specialisation
+  of `_LongDocBase` that swaps the default reducer for `Cluster`.
+  Inherits the existing cache + budget wiring.
+
+- **`HybridSummary`** at `kaos_llm_core.programs.summarize.hybrid`.
+  Composes `ExtractiveSummary` (top-k pre-filter) + a
+  `CitedSummary` (default) or `AbstractiveSummary` abstractive
+  stage over the picks. ``method="hybrid"``. Caps abstractive
+  cost at O(top_k) sentences regardless of source length. 3 unit
+  tests.
+
+- **`RetrievalClassify`** at
+  `kaos_llm_core.programs.classify.retrieval`. Embeds the input
+  + the labeled corpus, picks the k nearest by cosine, weights by
+  similarity, and optionally defers to a caller-supplied
+  `tie_break` Program (typically `ZeroShotClassify`) on close
+  calls. 7 unit tests cover the happy path, tie-break wiring,
+  empty corpus / empty input abstention, and validation.
+
+All four reuse the `Ranker` / `Embedder` Protocols defined for
+Phase 5 leftovers, keeping `kaos-nlp-transformers` an optional
+peer rather than a hard dep. Plan §11 "what success looks like"
+endgame ``classify(doc, labels=…, long_strategy="chunk",
+aggregator="union", cited=True)`` now decomposes cleanly to
+``classify_doc(..., supervision="retrieval", embedder=…,
+corpus=…)`` for the no-LLM many-shot path, with `ChunkedClassify`
++ `UnionAggregator` available for the multi-label long-doc shape.
 
 ### E — Phase 7 surfaces — **✅ closed 2026-05-15**
 
@@ -890,15 +917,45 @@ Three deliverables, all in `kaos-llm-core` 0.1.0a10:
 Live tests behind `@pytest.mark.live`; example scripts under
 `examples/`.
 
-### F — Phase 8 zero-shot NLI
+### F — Phase 8 zero-shot NLI — **✅ closed 2026-05-15 (kaos-llm-core half)**
 
-- Register an NLI model in `kaos-nlp-transformers` (license-audit
-  the chosen checkpoint, pin the SHA, document the pin in
-  `models/` provenance docs).
-- Build `ZeroShotNLIClassifier` in
-  `kaos_llm_core.programs.classify` that calls the registered NLI
-  model via a new tiny `kaos_nlp_transformers.nli` surface.
-- Add `supervision="nli"` to the starter `classify` façade.
+`kaos-llm-core` 0.1.0a10 ships the Program-side half of Phase 8:
+
+- **`ZeroShotNLIClassifier`** at
+  `kaos_llm_core.programs.classify.nli`. Per-label hypothesis via
+  `hypothesis_template.format(label.prompt_text)` (default
+  ``"This text is about {}."``). One :meth:`NLIScorer.score` call
+  per :meth:`forward` returns three-class probabilities; argmax
+  on entailment wins. Optional ``min_score`` abstention floor.
+  10 unit tests offline against a stub scorer.
+
+- **`NLIScorer` / `NLIScore` protocols** mirror the
+  `Ranker` / `Embedder` pattern, so `kaos-llm-core` keeps
+  `kaos-nlp-transformers` an optional peer. Any object exposing a
+  `score(premise, hypotheses)` returning records with
+  `(entailment, neutral, contradiction)` attributes satisfies the
+  protocol — production callers will plug in the future
+  `kaos_nlp_transformers.NliModel`, stubs and existing HF
+  cross-encoder pipelines work today.
+
+- **`classify_doc(supervision="nli")`** in
+  `kaos_llm_core.starter`. The same façade now dispatches to one
+  of five supervision modes (zero_shot / few_shot / prototype /
+  retrieval / nli) by branching on the supplied kwargs
+  (`examples=` / `embedder=` / `corpus=` / `nli_scorer=`); each
+  branch validates its requirements with a `CallError`. The
+  starter façade and CLI surface the new modes uniformly.
+
+**Still pending — `kaos-nlp-transformers` half:**
+
+- License-audit a public NLI checkpoint and add it to
+  `kaos-nlp-transformers/REGISTRY` with a pinned commit SHA.
+- Wrap a thin `kaos_nlp_transformers.NliModel` (one ``score``
+  method, three-class output) over the existing ort cdylib
+  cross-encoder pathway. Once it ships, swap the stub scorer for
+  the real one in callers — no plan-doc or `kaos-llm-core`
+  changes required (the `NLIScorer` Protocol absorbs the binding
+  cleanly).
 
 Independently shippable; deferred until a no-LLM-budget use case
 asks for it.

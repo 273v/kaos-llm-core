@@ -47,22 +47,34 @@ from kaos_llm_core.programs.classify.chunked import ChunkedClassify
 from kaos_llm_core.programs.classify.ensemble import EnsembleClassify
 from kaos_llm_core.programs.classify.hierarchical import HierarchicalClassify
 from kaos_llm_core.programs.classify.multi_label import MultiLabelClassify
+from kaos_llm_core.programs.classify.nli import (
+    DEFAULT_HYPOTHESIS_TEMPLATE,
+    NLIScore,
+    NLIScorer,
+    ZeroShotNLIClassifier,
+)
 from kaos_llm_core.programs.classify.prototype import (
     Embedder,
     PrototypeClassify,
 )
+from kaos_llm_core.programs.classify.retrieval import RetrievalClassify
 from kaos_llm_core.programs.classify.zero_shot import (
     FewShotClassify,
     ZeroShotClassify,
 )
 
 __all__ = [
+    "DEFAULT_HYPOTHESIS_TEMPLATE",
     "ChunkedClassify",
     "Embedder",
     "EnsembleClassify",
     "FewShotClassify",
     "HierarchicalClassify",
     "MultiLabelClassify",
+    "NLIScore",
+    "NLIScorer",
     "PrototypeClassify",
+    "RetrievalClassify",
     "ZeroShotClassify",
+    "ZeroShotNLIClassifier",
 ]

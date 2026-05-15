@@ -29,6 +29,8 @@ from kaos_llm_core.composition.aggregate import (
     WeightedAggregator,
 )
 from kaos_llm_core.composition.reduce import (
+    Cluster,
+    ClusterEmbedder,
     MapReduce,
     Reducer,
     Refine,
@@ -37,6 +39,8 @@ from kaos_llm_core.composition.reduce import (
 
 __all__ = [
     "Aggregator",
+    "Cluster",
+    "ClusterEmbedder",
     "IntersectionAggregator",
     "MajorityAggregator",
     "MapReduce",
