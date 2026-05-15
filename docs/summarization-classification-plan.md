@@ -128,8 +128,12 @@ review on 2026-05-15 ("alpha shipped, untested in anger"):
 
 The Q4 / Q5 / Q6 harnesses are `@pytest.mark.live`-gated dev tooling
 on `main`; running them produces `docs/benchmarks/quality-*.json`
-artifacts. They have **not been fired against a real provider yet**;
-doing so is task A in §8.6.
+artifacts. **First live run (2026-05-15, `anthropic:claude-haiku-4-5`):**
+all three pass with 0 errors; BillSum ROUGE-1 ≈ 0.48 (Abstractive),
+LEDGAR F1-macro 0.54 (top of the harness's expected 0.30–0.55 band),
+CUAD 68 % verified-span coverage with 0 refusals. See §8.6 item A
+for the headline table and the JSON artifacts under
+`docs/benchmarks/quality-*.json`.
 
 ---
 
@@ -749,20 +753,34 @@ This is the canonical forward roadmap. Items are ordered by
 prerequisite, not by perceived priority — each is independently
 shippable once its predecessors land.
 
-### A — Run the Q4 / Q5 / Q6 quality harnesses against a live provider
+### A — Run the Q4 / Q5 / Q6 quality harnesses against a live provider — **✅ closed 2026-05-15**
 
-- **What:** with `KAOS_LLM_LIVE_PROVIDER=anthropic` (or equivalent),
-  fire `tests/quality/test_billsum_rouge.py`,
-  `tests/quality/test_ledgar_f1.py`, `tests/quality/test_cuad_grounding.py`.
-  Commit the resulting `docs/benchmarks/quality-*.json` artifacts.
-- **Why:** the harnesses are dev tooling on `main` (PR #26) but
-  have never been fired. Without the artifacts we have no
-  public-benchmark evidence the Programs work; the audit-driven
-  "alpha shipped, untested in anger" gap remains open.
-- **Cost:** ~$2–5 in LLM spend.
-- **Owner:** any contributor with provider credentials.
-- **Output:** three new JSON artifacts under
-  `kaos-llm-core/docs/benchmarks/`.
+All three harnesses fired against
+``anthropic:claude-haiku-4-5`` and the artifacts committed under
+`docs/benchmarks/`. Two pre-existing harness bugs were fixed
+along the way:
+
+- `tests/quality/test_cuad_grounding.py` referenced
+  ``summary.refused`` which is not an attribute on the
+  :class:`Summary` Pydantic model — the refusal state lives in
+  ``metadata["cited.refused"]``. Fixed; CUAD now runs clean.
+- `tests/quality/test_billsum_rouge.py` called
+  ``rouge_score.rouge_scorer.RougeScorer`` without explicitly
+  importing the ``rouge_scorer`` submodule (the package does not
+  auto-import it). Fixed with a one-line ``from rouge_score
+  import rouge_scorer`` after the ``importorskip``.
+
+**Headline numbers (claude-haiku-4-5, 0 errors across all three runs):**
+
+| Harness | Aggregate |
+|---|---|
+| CUAD span-verification (25 cells) | 68 % cells with ≥1 verified span; 0 refusals; 20 % cells with a gold-clause match; 100 % verified-claim rate over the LLM's stated claims. |
+| BillSum ROUGE (20 bills × 3 programs) | `AbstractiveSummary` ROUGE-1 / 2 / L = **0.48 / 0.21 / 0.31**; `HierarchicalSummary` **0.46 / 0.20 / 0.28**; `MapReduceSummary` **0.46 / 0.20 / 0.28**. |
+| LEDGAR F1 (100 clauses, 100-class taxonomy, 68 classes seen) | **F1-macro 0.54**, F1-micro 0.66, accuracy 0.66. The harness expected the haiku-tier model to land in the 0.30–0.55 F1-macro band; we landed at the top. |
+
+Run cost (claude-haiku-4-5, single pass each): well under the
+plan's $2–5 ceiling — see `docs/benchmarks/quality-*.json` for the
+per-cell traces. Wall time: ~11 minutes end-to-end.
 
 ### B — Phase-5 leftovers (`ExtractiveSummary` + `PrototypeClassify`) — **✅ closed 2026-05-15**
 

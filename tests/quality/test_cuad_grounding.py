@@ -143,9 +143,13 @@ async def _run_one_clause(citer, contract_text: str) -> dict:
         contract_text[s.start : s.end] for s in summary.source_spans if s.end <= len(contract_text)
     ]
     meta = summary.metadata or {}
+    # ``Summary`` carries refusal state in ``metadata["cited.refused"]``
+    # (set by ``CitedSummary`` when the verified-claim ratio falls
+    # below ``refuse_below``); there is no top-level ``refused``
+    # attribute on the Pydantic model.
     return {
         "summary_head": summary.text[:120] if summary.text else "",
-        "refused": bool(summary.refused),
+        "refused": bool(meta.get("cited.refused", False)),
         "n_verified_spans": len(summary.source_spans),
         "n_total_claims": int(meta.get("claims_total", len(summary.source_spans))),
         "n_verified_claims": int(meta.get("claims_verified", len(summary.source_spans))),

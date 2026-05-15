@@ -88,11 +88,15 @@ def billsum_pairs() -> list[tuple[str, str]]:
 
 @pytest.fixture(scope="module")
 def rouge_scorer_fixture():
-    rouge_score = pytest.importorskip(
+    pytest.importorskip(
         "rouge_score",
         reason="BillSum harness requires `pip install rouge-score`",
     )
-    return rouge_score.rouge_scorer.RougeScorer(["rouge1", "rouge2", "rougeL"], use_stemmer=True)
+    # ``rouge_score`` does not auto-import its ``rouge_scorer`` submodule;
+    # do it explicitly so ``RougeScorer`` is reachable.
+    from rouge_score import rouge_scorer
+
+    return rouge_scorer.RougeScorer(["rouge1", "rouge2", "rougeL"], use_stemmer=True)
 
 
 async def _abstractive(text: str) -> tuple[str, dict]:
