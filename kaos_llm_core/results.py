@@ -161,8 +161,54 @@ class Classification[L: (Label, str)](KaosModel):
         return self.names[0]
 
 
+class EntitySpan(KaosModel):
+    """A named-entity span extracted from source text.
+
+    Plan §4.2.4 / Phase 8 — the lightweight result type emitted by
+    :class:`~kaos_llm_core.programs.ner.GLiNERExtract` and consumed by
+    downstream Programs that want zero-shot NER without the full
+    schema-driven :class:`~kaos_llm_core.results.ExtractionResult`
+    machinery.
+
+    Byte offsets are into the original source text passed to the
+    Program — ``source_text[start:end]`` reproduces ``text`` exactly.
+    ``score`` is in ``[0.0, 1.0]`` (the NER backend's sigmoid- or
+    softmax-normalized confidence).
+    """
+
+    start: int = Field(ge=0)
+    end: int = Field(ge=0)
+    text: str
+    label: str
+    score: float = Field(ge=0.0, le=1.0)
+
+    def model_post_init(self, _context: Any, /) -> None:
+        if self.end < self.start:
+            raise ValueError(f"end ({self.end}) must be >= start ({self.start})")
+
+
+class Entities(KaosModel):
+    """A list of :class:`EntitySpan` extracted from one source text.
+
+    Attributes:
+        spans: The extracted entities, in source order (sorted by
+            ``start``, with ties broken by ``end``).
+        labels: The label set the extractor was queried with — handy
+            for downstream code that needs to know which labels were
+            available even when ``spans`` is empty.
+        metadata: Free-form annotations. Programs should namespace
+            keys (``"program"``, ``"extractor.model_id"``, etc.).
+    """
+
+    spans: list[EntitySpan] = Field(default_factory=list)
+    labels: list[str] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
 __all__ = [
     "Classification",
+    "Entities",
+    "EntitySpan",
     "SourceSpan",
     "Summary",
     "SummaryMethod",
