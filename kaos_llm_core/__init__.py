@@ -167,6 +167,8 @@ from kaos_llm_core.programs.summarize import (
 )
 from kaos_llm_core.results import (
     Classification,
+    Entities,
+    EntitySpan,
     SourceSpan,
     Summary,
     SummaryMethod,
@@ -237,6 +239,8 @@ __all__ = [
     "Document",
     "Ensemble",
     "EnsembleClassify",
+    "Entities",
+    "EntitySpan",
     "EnvelopeStep",
     "EvalResult",
     "Example",

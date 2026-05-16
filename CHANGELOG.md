@@ -8,6 +8,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0a12] — 2026-05-15
+
+Lands the Phase-8 GLiNER half from
+`docs/summarization-classification-plan.md` §4.2.4. The companion
+`kaos-nlp-transformers` 0.2.0a7 release ships the actual ONNX-backed
+`GLiNERExtractor` whose `extract()` method satisfies the new
+`NerExtractor` Protocol at runtime — cross-tested against the real
+`onnx-community/gliner_medium-v2.1` model and verified to produce
+sigmoid scores matching the upstream PyTorch reference (0.9935 /
+0.9772 on the canonical "Barack Obama was born in Hawaii." input).
+
+### Added
+
+- **`GLiNERExtract` Program** in `kaos_llm_core.programs.ner`. The
+  zero-shot NER counterpart to `ZeroShotNLIClassifier` — LLM-free,
+  deterministic, runs locally through an injected `NerExtractor`
+  Protocol implementation. Accepts a `labels` list, a per-Program
+  `threshold` (default 0.5) plus `max_width` / `flat_ner` /
+  `dup_label` / `multi_label` tuning, and returns `Entities`
+  carrying byte-offset `EntitySpan` records sorted by source
+  position.
+- **`NerExtractor` + `EntityResult` Protocols** in
+  `kaos_llm_core.programs.ner`. Both `@runtime_checkable`; the
+  canonical implementation lives in
+  `kaos_nlp_transformers.GLiNERExtractor` (which ships in
+  `kaos-nlp-transformers` 0.2.0a7+).
+- **`Entities` and `EntitySpan` result types** in
+  `kaos_llm_core.results`. `EntitySpan` is the lightweight
+  `(start, end, text, label, score)` record emitted by
+  `GLiNERExtract`; `Entities` is the per-text wrapper carrying the
+  list, the queried labels, and program/extractor metadata.
+- Both new result types re-exported from the top-level
+  `kaos_llm_core.__all__`.
+
 ## [0.1.0a11] — 2026-05-15
 
 Audit-driven follow-up to the 0.1.0a10 plan release. Re-running the
