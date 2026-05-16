@@ -87,6 +87,28 @@ class KaosLLMCoreClassifyTool(BaseLLMCoreTool):
             constraints={"enum": ["auto", "single", "chunk"]},
         ),
         ParameterSchema(
+            name="aggregator",
+            type="string",
+            description=(
+                "Short name of the aggregation strategy used by the "
+                "chunked path. One of 'vote', 'majority', 'union', "
+                "'intersection', 'weighted', 'max_score'. Ignored on "
+                "the single-call path. Defaults to 'majority' for "
+                "exclusive labels and 'union' for multi-label."
+            ),
+            required=False,
+            constraints={
+                "enum": [
+                    "vote",
+                    "majority",
+                    "union",
+                    "intersection",
+                    "weighted",
+                    "max_score",
+                ]
+            },
+        ),
+        ParameterSchema(
             name="budget_tokens",
             type="integer",
             description="Optional token budget cap.",
@@ -149,6 +171,7 @@ class KaosLLMCoreClassifyTool(BaseLLMCoreTool):
             model=inputs.get("model"),
             supervision=inputs.get("supervision", "zero_shot"),
             long_strategy=inputs.get("long_strategy", "auto"),
+            aggregator=inputs.get("aggregator"),
             budget=budget,
         )
 

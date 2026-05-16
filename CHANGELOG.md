@@ -8,6 +8,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0a11] — 2026-05-15
+
+Audit-driven follow-up to the 0.1.0a10 plan release. Re-running the
+plan §11 endgame snippet against the actual public API surfaced three
+load-bearing gaps; this release closes them and adds a contract-test
+guard so future drift triggers a unit-test failure rather than a
+plan-doc lie.
+
+### Added
+
+- **`resolve_aggregator`** in `kaos_llm_core.composition`. Maps short
+  names (``"vote"``, ``"majority"``, ``"union"``, ``"intersection"``,
+  ``"weighted"``, ``"max_score"``) to the matching `Aggregator` class
+  and passes through instances unchanged. Raises `CallError` on
+  unknown names with the allowed-name list embedded in the message.
+
+- **`classify_doc(aggregator=…)` accepts strings** (audit G1). The
+  plan §11 endgame snippet — ``classify(doc, …, aggregator="union",
+  …)`` — now runs against the actual API:
+  ``classify_doc(doc, …, aggregator="union", …)``.
+
+- **`summarize_doc(query=…, embedder=…)`** (audit G3, plan §7.1).
+  When `query` is supplied, `summarize_doc` routes through
+  :class:`QueryFocusedSummary` regardless of `long_strategy`. `CallError`
+  when `query` is set without `embedder`. CLI / MCP exposure waits
+  for an embedder-kind registry (parallel to the tokenizer-registry
+  task P2-2); the query route is in-process only at 0.1.0a11.
+
+- **`tests/unit/test_plan_endgame_snippet.py`** — verbatim contract
+  test for the plan §11 snippets (classification + no-LLM
+  prototype + cited summary). Future drift between the plan's
+  promise and the shipped API now produces a test failure.
+
+### Changed
+
+- **`QueryFocusedSummary` accepts `budget=`** (audit G2). The single
+  abstractive call is bracketed by a pre-call `tracker.exhausted()`
+  gate and a post-call `tracker.consume()` from `Invocation.usage`.
+  Exhaustion returns an empty Summary tagged with
+  `metadata["partial"] = True` and `metadata["budget.exhausted"]`.
+
+- **`HybridSummary` accepts `budget=`** (audit G2). Same shape as
+  the QueryFocusedSummary wiring; the extractive pre-filter is
+  free, so only the abstractive stage charges the tracker.
+
+- **Plan §11 endgame snippet** updated to use the actual
+  ``classify_doc`` / ``summarize_doc`` names + the new symmetric
+  no-LLM path with ``supervision="prototype"``.
+
+### Notes
+
+- ``cache=`` is deliberately NOT exposed on `QueryFocusedSummary` /
+  `HybridSummary`: the `ChunkCache` Protocol is chunk-id-keyed for
+  the chunked-reducer Programs, and these single-call Programs
+  don't chunk. Per-(doc, query) reuse is the caller's
+  responsibility for now; revisit if usage patterns demand it.
+
 ## [0.1.0a10] — 2026-05-15
 
 Plan-driven release closing `docs/summarization-classification-plan.md`

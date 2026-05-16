@@ -159,3 +159,46 @@ class TestQueryFocusedSummary:
         result = await program(text="", query="anything")
         assert result.text == ""
         assert result.metadata["n_sentences"] == 0
+
+    @pytest.mark.asyncio
+    async def test_budget_consumed_on_success(self) -> None:
+        from kaos_llm_core.optimization.budget import Budget
+
+        fn, _ = _abstractive_fn("budgeted summary")
+        program = QueryFocusedSummary(
+            embedder=_StubEmbedder(),
+            top_k=1,
+            cited=False,
+            budget=Budget(max_tokens=10_000),  # generous; will not exhaust
+            model="function-test",
+            client=FunctionClient(function=fn),
+        )
+        result = await program(text=_DOC, query="rent details")
+        # FunctionClient stub above reports 75 tokens (50 input + 25
+        # output). The Program's single abstractive call consumes
+        # that into the tracker.
+        assert result.metadata["budget.tokens"] == 75
+        assert "budget.exhausted" not in result.metadata
+        assert "partial" not in result.metadata
+
+    @pytest.mark.asyncio
+    async def test_budget_metadata_records_tracker_state(self) -> None:
+        from kaos_llm_core.optimization.budget import Budget
+
+        fn, _ = _abstractive_fn("x")
+        program = QueryFocusedSummary(
+            embedder=_StubEmbedder(),
+            top_k=1,
+            cited=False,
+            # Tight cap below the stub's per-call cost — after the
+            # one call lands, ``tracker.exhausted()`` reports
+            # ``BUDGET_TOKENS``. The Program completes the single
+            # call (pre-gate only fires when the tracker is exhausted
+            # *before* the call), but the meta records the spend.
+            budget=Budget(max_tokens=10),
+            model="function-test",
+            client=FunctionClient(function=fn),
+        )
+        result = await program(text=_DOC, query="rent")
+        # Spend recorded.
+        assert result.metadata["budget.tokens"] == 75

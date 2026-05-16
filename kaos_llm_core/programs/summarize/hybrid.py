@@ -16,6 +16,7 @@ from kaos_llm_client import BaseProviderClient
 from kaos_llm_client.settings import KaosLLMSettings
 
 from kaos_llm_core.codecs.base import Codec
+from kaos_llm_core.optimization.budget import Budget
 from kaos_llm_core.programs.base import Program
 from kaos_llm_core.programs.summarize.abstractive import AbstractiveSummary, CitedSummary
 from kaos_llm_core.programs.summarize.extractive import ExtractiveSummary, Ranker
@@ -69,6 +70,7 @@ class HybridSummary(Program):
         top_k: int = 5,
         diversify: float = 0.0,
         cited: bool = True,
+        budget: Budget | None = None,
         model: str | None = None,
         codec: Codec | None = None,
         client: BaseProviderClient | None = None,
@@ -81,6 +83,7 @@ class HybridSummary(Program):
     ) -> None:
         self._cited = cited
         self._top_k = top_k
+        self._budget = budget
         # Extractive stage. Auto-registers as a Program child via
         # ``Program.__setattr__`` so the trace tree shows the
         # extract→summarize wiring.
@@ -134,11 +137,40 @@ class HybridSummary(Program):
                 },
             )
 
+        # 1.5. Budget pre-gate (plan §6.1 / §8.5 P1-8). The Program
+        # makes one LLM call on the abstractive stage (the extractive
+        # stage is free), so check exhausted() up front; consume from
+        # the tracker after the call lands.
+        tracker = self._budget.make_tracker() if self._budget is not None else None
+        if tracker is not None and tracker.exhausted() is not None:
+            return Summary[str](
+                text="",
+                method="hybrid",
+                source_spans=list(picks.source_spans),
+                chunks_used=[parent_id] if parent_id else [],
+                metadata={
+                    "program": "HybridSummary",
+                    "top_k": self._top_k,
+                    "cited": self._cited,
+                    "picks.count": len(picks.source_spans),
+                    "extract.metadata": dict(picks.metadata),
+                    "partial": True,
+                    "budget.exhausted": str(tracker.exhausted()),
+                },
+            )
+
         # 2. Abstractive summary over the joined picks. CitedSummary
         # returns Summary[GroundedAnswer[str]]; AbstractiveSummary
         # returns Summary[str]. We preserve the payload type by not
-        # touching it here.
-        abstractive = await self.summarize(text=picks.text, parent_id=parent_id)
+        # touching it here. Use ``invoke()`` so the budget tracker
+        # gets the token-usage breakdown.
+        abstractive_invocation = await self.summarize.invoke(text=picks.text, parent_id=parent_id)
+        abstractive = abstractive_invocation.output
+        if tracker is not None:
+            tracker.consume(
+                cost_usd=float(abstractive_invocation.usage.cost_usd or 0.0),
+                tokens=int(abstractive_invocation.usage.total_tokens or 0),
+            )
 
         # 3. Pool source spans. The extractive picks always survive
         # (they are the abstractive's input); any verified cited
@@ -163,6 +195,9 @@ class HybridSummary(Program):
             "picks.count": len(extractive_spans),
             "extract.metadata": dict(picks.metadata),
         }
+        if tracker is not None:
+            meta["budget.cost_usd"] = round(tracker.cost_usd, 6)
+            meta["budget.tokens"] = tracker.tokens
         return abstractive.model_copy(
             update={
                 "method": "hybrid",

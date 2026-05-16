@@ -46,6 +46,7 @@ from kaos_nlp_core.similarity import (
 )
 
 from kaos_llm_core.codecs.base import Codec
+from kaos_llm_core.optimization.budget import Budget
 from kaos_llm_core.programs.base import Program
 from kaos_llm_core.programs.classify.prototype import Embedder
 from kaos_llm_core.programs.summarize.abstractive import (
@@ -99,6 +100,7 @@ class QueryFocusedSummary(Program):
         cited: bool = True,
         normalize: bool = True,
         joiner: str = " ",
+        budget: Budget | None = None,
         model: str | None = None,
         codec: Codec | None = None,
         client: BaseProviderClient | None = None,
@@ -116,6 +118,14 @@ class QueryFocusedSummary(Program):
         self._cited = cited
         self._normalize = normalize
         self._joiner = joiner
+        self._budget = budget
+        # Cache: ``ChunkCache`` (plan §5.3) is chunk-id-keyed for the
+        # chunked-reducer Programs; ``QueryFocusedSummary`` is a
+        # single-call path with no chunker, so chunk-id caching does
+        # not naturally apply. Callers needing per-(doc, query) reuse
+        # should wrap the call themselves; we keep the constructor
+        # surface honest by not advertising a cache= param that has
+        # no implementation.
         abstractive_kwargs: dict[str, Any] = {
             "model": model,
             "codec": codec,
@@ -217,10 +227,41 @@ class QueryFocusedSummary(Program):
             for i in picks_idx
         ]
 
+        # Budget gate (plan §6.1 / §8.5 P1-8). The Program makes one
+        # LLM call, so the cheapest correct semantics is pre-check
+        # exhausted() and abort with a partial result; otherwise run
+        # the call and consume from the tracker afterward.
+        tracker = self._budget.make_tracker() if self._budget is not None else None
+        if tracker is not None and tracker.exhausted() is not None:
+            return Summary[str](
+                text="",
+                method="abstractive",
+                source_spans=pick_spans,
+                chunks_used=[parent_id] if parent_id else [],
+                metadata={
+                    "program": "QueryFocusedSummary",
+                    "query": query,
+                    "top_k": self._top_k,
+                    "n_sentences": len(sentences),
+                    "cited": self._cited,
+                    "picks": picks_meta,
+                    "partial": True,
+                    "budget.exhausted": str(tracker.exhausted()),
+                },
+            )
+
         # Hand the joined passage to the abstractive sub-Program.
         # ``parent_id`` is forwarded so the abstractive's
-        # ``chunks_used`` carries the original source id.
-        abstractive = await self.summarize(text=passage, parent_id=parent_id)
+        # ``chunks_used`` carries the original source id. Use
+        # ``invoke()`` (not ``__call__``) so we get access to the
+        # token-usage breakdown for the budget tracker.
+        abstractive_invocation = await self.summarize.invoke(text=passage, parent_id=parent_id)
+        abstractive = abstractive_invocation.output
+        if tracker is not None:
+            tracker.consume(
+                cost_usd=float(abstractive_invocation.usage.cost_usd or 0.0),
+                tokens=int(abstractive_invocation.usage.total_tokens or 0),
+            )
 
         # Pool the picks' spans with whatever verified spans the
         # abstractive (typically CitedSummary) emitted; dedup by
@@ -243,6 +284,9 @@ class QueryFocusedSummary(Program):
             "cited": self._cited,
             "picks": picks_meta,
         }
+        if tracker is not None:
+            meta["budget.cost_usd"] = round(tracker.cost_usd, 6)
+            meta["budget.tokens"] = tracker.tokens
         return abstractive.model_copy(
             update={
                 "method": "abstractive",

@@ -27,6 +27,7 @@ from kaos_llm_core.composition.aggregate import (
     UnionAggregator,
     VoteAggregator,
     WeightedAggregator,
+    resolve_aggregator,
 )
 from kaos_llm_core.composition.reduce import (
     Cluster,
@@ -51,4 +52,5 @@ __all__ = [
     "UnionAggregator",
     "VoteAggregator",
     "WeightedAggregator",
+    "resolve_aggregator",
 ]
