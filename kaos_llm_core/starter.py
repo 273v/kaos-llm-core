@@ -510,6 +510,8 @@ async def summarize_doc(
     model: str | None = None,
     long_strategy: LongSummaryStrategy = "auto",
     cited: bool = False,
+    query: str | None = None,
+    embedder: Any = None,
     cache: ChunkCache | None = None,
     budget: Budget | None = None,
     chunker: Chunker | None = None,
@@ -536,16 +538,32 @@ async def summarize_doc(
             :class:`~kaos_llm_core.programs.summarize.HierarchicalSummary`;
             ``"refine"`` forces a
             :class:`~kaos_llm_core.programs.summarize.RefineSummary`.
+
+            **When ``query=`` is supplied, ``long_strategy`` is
+            overridden**: the façade routes to
+            :class:`~kaos_llm_core.programs.summarize.QueryFocusedSummary`
+            regardless of input length.
         cited: When ``True``, route through
             :class:`~kaos_llm_core.programs.summarize.CitedSummary`
-            for the ``"single"`` strategy. Long-doc strategies emit
+            for the ``"single"`` strategy or feed
+            :class:`QueryFocusedSummary` to its cited path. Long-doc
+            ``"tree"`` / ``"refine"`` strategies emit
             ``method="abstractive"``; per-leaf citation is a Phase 6
-            feature (``QueryFocusedSummary`` / ``CitedSummary``
-            wrapping reducer levels).
+            feature wrapping reducer levels (not built).
+        query: When supplied, routes through
+            :class:`~kaos_llm_core.programs.summarize.QueryFocusedSummary`
+            with the given query. Requires ``embedder`` to be set
+            (any object conforming to the
+            :class:`~kaos_llm_core.programs.classify.Embedder`
+            protocol). Overrides ``long_strategy``.
+        embedder: Required when ``query`` is supplied. Object
+            conforming to
+            :class:`~kaos_llm_core.programs.classify.Embedder`.
         cache: Optional :class:`~kaos_llm_core.cache.ChunkCache`
             threaded into long-doc Programs.
         budget: Optional :class:`~kaos_llm_core.optimization.budget.Budget`
-            threaded into long-doc Programs.
+            threaded into long-doc Programs *and*
+            :class:`QueryFocusedSummary` (single-call budget gate).
         chunker: Optional explicit chunker. ``None`` uses each long-doc
             Program's default (``ParagraphChunker(max_tokens=1024)``).
         settings: Optional :class:`KaosLLMCoreSettings`.
@@ -554,11 +572,43 @@ async def summarize_doc(
         AbstractiveSummary,
         CitedSummary,
         HierarchicalSummary,
+        QueryFocusedSummary,
         RefineSummary,
     )
 
     resolved_model = _resolve_default_model(model, settings=settings)
     resolved_settings = settings or KaosLLMCoreSettings()
+
+    # Query route — plan §7.1 says ``query`` "turns it into
+    # QueryFocusedSummary". Overrides ``long_strategy`` since the
+    # query-focused path has its own retrieval-then-summarise shape
+    # that's independent of the chunk-then-reduce shape.
+    if query is not None:
+        if embedder is None:
+            raise CallError(
+                "summarize_doc(query=...) requires an `embedder=` argument "
+                "(any object conforming to the Embedder protocol). The "
+                "query route uses cosine retrieval over sentences before "
+                "the abstractive call."
+            )
+        qf_program = QueryFocusedSummary(
+            embedder=embedder,
+            cited=cited,
+            budget=budget,
+            model=resolved_model,
+            core_settings=resolved_settings,
+        )
+        qf_result = await qf_program(text=doc, query=query)
+        return qf_result.model_copy(
+            update={
+                "metadata": {
+                    **dict(qf_result.metadata),
+                    "starter.long_strategy": "query",
+                    "starter.facade": "summarize_doc",
+                },
+            }
+        )
+
     strategy = _resolve_long_summary_strategy(len(doc), long_strategy)
 
     if strategy == "single":
@@ -614,6 +664,8 @@ def summarize_doc_sync(
     model: str | None = None,
     long_strategy: LongSummaryStrategy = "auto",
     cited: bool = False,
+    query: str | None = None,
+    embedder: Any = None,
     cache: ChunkCache | None = None,
     budget: Budget | None = None,
     chunker: Chunker | None = None,
@@ -626,6 +678,8 @@ def summarize_doc_sync(
             model=model,
             long_strategy=long_strategy,
             cited=cited,
+            query=query,
+            embedder=embedder,
             cache=cache,
             budget=budget,
             chunker=chunker,
@@ -645,7 +699,7 @@ async def classify_doc(
     corpus: Sequence[tuple[str, str]] | None = None,
     nli_scorer: Any = None,
     long_strategy: LongClassifyStrategy = "auto",
-    aggregator: Aggregator | None = None,
+    aggregator: Aggregator | str | None = None,
     cache: ChunkCache | None = None,
     budget: Budget | None = None,
     chunker: Chunker | None = None,
@@ -698,7 +752,12 @@ async def classify_doc(
             otherwise. ``"single"`` forces a single classifier call
             on the whole doc; ``"chunk"`` wraps the chosen classifier
             in :class:`~kaos_llm_core.programs.classify.ChunkedClassify`.
-        aggregator: Aggregator for the chunked path. ``None`` resolves
+        aggregator: Either an :class:`Aggregator` instance or the
+            short-name string (``"vote"``, ``"majority"``, ``"union"``,
+            ``"intersection"``, ``"weighted"``, ``"max_score"`` —
+            resolved via
+            :func:`kaos_llm_core.composition.resolve_aggregator`).
+            ``None`` resolves
             via :meth:`ChunkedClassify._default_aggregator`.
         cache / budget / chunker: Threaded into ``ChunkedClassify``
             when the chunked path is selected. Ignored on the single
@@ -798,7 +857,11 @@ async def classify_doc(
     if chunker is not None:
         chunked_kwargs["chunker"] = chunker
     if aggregator is not None:
-        chunked_kwargs["aggregator"] = aggregator
+        # Accept either an :class:`Aggregator` instance or the
+        # short-name string (plan §11 endgame: ``aggregator="union"``).
+        from kaos_llm_core.composition import resolve_aggregator
+
+        chunked_kwargs["aggregator"] = resolve_aggregator(aggregator)
     if cache is not None:
         chunked_kwargs["cache"] = cache
     if budget is not None:
@@ -828,7 +891,7 @@ def classify_doc_sync(
     corpus: Sequence[tuple[str, str]] | None = None,
     nli_scorer: Any = None,
     long_strategy: LongClassifyStrategy = "auto",
-    aggregator: Aggregator | None = None,
+    aggregator: Aggregator | str | None = None,
     cache: ChunkCache | None = None,
     budget: Budget | None = None,
     chunker: Chunker | None = None,

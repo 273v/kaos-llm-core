@@ -167,6 +167,40 @@ class TestSummarizeDocSingle:
         assert recorded == [CitedSummary]
 
 
+class TestSummarizeDocQueryRoute:
+    """Plan §7.1: ``summarize_doc(query=…)`` overrides ``long_strategy``
+    and routes through :class:`QueryFocusedSummary`."""
+
+    @pytest.mark.asyncio
+    async def test_query_routes_to_query_focused_summary(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from kaos_llm_core.programs.summarize import QueryFocusedSummary
+
+        recorded: list[type[Any]] = []
+
+        def _patched_init(self: QueryFocusedSummary, **kwargs: Any) -> None:
+            recorded.append(type(self))
+            raise _ConstructorIntercepted
+
+        monkeypatch.setattr(QueryFocusedSummary, "__init__", _patched_init)
+
+        class _StubEmbedder:
+            def embed(self, texts, *, batch_size=32):
+                import numpy as np
+
+                return np.zeros((len(list(texts)), 2), dtype=np.float32)
+
+        with pytest.raises(_ConstructorIntercepted):
+            await summarize_doc("Any doc.", query="who signed?", embedder=_StubEmbedder())
+        assert recorded == [QueryFocusedSummary]
+
+    @pytest.mark.asyncio
+    async def test_query_requires_embedder(self) -> None:
+        with pytest.raises(CallError, match="embedder"):
+            await summarize_doc("Any doc.", query="who signed?")
+
+
 class TestSummarizeDocLong:
     @pytest.mark.asyncio
     async def test_long_input_auto_resolves_to_tree(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -309,6 +343,62 @@ class TestClassifyDocSingle:
     async def test_nli_requires_scorer(self) -> None:
         with pytest.raises(CallError, match="nli_scorer"):
             await classify_doc("x", _LABEL_NAMES, supervision="nli")
+
+    @pytest.mark.asyncio
+    async def test_aggregator_string_resolves(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Plan §11 endgame: ``classify_doc(..., aggregator="union", ...)``
+        must resolve the short name into the matching Aggregator."""
+        from kaos_llm_core.composition import UnionAggregator
+        from kaos_llm_core.programs.classify import ChunkedClassify, ZeroShotClassify
+
+        seen: dict[str, Any] = {}
+        orig = ChunkedClassify.__init__
+
+        def _patched(self: ChunkedClassify, **kwargs: Any) -> None:
+            seen.update(kwargs)
+            orig(self, **kwargs)
+
+        monkeypatch.setattr(ChunkedClassify, "__init__", _patched)
+        # Avoid actually running the inner LLM path; we only assert
+        # the aggregator the façade hands to ChunkedClassify.
+        orig_zero = ZeroShotClassify.__init__
+
+        def _patched_zero(self: ZeroShotClassify, **kwargs: Any) -> None:
+            from kaos_llm_client.providers.function import FunctionClient
+
+            # The fixture _LABEL_NAMES is ("contract", "memo"); the
+            # ZeroShotClassify literal-typed output validates against it.
+            kwargs.setdefault(
+                "client",
+                FunctionClient(
+                    function=lambda messages, profile: _resp(
+                        {"label": "contract", "confidence": 0.9, "rationale": "x"}
+                    )
+                ),
+            )
+            orig_zero(self, **kwargs)
+
+        monkeypatch.setattr(ZeroShotClassify, "__init__", _patched_zero)
+
+        from kaos_nlp_core.chunking import SentenceChunker
+
+        await classify_doc(
+            "Sentence one. Sentence two. " * 5_000,  # force chunk path
+            _LABEL_NAMES,
+            aggregator="union",
+            chunker=SentenceChunker(max_tokens=1),
+        )
+        assert isinstance(seen["aggregator"], UnionAggregator)
+
+    @pytest.mark.asyncio
+    async def test_unknown_aggregator_string_raises(self) -> None:
+        with pytest.raises(CallError, match="unknown aggregator"):
+            await classify_doc(
+                "x",
+                _LABEL_NAMES,
+                aggregator="not_a_real_aggregator",
+                long_strategy="chunk",
+            )
 
 
 class TestClassifyDocLong:

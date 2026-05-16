@@ -322,6 +322,50 @@ class MaxScoreAggregator(_MultiLabelAggregator, _ExclusiveAggregator):
         return _MultiLabelAggregator._build(self, picks, per_chunk, label_set, pooled)
 
 
+# ---------------------------------------------------------------------------
+# String resolver — supports the plan §11 "what success looks like" endgame
+# snippet ``classify(doc, ..., aggregator="union", ...)`` where the caller
+# supplies a short name instead of an :class:`Aggregator` instance.
+# ---------------------------------------------------------------------------
+
+_AGGREGATOR_BY_NAME: dict[str, type[Aggregator]] = {
+    "vote": VoteAggregator,
+    "majority": MajorityAggregator,
+    "union": UnionAggregator,
+    "intersection": IntersectionAggregator,
+    "weighted": WeightedAggregator,
+    "max_score": MaxScoreAggregator,
+}
+
+
+def resolve_aggregator(value: Aggregator | str) -> Aggregator:
+    """Return an :class:`Aggregator` from a name or pass-through an instance.
+
+    Accepted names (case-sensitive): ``"vote"``, ``"majority"``, ``"union"``,
+    ``"intersection"``, ``"weighted"``, ``"max_score"``. Each maps to the
+    matching concrete class with default constructor arguments.
+
+    Raises:
+        CallError: When ``value`` is a string that does not name a known
+            aggregator.
+
+    Pass-through: when ``value`` is already an :class:`Aggregator`
+    instance (or any callable matching the protocol), it is returned
+    unchanged so callers can build aggregators with custom kwargs and
+    still flow through the same resolver-style API.
+    """
+    from kaos_llm_core.errors import CallError
+
+    if isinstance(value, str):
+        cls = _AGGREGATOR_BY_NAME.get(value)
+        if cls is None:
+            raise CallError(
+                f"unknown aggregator {value!r}; allowed names: {sorted(_AGGREGATOR_BY_NAME)}"
+            )
+        return cls()
+    return value
+
+
 __all__ = [
     "Aggregator",
     "IntersectionAggregator",
@@ -330,4 +374,5 @@ __all__ = [
     "UnionAggregator",
     "VoteAggregator",
     "WeightedAggregator",
+    "resolve_aggregator",
 ]

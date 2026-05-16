@@ -149,6 +149,26 @@ class TestHybridSummary:
         assert result.method == "hybrid"
         assert result.metadata["picks.count"] == 0
 
+    @pytest.mark.asyncio
+    async def test_budget_consumed_on_success(self) -> None:
+        from kaos_llm_core.optimization.budget import Budget
+
+        ranker = _StaticRanker(indices=[0])
+        client = FunctionClient(function=_abstractive_fn("budgeted hybrid"))
+        program = HybridSummary(
+            ranker=ranker,
+            top_k=1,
+            cited=False,
+            budget=Budget(max_tokens=10_000),
+            model="function-test",
+            client=client,
+        )
+        result = await program(text=_DOC)
+        # 75 tokens consumed from the one abstractive call
+        # (stub `_resp` uses 50 in + 25 out).
+        assert result.metadata["budget.tokens"] == 75
+        assert "partial" not in result.metadata
+
 
 class _Intercepted(Exception):
     """Marker raised by patched __init__ to assert wiring only."""

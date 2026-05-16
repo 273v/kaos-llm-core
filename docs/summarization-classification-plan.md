@@ -84,7 +84,7 @@ spec, the divergence is called out here.
 |---|---|---|
 | `kaos-nlp-core` | **0.1.0a6** | Layer-0 `Chunk`, Layer-1 deterministic chunkers (5), label aggregation primitives (6), dense-vector similarity kernels (NumKong-design SIMD ported into Rust at `rust/core/similarity/kernels.rs`; AVX-512F / AVX2+FMA / NEON / scalar with runtime ISA dispatch; pre-normalised fast-path variants for unit-norm inputs). |
 | `kaos-nlp-transformers` | **0.2.0a6** | Layer-2 `SemanticChunker` + `ExtractiveRanker`, both wired to the pre-normalised SIMD fast paths. End-to-end throughput benches under `tests/bench_*.py`. |
-| `kaos-llm-core` | **0.1.0a10** (in flight; Phase-5 leftovers + Q3–Q6 dev tooling on `main`) | Layer-0 `Label` / `LabelSet` / `Summary[T]` / `Classification[L]` / `SourceSpan`. Layer-3 `Reducer` protocol + 3 of 4 reducers + `Aggregator` protocol + 6 strategies. Layer-4 summarization Programs (7 of 10) + classification Programs (7 of 8). 0.1.0a10 closes the Phase-5 leftover gap with `ExtractiveSummary` + `PrototypeClassify` (both no-LLM); 0.1.0a9 (shipped) carries the MCP registration split into `register_llm_core_program_tools` + `register_llm_core_alpha_tools` (PRD §4 PR-1) — orthogonal to this plan but worth noting because §7.3 talks about MCP. |
+| `kaos-llm-core` | **0.1.0a11** (in flight; 0.1.0a10 shipped 2026-05-15 with the full Phase 0–8 pyramid; 0.1.0a11 closes three audit gaps surfaced by re-running the §11 endgame snippet against the actual API) | Layer-0 `Label` / `LabelSet` / `Summary[T]` / `Classification[L]` / `SourceSpan`. Layer-3 `Reducer` protocol + 4 of 4 reducers (Cluster shipped in a10) + `Aggregator` protocol + 6 strategies + `resolve_aggregator` string-shortcut (a11). Layer-4 summarization Programs (10 of 10) + classification Programs (8 of 8 + `ZeroShotNLIClassifier`). `QueryFocusedSummary` + `HybridSummary` now accept `budget=` (a11 closes audit gap G2). `summarize_doc` now routes `query=` to `QueryFocusedSummary` (a11 closes audit gap G3). |
 
 ### Per-phase ledger
 
@@ -1067,19 +1067,43 @@ final = my_aggregate(results)           # bespoke aggregator
 After this plan ships, the same caller writes:
 
 ```python
-result = await classify(
+from kaos_llm_core.starter import classify_doc
+
+result = await classify_doc(
     doc,
     labels=contract_labels,
     long_strategy="chunk",
     aggregator="union",
-    cited=True,
 )
 ```
 
-…and gets traces, cost reporting, caching, routing, and citations for
-free. The same primitives compose into a no-LLM path
-(`PrototypeClassify` + `UnionAggregator`) when the caller wants to
-drop cost to near-zero.
+…and gets traces, cost reporting, caching, routing, and budget
+enforcement for free. The same primitives compose into a no-LLM path
+
+```python
+result = await classify_doc(
+    doc,
+    labels=contract_labels,
+    supervision="prototype",       # or "retrieval" / "nli"
+    embedder=embedder,
+    long_strategy="chunk",
+    aggregator="union",
+)
+```
+
+when the caller wants to drop cost to near-zero.
+
+Symmetric façade for summarization:
+
+```python
+from kaos_llm_core.starter import summarize_doc
+
+result = await summarize_doc(doc, long_strategy="tree", cited=True)
+```
 
 The taxonomy from the design discussion becomes the parameter space of
 exactly two functions.
+
+**Contract test:** ``tests/unit/test_plan_endgame_snippet.py`` runs
+both endgame snippets verbatim against ``FunctionClient`` stubs so
+the §11 promise stays guaranteed across releases.
