@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import hashlib
 import time
+from pathlib import Path
 from typing import Any, Literal
 
 from kaos_content.model.extraction import (
@@ -31,7 +32,7 @@ from kaos_content.model.extraction import (
 from kaos_core.logging import get_logger
 from pydantic import BaseModel, ConfigDict, Field
 
-from kaos_llm_core.errors import CallError, ValidationRetryExhaustedError
+from kaos_llm_core.errors import CallError, KaosLLMCoreError, ValidationRetryExhaustedError
 from kaos_llm_core.extract.merge import AlphaLLMMerger
 from kaos_llm_core.programs.base import Program
 from kaos_llm_core.programs.call import Call
@@ -675,6 +676,16 @@ def _classify_error(exc: Exception) -> ExtractionErrorCode:
 # =====================================================================
 
 
+class ExtractCorpusError(KaosLLMCoreError):
+    """Raised when :func:`extract_corpus` cannot proceed with the given args.
+
+    Currently only signals a missing/invalid ``output_dir``. The previous
+    behaviour was to silently return an empty
+    :class:`CorpusExtractionResult` — indistinguishable from a corpus that
+    genuinely had no matches — which made agent-side debugging impossible.
+    """
+
+
 class CorpusInputSource:
     """``BatchInputSource`` that iterates a corpus for structured extraction.
 
@@ -789,6 +800,11 @@ async def extract_corpus(
             (``ExtractionSchema`` / ``dict`` / Pydantic class / Signature).
         corpus: ``dict[doc_id, text]`` or a ``Corpus`` Protocol instance.
         output_dir: Where ``batch_run`` writes ``items.jsonl`` + manifest.
+            Must be an existing directory on the local filesystem; this
+            function does **not** auto-create it (and raises
+            :class:`ExtractCorpusError` if the path is missing or not a
+            directory). VFS paths are not yet supported — see the
+            ``TODO(vfs-aware)`` marker in the implementation.
         model: Provider/model (e.g. ``"anthropic:claude-haiku-4-5"``).
         provenance: ``"none" | "cited" | "grounded"`` — same semantics as
             :class:`Extract`.
@@ -811,6 +827,28 @@ async def extract_corpus(
     from kaos_content.model.tabular import TabularDocument
 
     from kaos_llm_core.programs.batch import batch_run
+
+    # Path validation — fail loud before batch_run silently writes its log to
+    # a parent that exists but is not what the caller intended (or, worse,
+    # before we try to read items.jsonl back from a VFS path that never
+    # existed on the real filesystem and return an empty result).
+    #
+    # TODO(vfs-aware): accept ``context: KaosContext | None`` so output_dir
+    # can be a VFS path (e.g. ``sessions/<sid>/files/output``) — materialise
+    # via ``context.get_vfs_path()``. Requires batch_run() to be VFS-aware
+    # too; deferred. See vfs-blind-tools-audit-and-fix-plan.md §5.1 (b).
+    output_path = Path(output_dir)
+    if not output_path.exists() or not output_path.is_dir():
+        raise ExtractCorpusError(
+            f"output_dir '{output_dir}' does not exist on the local filesystem "
+            "or is not a directory. "
+            "How to fix: pass an absolute filesystem path that the process can "
+            "write to (the directory must already exist). "
+            "Alternative: if you intended a VFS path, this function is "
+            "filesystem-only — materialise the output directory first or use "
+            "kaos-agent-corpus-filter for in-VFS workflows.",
+            output_dir=str(output_dir),
+        )
 
     extractor = Extract(
         schema,
@@ -835,9 +873,7 @@ async def extract_corpus(
     batch_result = await batch_run(extractor, source, **batch_kwargs)
 
     # Hydrate per-doc ExtractionResult rows from the JSONL log.
-    from pathlib import Path
-
-    log_path = Path(output_dir) / "items.jsonl"
+    log_path = output_path / "items.jsonl"
     results: list[ExtractionResult] = []
     if log_path.exists():
         import json

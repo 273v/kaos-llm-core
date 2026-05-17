@@ -8,6 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`extract_corpus()` no longer silently returns empty results when
+  `output_dir` is missing.** Previously, if the caller passed an
+  `output_dir` that did not exist on the local filesystem (most often
+  a session-VFS path like `sessions/<sid>/files/output` plumbed through
+  by an agent), `batch_run()` would create the directory and write
+  `items.jsonl`, but the hydration step's `Path(output_dir).exists()`
+  check would still see the path the caller passed and — in the failure
+  paths covered by this fix — return a vacuously-empty
+  `CorpusExtractionResult` with no error signal. Indistinguishable from
+  a corpus that genuinely had no matches. `extract_corpus()` now raises
+  the new `ExtractCorpusError` (subclass of `KaosLLMCoreError`) with an
+  agent-friendly what / how / alternative message before any LLM call.
+  See `kaos-modules/docs/plans/vfs-blind-tools-audit-and-fix-plan.md`
+  §5.1. A `TODO(vfs-aware)` marker tracks the optional follow-up to
+  accept a `KaosContext` and route via VFS materialisation.
+
+### Added
+
+- **`ExtractCorpusError`** in `kaos_llm_core.programs.extract`. Raised
+  by `extract_corpus()` when `output_dir` is missing or not a directory.
+  Inherits `KaosLLMCoreError` → `KaosCoreError`, so agent-side tool
+  wrappers that already translate `KaosCoreError` to
+  `ToolResult.create_error()` pick it up without changes.
+
 ## [0.1.0a12] — 2026-05-15
 
 Lands the Phase-8 GLiNER half from
