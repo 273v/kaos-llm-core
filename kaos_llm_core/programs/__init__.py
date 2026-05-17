@@ -53,6 +53,7 @@ from kaos_llm_core.programs.extract import (
     CorpusExtractionResult,
     CorpusInputSource,
     Extract,
+    ExtractCorpusError,
     ExtractionResult,
     extract_corpus,
 )
@@ -105,6 +106,7 @@ __all__ = [
     "EnvelopeStep",
     "ExpandQuery",
     "Extract",
+    "ExtractCorpusError",
     "ExtractionResult",
     "HasOutputs",
     "InputSpec",

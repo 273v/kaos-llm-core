@@ -21,6 +21,7 @@ from kaos_llm_core.programs.extract import (
     CorpusExtractionResult,
     CorpusInputSource,
     Extract,
+    ExtractCorpusError,
     ExtractionResult,
     extract_corpus,
 )
@@ -204,6 +205,11 @@ class TestExtractCorpus:
         )
         corpus = {"doc-1": "first", "doc-2": "second"}
 
+        # extract_corpus now requires the output_dir to exist on disk before
+        # the call (fail-loud contract — see ExtractCorpusError docstring).
+        output_dir = tmp_path / "tab-run"
+        output_dir.mkdir()
+
         # Monkey-patch the Extract.__init__ to inject our client after construction.
         # Simplest path: run extract_corpus, then replace the extractor's client
         # via a subclass.
@@ -224,7 +230,7 @@ class TestExtractCorpus:
             result = await extract_corpus(
                 schema,
                 corpus,
-                output_dir=str(tmp_path / "tab-run"),
+                output_dir=str(output_dir),
                 model="function:test",
                 provenance="none",
                 max_concurrency=2,
@@ -297,6 +303,63 @@ class TestExtractCorpus:
         assert result2.n_skipped == 3
         # No new items were processed (n_succeeded is the cumulative count,
         # not the delta; all 3 rows in the log were pre-existing).
+
+
+@pytest.mark.asyncio
+class TestExtractCorpusOutputDirValidation:
+    """Regression: extract_corpus must fail loud on a missing output_dir.
+
+    Before this fix, ``Path(output_dir).exists()`` silently returned False
+    in the hydration step and the function returned an empty
+    ``CorpusExtractionResult`` — indistinguishable from a corpus that
+    genuinely had no matches. The agent-side ``kaos-extract-corpus`` MCP
+    tool then surfaced a "successful extraction with zero matches" to the
+    LLM, which is the worst possible failure mode.
+
+    These tests are path-validation only — the LLM is never called.
+    """
+
+    async def test_missing_output_dir_raises_extract_corpus_error(self) -> None:
+        schema = ExtractionSchema.from_dict(
+            {"id": "tiny", "columns": [{"id": "name", "column_type": "string"}]}
+        )
+        with pytest.raises(ExtractCorpusError) as exc_info:
+            await extract_corpus(
+                schema,
+                {"doc-1": "anything"},
+                output_dir="/nope/missing/definitely-not-here",
+                model="function:test",
+                provenance="none",
+            )
+
+        msg = str(exc_info.value)
+        # 3-part agent-friendly error: what / how / alternative.
+        assert "/nope/missing/definitely-not-here" in msg
+        assert "does not exist" in msg
+        assert "How to fix:" in msg
+        assert "Alternative:" in msg
+        # Structured detail carries the offending path for downstream tools.
+        assert getattr(exc_info.value, "details", {}).get("output_dir") == (
+            "/nope/missing/definitely-not-here"
+        )
+
+    async def test_output_dir_that_is_a_file_raises(self, tmp_path: Path) -> None:
+        """A path that exists but isn't a directory is also a clear miss."""
+        file_path = tmp_path / "not-a-dir.txt"
+        file_path.write_text("oops")
+
+        schema = ExtractionSchema.from_dict(
+            {"id": "tiny", "columns": [{"id": "name", "column_type": "string"}]}
+        )
+        with pytest.raises(ExtractCorpusError) as exc_info:
+            await extract_corpus(
+                schema,
+                {"doc-1": "anything"},
+                output_dir=str(file_path),
+                model="function:test",
+                provenance="none",
+            )
+        assert "not a directory" in str(exc_info.value)
 
 
 class TestExtractionResultRoundTrip:

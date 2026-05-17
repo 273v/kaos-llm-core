@@ -86,11 +86,14 @@ class TestExtractCorpusLive:
     async def test_3_doc_corpus_end_to_end(self, tmp_path: Path) -> None:
         """Fan out Extract over a 3-doc corpus and assert each doc's row."""
         corpus = _load_text_corpus()
+        # extract_corpus requires output_dir to exist (fail-loud contract).
+        output_dir = tmp_path / "corpus-run"
+        output_dir.mkdir()
 
         result = await extract_corpus(
             CORPUS_SCHEMA,
             corpus,
-            output_dir=str(tmp_path / "corpus-run"),
+            output_dir=str(output_dir),
             model="anthropic:claude-haiku-4-5",
             provenance="none",
             max_concurrency=3,
@@ -139,7 +142,10 @@ class TestExtractCorpusLive:
         skip every item.
         """
         corpus = _load_text_corpus()
-        output_dir = str(tmp_path / "resume-live")
+        # extract_corpus requires output_dir to exist (fail-loud contract).
+        output_dir_path = tmp_path / "resume-live"
+        output_dir_path.mkdir()
+        output_dir = str(output_dir_path)
 
         # Run 1 — processes all 3 docs.
         result1 = await extract_corpus(
