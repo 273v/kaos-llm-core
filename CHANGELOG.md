@@ -8,6 +8,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0a15] — 2026-05-18
+
+### Changed
+
+- **`@llm_call` now auto-unwraps single-output Signatures.** When the
+  decorated function's return-type annotation produces a Signature
+  with exactly one OutputField (the common case for `-> str`,
+  `-> int`, `-> list[Foo]`, etc.), the wrapper returns that field's
+  value directly instead of the synthesized `fnSignatureOutput`
+  pydantic object. The function's `-> ReturnType` annotation is now
+  honest. Multi-field Signatures (functions annotated to return a
+  multi-field Pydantic model, or whose introspection inferred
+  multiple outputs) continue to return the full SignatureOutput
+  object. The behavior is decided once at decoration time.
+
+  This closes a quiet-failure mode surfaced by the kaos-ui SPA's
+  ``summarize_session_title`` Program (kaos-modules/docs/plans/
+  persona-matrix-followups.md §5). The Program declared `-> str`
+  and callers wrote ``(await fn(...)).strip()``; the decorator had
+  been returning a pydantic wrapper with no ``.strip()`` attribute,
+  silently breaking every auto-titler call on the 2026-05-18
+  10-persona run. Single-field unwrap makes the type annotation
+  load-bearing again. A `wrapper._unwrap_field` attribute is exposed
+  for tests and introspection (``None`` for multi-output
+  Signatures).
+
+  Behavior change is intentional and additive — code that already
+  destructured the SignatureOutput via attribute access on a
+  single-field Signature is the only surface affected; switch those
+  call sites to use the unwrapped value directly.
+
 ## [0.1.0a14] — 2026-05-17
 
 ### Changed
