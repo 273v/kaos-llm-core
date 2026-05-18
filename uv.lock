@@ -11,7 +11,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-05-15T02:24:37.941844143Z"
+exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
 exclude-newer-span = "PT72H"
 
 [options.exclude-newer-package]
@@ -355,18 +355,18 @@ dev = [
 
 [[package]]
 name = "kaos-nlp-core"
-version = "0.1.0a6"
+version = "0.1.0a8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/44/80/ff41301b7eed3c6b7f652d565f0338b695c7648e121d8ffec6664192a48b/kaos_nlp_core-0.1.0a6.tar.gz", hash = "sha256:9e50b434149707ec24694267387de4a5fc40a8ee7ff2e0f3079c5b01502332a8", size = 58998872, upload-time = "2026-05-15T13:46:48.435Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b8/e0/aa336da82cf3a0b4c40107e6c99505782d30a00e56c7709aaf57e0ac6857/kaos_nlp_core-0.1.0a8.tar.gz", hash = "sha256:8b899cd988e4d1505ac88ce71c1fd7d1734efc08792ca3a27696bb45b85fb8fb", size = 59006251, upload-time = "2026-05-16T17:15:02.443Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/be/51/6109fbc10922ec562cab345142138b49f11f05d75b114a8bd88d4a5da06a/kaos_nlp_core-0.1.0a6-cp313-abi3-macosx_11_0_arm64.whl", hash = "sha256:ee08d847a0a7a17377a3e22a583c708aeee740866554c0dd9123d681142a9d9a", size = 49141630, upload-time = "2026-05-15T13:46:20.85Z" },
-    { url = "https://files.pythonhosted.org/packages/31/90/18df0a3578738abdec0eaff848c462ae68ad0447c194ea9b4745544dcab3/kaos_nlp_core-0.1.0a6-cp313-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:8f679507bac28eab309f69d6357e4d3101f107d475b3535adbb3d09df194eef1", size = 49012589, upload-time = "2026-05-15T13:46:25.133Z" },
-    { url = "https://files.pythonhosted.org/packages/08/1f/f30f118993542a3ab57ff5b65a25e3376fa4aee17d480d23e5a2b7a9efdb/kaos_nlp_core-0.1.0a6-cp313-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:7a6b7f18122431da361c5c5ca3f27e736d7ac52f1a8a9461f3505c399592e27f", size = 49686822, upload-time = "2026-05-15T13:46:30.351Z" },
-    { url = "https://files.pythonhosted.org/packages/8e/7e/2d3dcb78c35a18be07df95097270290ffa6aa9a0ea0759e0c9156b412418/kaos_nlp_core-0.1.0a6-cp313-abi3-win_amd64.whl", hash = "sha256:a752256665d2a477efbbb96a89b4e753fda58e12da280ecfd122ecee3e6bcd31", size = 48925214, upload-time = "2026-05-15T13:46:36.288Z" },
-    { url = "https://files.pythonhosted.org/packages/46/89/308f81d31287f33302a3a907f0c9d555d73b1b34cffcf8ca1e3a44b79fcb/kaos_nlp_core-0.1.0a6-cp313-abi3-win_arm64.whl", hash = "sha256:7423fda97fc5a7692ba8ddfe94d8cea5520b6b73b424d15c5795e4e696628d7b", size = 48719564, upload-time = "2026-05-15T13:46:42.234Z" },
+    { url = "https://files.pythonhosted.org/packages/05/07/9eadab1e04fe52132de1df2dc996a3ed8222fe9b2bd64ab9887301bcb273/kaos_nlp_core-0.1.0a8-cp313-abi3-macosx_11_0_arm64.whl", hash = "sha256:c7bfe5df8f4d9cefd58bbab9007aa1f17140bb1b8757dedb05a26c63a0e555e1", size = 49181456, upload-time = "2026-05-16T17:14:44.463Z" },
+    { url = "https://files.pythonhosted.org/packages/1b/15/85f1e21ea39bcb3fff41d97ee482649800e0b937830a2bc8d6b64f557997/kaos_nlp_core-0.1.0a8-cp313-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:c6b0c8ad7330507c9bce2a88167eb6373d07f723bca4b7976a4f1d9be0a8461e", size = 49055444, upload-time = "2026-05-16T17:14:48.321Z" },
+    { url = "https://files.pythonhosted.org/packages/6a/4e/b5707f8c4e305765653b3d29a59a420a0fd3d1aa8f65f8e78a11af3706e4/kaos_nlp_core-0.1.0a8-cp313-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:535d7bcd06c28fa2a023ce5c0c0ddb3b59b5e4c878629e0cb4c8135d1cbba5d2", size = 49733967, upload-time = "2026-05-16T17:14:51.795Z" },
+    { url = "https://files.pythonhosted.org/packages/a0/2d/4695af59294eaa5a3a6a9014b8e02f4b786c091358b7a545aad3d1166bf7/kaos_nlp_core-0.1.0a8-cp313-abi3-win_amd64.whl", hash = "sha256:da499824f890d7ccac6e82aacd07b972402a45be9532300fdf69fce57b292900", size = 48967605, upload-time = "2026-05-16T17:14:55.58Z" },
+    { url = "https://files.pythonhosted.org/packages/9f/6d/4f55d4b791702581679b829bbe24a9dfdc8e996320f6b7c20c1ed545a748/kaos_nlp_core-0.1.0a8-cp313-abi3-win_arm64.whl", hash = "sha256:3073dc3ae7397668612407e9c3afcdabb7b4819e0f6caf87cd0d3eb4835efa39", size = 48759020, upload-time = "2026-05-16T17:14:59.094Z" },
 ]
 
 [[package]]
