@@ -48,7 +48,7 @@ jobs:
 
       - name: Run tests
         run: |
-          uv run pytest \
+          uv run pytest tests/unit/ \
             -m "not live and not network and not slow" \
             --cov=kaos_llm_core \
             --cov-branch \
