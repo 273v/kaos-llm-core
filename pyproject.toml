@@ -42,7 +42,7 @@ classifiers = [
 ]
 dependencies = [
   "kaos-content>=0.1.0a1,<0.2",
-  "kaos-core>=0.1.0a3,<0.2",
+  "kaos-core>=0.1.0a10,<0.2",
   "kaos-llm-client>=0.1.0a2,<0.2",
   # 0.1.0a5 added kaos_nlp_core.{chunking,aggregation,similarity}
   # consumed by Programs/composition. 0.1.0a6 added the
