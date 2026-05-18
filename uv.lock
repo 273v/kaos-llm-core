@@ -11,7 +11,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
+exclude-newer = "2026-05-15T02:24:37.941844143Z"
 exclude-newer-span = "PT72H"
 
 [options.exclude-newer-package]
@@ -277,16 +277,16 @@ images = [
 
 [[package]]
 name = "kaos-core"
-version = "0.1.0a7"
+version = "0.1.0a10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e5/3d/dfb8f766e706893870977fc035582b37c6b2fa63f4ecf81190dbae20f53f/kaos_core-0.1.0a7.tar.gz", hash = "sha256:df249e194f53c3d9ccec0dbd0497c12e99b7daa750a780b356cc1a5118776d27", size = 169231, upload-time = "2026-05-15T03:48:39.203Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b3/fa/7fe7eba42dae8acdb036a1863aec8d009f9bd077258ac8937e515c3c706d/kaos_core-0.1.0a10.tar.gz", hash = "sha256:6237422136b352d9a6805ccf634714d6b086b39a6551d77e779a9fd9eba0bae7", size = 186012, upload-time = "2026-05-18T02:19:54.659Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f8/7d/1cdb1bb0054e543b5b86b93c07ba8b067fcc178ae2c41062c8c68acb2255/kaos_core-0.1.0a7-py3-none-any.whl", hash = "sha256:08f76a0024f9ae339b6c54f6d9fedb5e1185afab6f52692732a6d981f1e52705", size = 133071, upload-time = "2026-05-15T03:48:37.827Z" },
+    { url = "https://files.pythonhosted.org/packages/a9/fe/13b14e98098b5e5e9854b9b6228ed7e5792b6b9708c19615b9735530c913/kaos_core-0.1.0a10-py3-none-any.whl", hash = "sha256:5690a55dd4720a68083328dad20c6d59f13fcc6dc2d557c710936a1f48257f2f", size = 143617, upload-time = "2026-05-18T02:19:52.861Z" },
 ]
 
 [[package]]
@@ -336,7 +336,7 @@ dev = [
 requires-dist = [
     { name = "kaos-content", specifier = ">=0.1.0a1,<0.2" },
     { name = "kaos-content", extras = ["images"], marker = "extra == 'vision'", specifier = ">=0.1.0a1,<0.2" },
-    { name = "kaos-core", specifier = ">=0.1.0a3,<0.2" },
+    { name = "kaos-core", specifier = ">=0.1.0a10,<0.2" },
     { name = "kaos-llm-client", specifier = ">=0.1.0a2,<0.2" },
     { name = "kaos-nlp-core", specifier = ">=0.1.0a6,<0.2" },
     { name = "opentelemetry-api", marker = "extra == 'otel'", specifier = ">=1.20" },

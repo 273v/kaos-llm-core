@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0a14] — 2026-05-17
+
+### Changed
+
+- **kaos-core floor raised to `>=0.1.0a10`** to pick up the URI
+  contract redesign (bare names route through
+  `context.default_vfs_namespace`; `file://` and `vfs://` schemes).
+  See `kaos-modules/docs/plans/uri-contract-redesign.md`. Pass-through
+  for kaos-llm-core internals (no synthetic bare-name resolver calls).
+
 ## [0.1.0a13] — 2026-05-17
 
 ### Fixed
