@@ -66,7 +66,7 @@ from kaos_llm_client.types import ToolCall, ToolChoice
 from pydantic import ValidationError
 
 from kaos_llm_core.codecs.base import Codec
-from kaos_llm_core.errors import CallError, CodecError
+from kaos_llm_core.errors import CallError, CodecError, ToolReportedError
 from kaos_llm_core.observability.collectors import push_trace
 from kaos_llm_core.observability.cost import apply_cost_estimates
 from kaos_llm_core.observability.traces import ExecutionTrace
@@ -1066,15 +1066,25 @@ class ReAct(Program):
     async def _invoke_one(self, tc: ToolCall, tool_lookup: dict[str, Tool]) -> tuple[Any, bool]:
         """Execute one tool call.
 
-        Returns ``(payload, is_error)``. The error flag is set by ReAct's
-        own dispatcher, never by inspecting the payload, so a tool that
-        legitimately returns ``{"error": True, "details": ...}`` is forwarded
-        with ``is_error=False``. Audit finding #3.
+        Returns ``(payload, is_error)``. Three error-signal paths:
 
-        Unknown tool name and tool exceptions both produce
-        ``{"error": True, "message": "..."}`` so the model gets a uniform
-        error shape it can reason about. ``on_tool_error="raise"`` skips
-        the catch and lets exceptions propagate.
+        1. **Unknown tool name** → ReAct's dispatcher synthesizes
+           ``{"error": True, "message": "..."}`` with ``is_error=True``.
+        2. **Tool raises :class:`~kaos_llm_core.errors.ToolReportedError`** →
+           the tool's own structured payload is forwarded as-is with
+           ``is_error=True``. This is how a wrapper (e.g. the kaos-agents
+           tool bridge) propagates a ``ToolResult.isError=True`` from
+           an underlying KaosTool without losing the tool's remediation
+           hint to the generic "Tool 'X' raised" wrapper.
+        3. **Tool raises any other Exception** → ReAct wraps with
+           ``{"error": True, "message": "Tool 'X' raised: ..."}`` and
+           ``is_error=True``. ``on_tool_error="raise"`` skips the
+           catch and lets exceptions propagate.
+
+        Audit finding #3 (the original "ReAct never inspects the payload")
+        still holds for path 3 — bare exceptions are not the same as a
+        legitimately-error-shaped success payload. ``ToolReportedError``
+        (path 2) is the explicit opt-in for wrappers that need both signals.
         """
         tool = tool_lookup.get(tc.name)
         if tool is None:
@@ -1091,6 +1101,14 @@ class ReAct(Program):
             )
         try:
             return (await tool.invoke(tc.arguments), False)
+        except ToolReportedError as exc:
+            # The tool wrapper (e.g. kaos-agents tool_bridge) is reporting
+            # a structured error from the underlying tool. Forward the
+            # tool's own payload AND propagate is_error=True so downstream
+            # observability (kaos-agents memory, audit CLI, UI chips,
+            # critics) can see the failure without losing the remediation
+            # hint to a generic wrapper.
+            return (exc.payload, True)
         except Exception as exc:
             if self.on_tool_error == "raise":
                 raise

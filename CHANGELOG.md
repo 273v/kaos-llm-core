@@ -8,6 +8,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0a16] — 2026-05-19
+
+### Added
+
+- **`ToolReportedError`** — new exception in `kaos_llm_core.errors`.
+  Raised by a tool executor (e.g. the kaos-agents tool bridge wrapping
+  a `ToolResult` with `isError=True`) when it wants ReAct's dispatcher
+  to record `is_error=True` on the resulting `ToolObservation` AND
+  preserve the tool's own structured payload as the observation
+  result, instead of the generic ``"Tool 'X' raised: ..."`` wrapper
+  applied to unhandled exceptions. Closes the audit-finding-#3 gap
+  that previously forced a binary choice between "preserve payload
+  (lose error flag)" and "raise exception (lose payload)" —
+  `ToolReportedError` propagates both signals. Downstream observers
+  (kaos-agents memory, audit CLI, UI chips, the critic's `_is_stuck`
+  heuristic) now see `is_error=True` instead of a silent "done ✓" on
+  tool failures. Companion to kaos-agents `tool_bridge.py` 0.1.0a16's
+  switch from returning `{"error": True, ...}` JSON to raising
+  `ToolReportedError`.
+
+### Changed
+
+- **`ReAct._invoke_one` propagates `ToolReportedError`.** The
+  dispatcher's exception handler now distinguishes
+  `ToolReportedError` (forward payload to model, record
+  `is_error=True`) from bare `Exception` (wrap with
+  ``"Tool 'X' raised: ..."``, record `is_error=True`). Existing
+  behavior for unhandled exceptions is unchanged.
+
 ## [0.1.0a15] — 2026-05-18
 
 ### Changed

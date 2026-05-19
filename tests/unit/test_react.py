@@ -240,6 +240,96 @@ class TestReActToolErrorContinue:
         assert "ValueError" in obs.result["message"]
 
 
+class TestReActToolReportedError:
+    """Coverage for the ``ToolReportedError`` opt-in path.
+
+    Pre-fix: tool wrappers (e.g. the kaos-agents tool bridge) could not
+    propagate ``is_error=True`` to the resulting ``ToolObservation`` without
+    losing the tool's own remediation hint to the generic
+    ``"Tool 'X' raised: ..."`` wrapper applied to unhandled exceptions.
+    The ``ToolReportedError`` exception class added in
+    ``kaos_llm_core.errors`` is the explicit opt-in: ReAct catches it
+    specifically, propagates ``is_error=True``, and preserves the tool's
+    own payload as the observation result.
+
+    See inventory P0-1 #437 and kaos-modules/docs/plans/
+    2026-05-19-consolidated-issue-inventory.md.
+    """
+
+    async def test_tool_reported_error_propagates_is_error_and_payload(self) -> None:
+        """`ToolReportedError` → is_error=True AND payload preserved verbatim."""
+        from kaos_llm_core.errors import ToolReportedError
+
+        call_count = {"n": 0}
+
+        def fetch_url(url: str) -> str:
+            """Raise a kaos-agents-bridge-style reported error."""
+            raise ToolReportedError(
+                {
+                    "error": True,
+                    "message": (
+                        "Failed to load document artifact 'sessions/SID/files/X.kaos.json': "
+                        "Unknown artifact. Verify the artifact_id with kaos-core-artifacts-list."
+                    ),
+                }
+            )
+
+        def handler(messages: list[dict[str, Any]], profile: ModelProfile) -> ProviderResponse:
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                return _tool_call_response(
+                    "fetch_url", {"url": "kaos://sessions/SID/files/X.kaos.json"}
+                )
+            return _json_response({"answer": "could not load doc"})
+
+        react = _make_react(handler=handler, tools=[Tool.from_callable(fetch_url)])
+        result = await react(question="Load X")
+
+        # Loop continued past the error rather than crashing.
+        assert result.stop_reason == "TERMINATED"
+        assert result.iterations_used == 2
+
+        # The ToolObservation faithfully reports is_error=True (NOT False) AND
+        # carries the tool's own payload (NOT the generic "Tool 'X' raised"
+        # wrapper).
+        obs = result.trajectory[0].tool_results[0]
+        assert obs.is_error is True, (
+            "ToolReportedError MUST propagate is_error=True; otherwise downstream "
+            "consumers (kaos-agents memory, audit CLI, UI chips, critics) cannot "
+            "distinguish a successful call from a recovered failure — see "
+            "inventory P0-1 #437."
+        )
+        assert isinstance(obs.result, dict)
+        assert obs.result.get("error") is True
+        # The tool's own remediation hint survives — NOT replaced by the
+        # generic "Try different arguments or pick a different tool."
+        assert "Verify the artifact_id" in obs.result["message"]
+        assert "Failed to load document artifact" in obs.result["message"]
+        # The generic Exception-path wrapper text MUST NOT be present.
+        assert "raised: ToolReportedError" not in obs.result["message"]
+
+    async def test_tool_reported_error_payload_can_be_non_dict(self) -> None:
+        """Payload is forwarded verbatim regardless of shape (dict / str / list / etc)."""
+        from kaos_llm_core.errors import ToolReportedError
+
+        def tool_with_string_payload(x: int) -> str:
+            raise ToolReportedError("plain-string error payload")
+
+        def handler(messages: list[dict[str, Any]], profile: ModelProfile) -> ProviderResponse:
+            return (
+                _json_response({"answer": "noted"})
+                if any(m.get("role") == "tool" for m in messages)
+                else _tool_call_response("tool_with_string_payload", {"x": 1})
+            )
+
+        react = _make_react(handler=handler, tools=[Tool.from_callable(tool_with_string_payload)])
+        result = await react(question="probe")
+
+        obs = result.trajectory[0].tool_results[0]
+        assert obs.is_error is True
+        assert obs.result == "plain-string error payload"
+
+
 class TestReActToolErrorRaise:
     async def test_tool_raises_propagates_with_raise_mode(self) -> None:
         """on_tool_error='raise' lets the exception propagate to the caller."""
