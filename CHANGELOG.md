@@ -8,6 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [0.1.0rc1] — 2026-05-20
+
+### Changed
+
+- Pin floor raised to `>=0.1.0rc1,<0.2` across kaos-* runtime and
+  optional dependencies (`kaos-content`, `kaos-core`,
+  `kaos-llm-client`, `kaos-nlp-core`, and the `[vision]` extra's
+  `kaos-content[images]`). Refreshed `uv.lock` to pick up the rc1
+  line of every upstream.
+
+### Internal
+
+- WU-J of the 0.1.0 GA plan
+  (`kaos-modules/docs/plans/2026-05-20-0.1.0-ga-plan.md`).
+  Release candidate; freezes the public API for `kaos-llm-core`
+  ahead of 0.1.0 GA.
+
+
 ## [0.1.0a17] — 2026-05-20
 
 ### Changed
