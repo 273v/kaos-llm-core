@@ -213,18 +213,61 @@ class Grounded(Program):
         )
 
     @staticmethod
-    def _build_feedback(errors: list[SpanError]) -> str:
-        """Build retry feedback from verification errors."""
+    def _build_feedback(
+        errors: list[SpanError],
+        *,
+        max_errors: int | None = None,
+        per_quote_char_budget: int | None = None,
+    ) -> str:
+        """Build retry feedback from verification errors.
+
+        Args:
+            errors: Verification errors from the previous attempt.
+            max_errors: When set, only the first ``max_errors`` entries
+                are inlined; the remainder are summarized as
+                ``... and N more errors``. **Default ``None`` — every
+                error is inlined.** The model is being asked to fix
+                these citations; silently dropping errors past index N
+                means the model never sees the failure it's supposed
+                to repair. Pass an explicit cap only when the caller
+                has a measured prompt-bloat issue.
+            per_quote_char_budget: When set, truncates each error's
+                ``quote`` excerpt to this many characters with a
+                ``...`` marker. **Default ``None`` — the full quote is
+                inlined.** The model is asked to fix a quote it must
+                see verbatim; chopping at 80 chars means the model
+                fixes the prefix and ignores the trailing context.
+                Pass an explicit cap only when the operator has
+                measured a specific context-window pressure.
+        """
         lines = [
             "Your previous answer had citation verification errors. "
             "Please re-answer, ensuring every cited quote is an EXACT "
             "verbatim substring from the source text.\n\n"
             "Failed citations:"
         ]
-        for err in errors[:10]:  # Cap feedback to avoid prompt bloat
-            lines.append(
-                f"- Span {err.span_index}: quote={err.span.quote[:80]!r}... reason={err.reason}"
+        kept_errors = errors if max_errors is None else errors[:max_errors]
+        for err in kept_errors:
+            quote = err.span.quote
+            if per_quote_char_budget is not None and len(quote) > per_quote_char_budget:
+                dropped = len(quote) - per_quote_char_budget
+                logger.warning(
+                    "grounded: retry-feedback quote truncated span_index=%s "
+                    "kept=%d dropped=%d budget=%d",
+                    err.span_index,
+                    per_quote_char_budget,
+                    dropped,
+                    per_quote_char_budget,
+                )
+                quote = quote[:per_quote_char_budget] + f"... (truncated {dropped} more chars)"
+            lines.append(f"- Span {err.span_index}: quote={quote!r} reason={err.reason}")
+        if max_errors is not None and len(errors) > max_errors:
+            dropped_errors = len(errors) - max_errors
+            logger.warning(
+                "grounded: retry-feedback errors truncated kept=%d dropped=%d budget=%d",
+                max_errors,
+                dropped_errors,
+                max_errors,
             )
-        if len(errors) > 10:
-            lines.append(f"  ... and {len(errors) - 10} more errors")
+            lines.append(f"  ... and {dropped_errors} more errors")
         return "\n".join(lines)

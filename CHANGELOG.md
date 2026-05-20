@@ -8,6 +8,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0a17] — 2026-05-20
+
+### Changed
+
+- **`Grounded._build_feedback` no longer truncates by default.** The
+  verify-retry feedback prompt previously hardcoded ``errors[:10]``
+  and ``quote[:80]`` caps, which meant the retry-LLM was asked to fix
+  citations it could not fully see — the model would often copy the
+  trailing ``...`` ellipsis back into its corrected quote. The cap is
+  now opt-in via two keyword-only parameters:
+
+  - ``max_errors: int | None = None`` — when set, only the first N
+    errors are inlined and a ``... and M more errors`` summary line
+    cites the dropped count.
+  - ``per_quote_char_budget: int | None = None`` — when set, each
+    error's ``quote`` is truncated with an explicit
+    ``... (truncated <K> more chars)`` marker.
+
+  Both default to ``None``, meaning the retry-LLM now sees the FULL
+  failed-citation list and the FULL quote text for each one — exactly
+  the surface it needs to repair the citation. When a cap actually
+  fires it emits a ``logger.warning`` so the truncation is auditable
+  in the structured log.
+
+  Closes ``kaos-modules/docs/plans/2026-05-19-truncation-audit.md``
+  P0 #8. Backward-compatible: existing callers that don't pass the
+  new kwargs see no behavior change at the call site, only fuller
+  context in the retry prompt.
+
 ## [0.1.0a16] — 2026-05-19
 
 ### Added
