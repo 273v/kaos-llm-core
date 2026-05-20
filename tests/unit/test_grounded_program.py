@@ -203,14 +203,55 @@ class TestBuildFeedback:
         assert "quote_mismatch" in feedback
         assert "WRONG TEXT" in feedback
 
-    def test_feedback_caps_at_10(self):
+    def test_feedback_default_inlines_every_error(self):
+        """Default (no cap) MUST inline every error so the retry-prompt
+        model sees every citation it's asked to fix."""
         from kaos_llm_core.signatures.grounding import SpanError
 
         errors = [
             SpanError(span_index=i, span=_bad_span(), reason="quote_mismatch") for i in range(15)
         ]
         feedback = Grounded._build_feedback(errors)
+        # All 15 spans should appear; no "and N more" summary line.
+        for i in range(15):
+            assert f"Span {i}:" in feedback, f"missing span {i} in feedback"
+        assert "more errors" not in feedback
+
+    def test_feedback_opt_in_max_errors_caps_with_summary(self):
+        """When ``max_errors`` is set explicitly, the cap fires with a
+        summary line counting the dropped errors."""
+        from kaos_llm_core.signatures.grounding import SpanError
+
+        errors = [
+            SpanError(span_index=i, span=_bad_span(), reason="quote_mismatch") for i in range(15)
+        ]
+        feedback = Grounded._build_feedback(errors, max_errors=10)
+        assert "Span 9:" in feedback
+        assert "Span 10:" not in feedback
         assert "5 more errors" in feedback
+
+    def test_feedback_default_does_not_truncate_quotes(self):
+        """Default (no per_quote cap) MUST inline the full quote text."""
+        from kaos_llm_core.signatures.grounding import Span, SpanError
+
+        long_quote = "X" * 500
+        span = Span(source_uri="doc", quote=long_quote, char_span=(0, 500))
+        errors = [SpanError(span_index=0, span=span, reason="quote_mismatch")]
+        feedback = Grounded._build_feedback(errors)
+        assert long_quote in feedback
+        assert "truncated" not in feedback
+
+    def test_feedback_opt_in_per_quote_budget_truncates_with_marker(self):
+        """When ``per_quote_char_budget`` is set, quotes are truncated
+        with an explicit marker telling the model how many chars were
+        dropped."""
+        from kaos_llm_core.signatures.grounding import Span, SpanError
+
+        long_quote = "X" * 500
+        span = Span(source_uri="doc", quote=long_quote, char_span=(0, 500))
+        errors = [SpanError(span_index=0, span=span, reason="quote_mismatch")]
+        feedback = Grounded._build_feedback(errors, per_quote_char_budget=80)
+        assert "truncated 420 more chars" in feedback
 
 
 # ---------------------------------------------------------------------------
