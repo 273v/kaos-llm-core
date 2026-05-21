@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [0.1.0] — 2026-05-20
+
+### Released
+
+- 0.1.0 GA — WU-L of GA plan. First stable release. Public API frozen.
+- Pin floor raised to `>=0.1.0,<0.2` across all kaos-* runtime and
+  optional dependencies. Refreshed `uv.lock` to pick up the 0.1.0
+  line of every upstream.
+
+### Internal
+
+- WU-L of the 0.1.0 GA plan
+  (`kaos-modules/docs/plans/2026-05-20-0.1.0-ga-plan.md`).
+
+
 ## [0.1.0rc1] — 2026-05-20
 
 ### Changed
