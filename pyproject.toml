@@ -41,9 +41,9 @@ classifiers = [
   "Typing :: Typed",
 ]
 dependencies = [
-  "kaos-content>=0.1.0rc1,<0.2",
-  "kaos-core>=0.1.0rc1,<0.2",
-  "kaos-llm-client>=0.1.0rc1,<0.2",
+  "kaos-content>=0.1.0,<0.2",
+  "kaos-core>=0.1.0,<0.2",
+  "kaos-llm-client>=0.1.0,<0.2",
   # 0.1.0a5 added kaos_nlp_core.{chunking,aggregation,similarity}
   # consumed by Programs/composition. 0.1.0a6 added the
   # SIMD-dispatched ``cosine_one_to_many_normalized`` /
@@ -52,7 +52,7 @@ dependencies = [
   # ensures downstream wheels resolve a kaos-nlp-core that exposes
   # them. (The 0.1.0a4 tag exists but its release run failed at the
   # wheels matrix and never published to PyPI.)
-  "kaos-nlp-core>=0.1.0rc1,<0.2",
+  "kaos-nlp-core>=0.1.0,<0.2",
   "pydantic>=2.11.0",
 ]
 
@@ -73,7 +73,7 @@ otel = [
 # (`kaos_llm_core.vision`). Pulls kaos-content's [images] extra
 # (Pillow + numpy) so KaosImage works as the program input type.
 vision = [
-  "kaos-content[images]>=0.1.0rc1,<0.2",
+  "kaos-content[images]>=0.1.0,<0.2",
 ]
 
 [project.scripts]
