@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] — 2026-05-23
+
+audit-04 remediation bundle: Family A `[mcp]` extra, Family D classifier, F-003 README counts.
+
 ### Documentation
 
 - **audit-04 README count drift.** README Maturity row updated from
