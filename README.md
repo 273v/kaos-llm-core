@@ -173,7 +173,10 @@ kaos-llm-core --help                   # admin CLI
 kaos-llm-core-serve --help             # MCP server
 ```
 
-`kaos-llm-core-serve` exposes 30 MCP tools over either transport:
+`kaos-llm-core-serve` exposes 32 MCP tools over either transport
+(pinned by `tests/unit/test_tools.py:1135-1153`; the additional two
+versus older docs are the declarative facade tools
+`kaos-llm-core-summarize` and `kaos-llm-core-classify`):
 
 ```bash
 kaos-llm-core-serve                    # stdio (Claude Code / Desktop)
@@ -201,9 +204,9 @@ Tools are mostly read-only / open-world. `program-execute` and the
 |---|---|
 | **Python** | 3.13, 3.14 |
 | **OS** | Linux, macOS, Windows (pure-Python wheel; no native code) |
-| **Maturity** | Alpha (`Development Status :: 3 - Alpha`). The public API is documented in `kaos_llm_core.__all__` (~140 symbols). |
+| **Maturity** | Alpha (`Development Status :: 3 - Alpha`). The public API is documented in `kaos_llm_core.__all__` (165 symbols). |
 | **Stability policy** | Pre-1.0: minor bumps may change behaviour. Every change is documented in [`CHANGELOG.md`](CHANGELOG.md). MCP tool names and `KAOS_LLM_CORE_*` env vars are public API. |
-| **Test coverage** | 93 unit-test modules plus a live integration tier (`tests/integration/`) that hits real provider APIs. Run the live tier with provider keys configured. |
+| **Test coverage** | 123 unit-test modules plus a live integration tier (`tests/integration/`) that hits real provider APIs. Run the live tier with provider keys configured. |
 | **Type checker** | Validated with [`ty`](https://docs.astral.sh/ty/), Astral's Python type checker. |
 
 ## Companion packages

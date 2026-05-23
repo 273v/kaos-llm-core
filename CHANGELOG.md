@@ -5,30 +5,16 @@ All notable changes to `kaos-llm-core` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-
+
 ## [Unreleased]
 
-### Added
+### Documentation
 
-- Declared `[mcp]` optional-dependency (`kaos-mcp>=0.1.0,<0.2`). The
-  `kaos-llm-core-serve` console script and the README server section
-  already advertised this install path, but the extra itself was not
-  declared because `kaos-mcp` was not on PyPI when 0.1.0a1 shipped.
-  Closes audit-04/kaos-llm-core.md F-001.
-- Test `tests/unit/test_serve_install_contract.py` pins the install
-  contract: `kaos-llm-core-serve` exits 1 with `[mcp]` in stderr when
-  `kaos-mcp` is unavailable.
-
-### Changed
-
-- `kaos-llm-core-serve` error message when `kaos-mcp` is missing now
-  cites the canonical install hint (`pip install kaos-llm-core[mcp]`)
-  rather than the bare package name, so it matches the declared
-  optional-dependency entry.
-- `pyproject.toml` classifier bumped from `Development Status :: 3 - Alpha`
-  to `Development Status :: 5 - Production/Stable` to reflect the
-  0.1.0 GA release (WU-L #543) that froze the public API for the
-  0.1.x line. Closes audit-04/kaos-llm-core.md Family D (classifier drift).
+- **audit-04 README count drift.** README Maturity row updated from
+  "~140 symbols" to 165 (runtime probe of `kaos_llm_core.__all__`)
+  and Test coverage row from "93 unit-test modules" to 123. Numbers
+  drifted as the GA cycle added new public API and regression test
+  modules. Doc-only fix; no public API or behavior change.
 
 
 ## [0.1.0] — 2026-05-20
