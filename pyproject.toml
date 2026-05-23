@@ -56,12 +56,9 @@ dependencies = [
   "pydantic>=2.11.0",
 ]
 
-# NOTE: the [mcp], [pdf], and [tabular] extras are not declared at 0.1.0a1
-# because the underlying kaos-mcp, kaos-pdf, and kaos-tabular packages are
-# not yet on PyPI. ``uv lock`` is strict and refuses to resolve any declared
-# extra whose package is not resolvable. These extras (cross-module input
-# bridges for the batch runner) will be re-added once those siblings ship.
-# Until then, install those packages from source.
+# NOTE: the [pdf] and [tabular] extras (cross-module input bridges for
+# the batch runner) are still pending separate declaration; see
+# audit-04 F-003. Install kaos-pdf / kaos-tabular directly until then.
 [project.optional-dependencies]
 # OpenTelemetry instrumentation — emits LLM-call spans through the
 # `opentelemetry-api` no-op tracer when no provider SDK is installed,
@@ -74,6 +71,12 @@ otel = [
 # (Pillow + numpy) so KaosImage works as the program input type.
 vision = [
   "kaos-content[images]>=0.1.0,<0.2",
+]
+# MCP server — required by the `kaos-llm-core-serve` console script
+# (see `kaos_llm_core.serve`). Install with
+# `pip install kaos-llm-core[mcp]` to run the LLM-core MCP server.
+mcp = [
+  "kaos-mcp>=0.1.0,<0.2",
 ]
 
 [project.scripts]

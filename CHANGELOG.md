@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Declared `[mcp]` optional-dependency (`kaos-mcp>=0.1.0,<0.2`). The
+  `kaos-llm-core-serve` console script and the README server section
+  already advertised this install path, but the extra itself was not
+  declared because `kaos-mcp` was not on PyPI when 0.1.0a1 shipped.
+  Closes audit-04/kaos-llm-core.md F-001.
+- Test `tests/unit/test_serve_install_contract.py` pins the install
+  contract: `kaos-llm-core-serve` exits 1 with `[mcp]` in stderr when
+  `kaos-mcp` is unavailable.
+
+### Changed
+
+- `kaos-llm-core-serve` error message when `kaos-mcp` is missing now
+  cites the canonical install hint (`pip install kaos-llm-core[mcp]`)
+  rather than the bare package name, so it matches the declared
+  optional-dependency entry.
+
 
 ## [0.1.0] — 2026-05-20
 
