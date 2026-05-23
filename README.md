@@ -83,6 +83,9 @@ uv add 'kaos-llm-core[otel]'
 
 # Page-level VLM programs (describe_page / classify_page / ocr_page)
 uv add 'kaos-llm-core[vision]'
+
+# MCP server (kaos-llm-core-serve console script)
+uv add 'kaos-llm-core[mcp]'
 ```
 
 `kaos-llm-core` requires Python **3.13** or newer (3.14 is supported).
