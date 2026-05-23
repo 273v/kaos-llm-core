@@ -173,7 +173,10 @@ kaos-llm-core --help                   # admin CLI
 kaos-llm-core-serve --help             # MCP server
 ```
 
-`kaos-llm-core-serve` exposes 30 MCP tools over either transport:
+`kaos-llm-core-serve` exposes 32 MCP tools over either transport
+(pinned by `tests/unit/test_tools.py:1135-1153`; the additional two
+versus older docs are the declarative facade tools
+`kaos-llm-core-summarize` and `kaos-llm-core-classify`):
 
 ```bash
 kaos-llm-core-serve                    # stdio (Claude Code / Desktop)
