@@ -82,6 +82,7 @@ from kaos_llm_core.signatures.introspection import (
     get_output_fields,
 )
 from kaos_llm_core.signatures.signature import Signature
+from kaos_llm_core.types import Example
 
 logger = get_logger(__name__)
 
@@ -200,7 +201,18 @@ class ProgramOfThought(Program):
         memory_bytes: int = _DEFAULT_MEM_BYTES,
         cpu_seconds: int = _DEFAULT_CPU_SECONDS,
         audit_callback: Callable[[str], None] | None = None,
+        code_writer_examples: list[Example] | None = None,
+        interpreter_examples: list[Example] | None = None,
     ) -> None:
+        """Construct a ProgramOfThought.
+
+        See the module docstring for the full security model. ``examples``
+        kwargs ground the two inner Calls; they are independent because
+        the writer and interpreter operate on different synthesised
+        Signatures (writer outputs ``code``; interpreter outputs the
+        original Signature's output fields). Pass ``None`` to either to
+        opt out of grounding for that step.
+        """
         super().__init__()
         self.signature = signature
         self.producer_model = producer_model
@@ -210,6 +222,8 @@ class ProgramOfThought(Program):
         self.memory_bytes = memory_bytes
         self.cpu_seconds = cpu_seconds
         self.audit_callback = audit_callback
+        self._code_writer_examples = code_writer_examples
+        self._interpreter_examples = interpreter_examples
 
         self.code_writer = self._build_code_writer()
         self.interpreter = self._build_interpreter()
@@ -246,6 +260,8 @@ class ProgramOfThought(Program):
         kwargs: dict[str, Any] = {}
         if self.producer_model is not None:
             kwargs["model"] = self.producer_model
+        if self._code_writer_examples is not None:
+            kwargs["examples"] = self._code_writer_examples
         return Call(writer_sig, **kwargs)
 
     def _build_interpreter(self) -> Call:
@@ -284,6 +300,8 @@ class ProgramOfThought(Program):
         kwargs: dict[str, Any] = {}
         if self.interpreter_model is not None:
             kwargs["model"] = self.interpreter_model
+        if self._interpreter_examples is not None:
+            kwargs["examples"] = self._interpreter_examples
         return Call(interp_sig, **kwargs)
 
     def _execute_code(self, code: str) -> _CodeExecutionResult:

@@ -21,6 +21,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `test_examples_forwarded_to_inner_producer` and
   `test_examples_default_none_keeps_existing_behaviour`.
 
+- **`LLMQueryExpander(examples=...)` parameter.** Same forwarding
+  contract as `MultiChainComparison` for the inner
+  `Call(ExpandQuery, ...)`. Default `None` preserves prior behaviour.
+  Unit-test coverage in `tests/unit/test_query_expander.py`:
+  `test_examples_forwarded_to_inner_call` and
+  `test_examples_default_none_keeps_existing_behaviour`.
+
+- **`ProgramOfThought(code_writer_examples=..., interpreter_examples=...)`
+  parameters.** The two inner Calls (code writer + answer
+  interpreter) operate on different synthesised Signatures, so they
+  take independent grounding-examples kwargs. Either may be `None`
+  to opt out of grounding for that step. Unit-test coverage in
+  `tests/unit/test_program_of_thought.py::TestExamplesForwarding`
+  (4 tests: writer-only, interpreter-only, both-independent,
+  back-compat default).
+
+### Documentation
+
+- **`Ensemble` few-shot grounding.** Docstring now documents the
+  pre-existing `**kwargs` passthrough that forwards `examples=` to
+  every voter `Call`. Same examples list applies to every model in
+  the ensemble — there is no per-model override by design (would
+  bias majority-vote semantics).
+
+- **`RAG` few-shot grounding.** `**call_kwargs` parameter
+  documentation now explicitly calls out the `examples=` passthrough
+  to the inner `Call(self._signature, ...)`, so callers that
+  enforce a grounded-Signature contract preserve calibration when
+  routing through `RAG`.
+
 ## [0.1.1] — 2026-05-23
 
 audit-04 remediation bundle: Family A `[mcp]` extra, Family D classifier, F-003 README counts.

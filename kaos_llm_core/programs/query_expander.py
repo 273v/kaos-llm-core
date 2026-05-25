@@ -26,6 +26,7 @@ from kaos_core.logging import get_logger
 from kaos_llm_core.programs.call import Call
 from kaos_llm_core.signatures.fields import InputField, OutputField
 from kaos_llm_core.signatures.signature import Signature
+from kaos_llm_core.types import Example
 
 logger = get_logger(__name__)
 
@@ -70,8 +71,29 @@ class LLMQueryExpander:
     with the document's vocabulary, not just the user's vocabulary.
     """
 
-    def __init__(self, model: str, *, max_queries: int = 5) -> None:
-        self._call = Call(ExpandQuery, model=model)
+    def __init__(
+        self,
+        model: str,
+        *,
+        max_queries: int = 5,
+        examples: list[Example] | None = None,
+    ) -> None:
+        """Construct the expander.
+
+        Args:
+            model: Provider:model string for the underlying ``Call``.
+            max_queries: Hard cap on returned variants (original
+                question included). Default 5.
+            examples: Optional few-shot grounding examples forwarded to
+                the inner ``Call(ExpandQuery, ...)``. Required by
+                callers that enforce a grounded-Signature contract
+                (e.g. kaos-agents'
+                ``Call(SigClass, examples=load_examples("..."))``
+                pattern) so query-expansion samples carry the same
+                calibration the non-wrapper path uses. Default
+                ``None`` preserves the prior behaviour.
+        """
+        self._call = Call(ExpandQuery, model=model, examples=examples)
         self._max_queries = max_queries
 
     async def expand(self, question: str) -> list[str]:

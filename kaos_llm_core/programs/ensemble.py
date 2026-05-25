@@ -38,6 +38,15 @@ class Ensemble(Program):
         print(result.selected)   # The majority-voted result
         print(result.all_results) # All individual results
         print(result.votes)      # Vote counts
+
+    **Few-shot grounding.** ``**kwargs`` is forwarded to every voter
+    :class:`Call`, so passing ``examples=load_examples("...")`` lights
+    up the same few-shot calibration on every model in the ensemble.
+    The examples list is the SAME for every voter — there is no
+    per-model override, by design (otherwise majority-vote semantics
+    would be biased by which model saw which examples). Callers that
+    need divergent calibration per voter should compose multiple
+    :class:`Call` instances explicitly rather than via ``Ensemble``.
     """
 
     def __init__(
