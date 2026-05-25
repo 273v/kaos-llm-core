@@ -53,6 +53,7 @@ from kaos_llm_core.programs.cloning import clone_call
 from kaos_llm_core.programs.result_mixin import OutputForwardingMixin
 from kaos_llm_core.signatures.fields import InputField, OutputField
 from kaos_llm_core.signatures.signature import Signature
+from kaos_llm_core.types import Example
 
 logger = get_logger(__name__)
 
@@ -102,6 +103,15 @@ class MultiChainComparison(Program):
         instruction: Optional override for the producer instruction.
             The aggregator's instruction is fixed: "synthesize a final
             answer informed by every reasoning chain below."
+        examples: Optional few-shot grounding examples forwarded to the
+            inner :class:`ChainOfThought` producer. Use the same shape
+            as :class:`Call`'s ``examples=`` argument. The aggregator
+            does NOT receive these — each chain is judged on its own
+            quality, then synthesised. Required by callers that enforce
+            a grounded-Signature contract (e.g. kaos-agents'
+            ``Call(SigClass, examples=load_examples("..."))`` pattern)
+            so producer samples carry the same calibration the
+            non-MCC path uses.
     """
 
     # Hard cap on ``n`` — see ReAct.MAX_ITERATIONS for rationale.
@@ -116,6 +126,7 @@ class MultiChainComparison(Program):
         aggregator_model: str | None = None,
         temperature: float = 0.7,
         instruction: str | None = None,
+        examples: list[Example] | None = None,
     ) -> None:
         super().__init__()
         if n < 2:
@@ -145,6 +156,8 @@ class MultiChainComparison(Program):
             cot_kwargs["model"] = producer_model
         if instruction is not None:
             cot_kwargs["instructions"] = instruction
+        if examples is not None:
+            cot_kwargs["examples"] = examples
         self.producer = ChainOfThought(signature, **cot_kwargs)
 
         # Aggregator: Call against a Signature that takes

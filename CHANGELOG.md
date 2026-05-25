@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`MultiChainComparison(examples=...)` parameter.** The constructor
+  now accepts a `list[Example] | None` and forwards it to the inner
+  `ChainOfThought` producer (which already accepts the parameter).
+  Required by callers that enforce a grounded-Signature contract — e.g.
+  kaos-agents' `Call(SigClass, examples=load_examples("..."))`
+  pattern — so producer samples carry the same calibration the
+  non-MCC path uses. Default `None` preserves existing behavior.
+  Unit-test coverage in `tests/unit/test_multi_chain_comparison.py`:
+  `test_examples_forwarded_to_inner_producer` and
+  `test_examples_default_none_keeps_existing_behaviour`.
+
 ## [0.1.1] — 2026-05-23
 
 audit-04 remediation bundle: Family A `[mcp]` extra, Family D classifier, F-003 README counts.

@@ -74,6 +74,43 @@ class TestMultiChainComparison:
         with pytest.raises(ValueError, match="n >= 2"):
             MultiChainComparison(_Sig, n=1, producer_model="function:function-test")
 
+    def test_examples_forwarded_to_inner_producer(self) -> None:
+        """``examples=`` flows through to the inner ChainOfThought producer.
+
+        Callers that enforce a grounded-Signature contract (e.g. kaos-agents'
+        ``Call(SigClass, examples=load_examples("..."))`` pattern) must be
+        able to keep the same calibration when routing through MCC. Pre-fix
+        the producer was constructed with no examples regardless of what the
+        caller passed; this test pins the forwarded behavior.
+        """
+        from kaos_llm_core.types import Example
+
+        examples = [
+            Example(
+                inputs={"question": "what is 2+2?"},
+                outputs={"answer": "4"},
+            ),
+            Example(
+                inputs={"question": "what is 3+5?"},
+                outputs={"answer": "8"},
+            ),
+        ]
+        m = MultiChainComparison(
+            _Sig,
+            n=3,
+            producer_model="function:function-test",
+            examples=examples,
+        )
+        # ChainOfThought is a Call subclass, so ``examples`` lands directly
+        # on the producer.
+        assert list(m.producer.examples) == examples
+
+    def test_examples_default_none_keeps_existing_behaviour(self) -> None:
+        """Omitting ``examples=`` leaves the producer ungrounded — back-compat."""
+        m = MultiChainComparison(_Sig, n=3, producer_model="function:function-test")
+        # Pre-fix shape: producer carries no caller-supplied examples.
+        assert not getattr(m.producer, "examples", None)
+
     async def test_forward_aggregates_n_chains(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Run a 3-chain MultiChainComparison through deterministic stubs.
 
