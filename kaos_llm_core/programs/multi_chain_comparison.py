@@ -112,6 +112,12 @@ class MultiChainComparison(Program):
             ``Call(SigClass, examples=load_examples("..."))`` pattern)
             so producer samples carry the same calibration the
             non-MCC path uses.
+        core_settings: Optional :class:`KaosLLMCoreSettings` forwarded
+            to BOTH the inner producer and the aggregator Call. Without
+            this, ``KAOS_LLM_CORE_TRACE_ENABLED`` and per-request
+            ``_meta.kaos_config`` overrides (from the MCP wrapper, the
+            HTTP API, etc.) silently drop on the floor inside MCC.
+            Mirrors the Phase 9d wiring in :class:`Judge`.
     """
 
     # Hard cap on ``n`` — see ReAct.MAX_ITERATIONS for rationale.
@@ -127,6 +133,7 @@ class MultiChainComparison(Program):
         temperature: float = 0.7,
         instruction: str | None = None,
         examples: list[Example] | None = None,
+        core_settings: Any = None,
     ) -> None:
         super().__init__()
         if n < 2:
@@ -150,6 +157,8 @@ class MultiChainComparison(Program):
         self.temperature = temperature
         self.instruction = instruction
 
+        self._core_settings = core_settings
+
         # Producer: ChainOfThought of the original signature.
         cot_kwargs: dict[str, Any] = {"temperature": temperature}
         if producer_model is not None:
@@ -158,6 +167,8 @@ class MultiChainComparison(Program):
             cot_kwargs["instructions"] = instruction
         if examples is not None:
             cot_kwargs["examples"] = examples
+        if core_settings is not None:
+            cot_kwargs["core_settings"] = core_settings
         self.producer = ChainOfThought(signature, **cot_kwargs)
 
         # Aggregator: Call against a Signature that takes
@@ -220,6 +231,8 @@ class MultiChainComparison(Program):
         agg_kwargs: dict[str, Any] = {}
         if self.aggregator_model is not None:
             agg_kwargs["model"] = self.aggregator_model
+        if self._core_settings is not None:
+            agg_kwargs["core_settings"] = self._core_settings
         return Call(agg_sig, **agg_kwargs)
 
     async def forward(self, **inputs: Any) -> Any:

@@ -144,6 +144,15 @@ class TestQueryExpander:
         expander = LLMQueryExpander(model="function-test")
         assert not getattr(expander._call, "examples", None)
 
+    def test_core_settings_forwarded_to_inner_call(self) -> None:
+        """``core_settings=`` flows through so MCP per-request config reaches the Call."""
+        from kaos_llm_core.settings import KaosLLMCoreSettings
+
+        sentinel = KaosLLMCoreSettings()
+        expander = LLMQueryExpander(model="function-test", core_settings=sentinel)
+        # Call stores it under the private ``_core_settings`` attribute.
+        assert expander._call._core_settings is sentinel
+
     async def test_original_question_always_included(self) -> None:
         """The original question is always in the result, even if the LLM omits it."""
         original = "What is the filing fee?"

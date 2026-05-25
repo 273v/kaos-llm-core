@@ -203,6 +203,7 @@ class ProgramOfThought(Program):
         audit_callback: Callable[[str], None] | None = None,
         code_writer_examples: list[Example] | None = None,
         interpreter_examples: list[Example] | None = None,
+        core_settings: Any = None,
     ) -> None:
         """Construct a ProgramOfThought.
 
@@ -212,6 +213,12 @@ class ProgramOfThought(Program):
         Signatures (writer outputs ``code``; interpreter outputs the
         original Signature's output fields). Pass ``None`` to either to
         opt out of grounding for that step.
+
+        ``core_settings`` is forwarded to BOTH inner Calls so
+        ``KAOS_LLM_CORE_TRACE_ENABLED`` and per-request
+        ``_meta.kaos_config`` overrides reach the writer + interpreter.
+        Without it, per-request config silently drops — mirrors the
+        Phase 9d wiring in :class:`Judge`.
         """
         super().__init__()
         self.signature = signature
@@ -224,6 +231,7 @@ class ProgramOfThought(Program):
         self.audit_callback = audit_callback
         self._code_writer_examples = code_writer_examples
         self._interpreter_examples = interpreter_examples
+        self._core_settings = core_settings
 
         self.code_writer = self._build_code_writer()
         self.interpreter = self._build_interpreter()
@@ -262,6 +270,8 @@ class ProgramOfThought(Program):
             kwargs["model"] = self.producer_model
         if self._code_writer_examples is not None:
             kwargs["examples"] = self._code_writer_examples
+        if self._core_settings is not None:
+            kwargs["core_settings"] = self._core_settings
         return Call(writer_sig, **kwargs)
 
     def _build_interpreter(self) -> Call:
@@ -302,6 +312,8 @@ class ProgramOfThought(Program):
             kwargs["model"] = self.interpreter_model
         if self._interpreter_examples is not None:
             kwargs["examples"] = self._interpreter_examples
+        if self._core_settings is not None:
+            kwargs["core_settings"] = self._core_settings
         return Call(interp_sig, **kwargs)
 
     def _execute_code(self, code: str) -> _CodeExecutionResult:

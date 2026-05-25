@@ -131,6 +131,26 @@ class TestExamplesForwarding:
         assert not getattr(p.code_writer, "examples", None)
         assert not getattr(p.interpreter, "examples", None)
 
+    def test_core_settings_forwarded_to_both_inner_calls(self) -> None:
+        """``core_settings=`` flows through to BOTH the code writer and interpreter.
+
+        Mirrors the Phase 9d wiring in :class:`Judge`: per-request
+        ``_meta.kaos_config`` overrides and ``KAOS_LLM_CORE_TRACE_ENABLED``
+        must reach every Call. Single kwarg threads through both
+        builders (writer + interpreter share the same settings, by
+        design — they are two halves of one ProgramOfThought run).
+        """
+        from kaos_llm_core.settings import KaosLLMCoreSettings
+
+        sentinel = KaosLLMCoreSettings()
+        p = ProgramOfThought(
+            _MathSig,
+            producer_model="function:function-test",
+            core_settings=sentinel,
+        )
+        assert p.code_writer._core_settings is sentinel
+        assert p.interpreter._core_settings is sentinel
+
 
 class TestSandbox:
     def test_default_refuses_execution(self) -> None:

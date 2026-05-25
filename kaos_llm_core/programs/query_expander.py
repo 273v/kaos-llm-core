@@ -19,7 +19,7 @@ Example::
 
 from __future__ import annotations
 
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from kaos_core.logging import get_logger
 
@@ -77,6 +77,7 @@ class LLMQueryExpander:
         *,
         max_queries: int = 5,
         examples: list[Example] | None = None,
+        core_settings: Any = None,
     ) -> None:
         """Construct the expander.
 
@@ -92,8 +93,20 @@ class LLMQueryExpander:
                 pattern) so query-expansion samples carry the same
                 calibration the non-wrapper path uses. Default
                 ``None`` preserves the prior behaviour.
+            core_settings: Optional :class:`KaosLLMCoreSettings`
+                forwarded to the inner ``Call``. Required for
+                ``KAOS_LLM_CORE_TRACE_ENABLED`` and per-request
+                ``_meta.kaos_config`` overrides (from the MCP
+                wrapper) to reach the underlying call. Without it,
+                per-request config silently drops on the floor
+                — mirrors the Phase 9d wiring in :class:`Judge`.
         """
-        self._call = Call(ExpandQuery, model=model, examples=examples)
+        self._call = Call(
+            ExpandQuery,
+            model=model,
+            examples=examples,
+            core_settings=core_settings,
+        )
         self._max_queries = max_queries
 
     async def expand(self, question: str) -> list[str]:

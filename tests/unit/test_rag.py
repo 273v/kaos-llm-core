@@ -333,6 +333,29 @@ class TestCorpusQASignature:
 # ---------------------------------------------------------------------------
 
 
+class TestRAGCoreSettingsForwarding:
+    """Pin the Phase-9d-style core_settings forwarding contract for RAG."""
+
+    def test_core_settings_forwarded_to_inner_call(self) -> None:
+        """``core_settings=`` flows through so MCP per-request config + trace
+        env reach the inner ``Call(self._signature, ...)``.
+
+        Without this forwarding, callers that thread per-request config via
+        ``_meta.kaos_config`` silently drop their overrides inside RAG.
+        """
+        from kaos_llm_core.settings import KaosLLMCoreSettings
+
+        sentinel = KaosLLMCoreSettings()
+        rag = RAG(model="function-test", top_k=5, core_settings=sentinel)
+        # Call stores it under the private ``_core_settings`` attribute.
+        assert rag.call._core_settings is sentinel
+
+    def test_core_settings_default_none_keeps_existing_behaviour(self) -> None:
+        """Omitting ``core_settings=`` lets Call construct its own default — back-compat."""
+        rag = RAG(model="function-test", top_k=5)
+        assert rag.call._core_settings is not None
+
+
 class TestRAGPipeline:
     """Tests for the RAG program using mocked retrieval + LLM."""
 
