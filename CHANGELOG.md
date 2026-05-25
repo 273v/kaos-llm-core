@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] — 2026-05-25
+
+Wrapping-Program parity bundle: every wrapping Program (MCC,
+LLMQueryExpander, ProgramOfThought, RAG) now offers a uniform contract
+for downstream callers to ground inner Calls (``examples=``) and inject
+per-request configuration (``core_settings=``). Closes a class of
+silent-drop bugs in MCP wrappers and any other adapter that constructed
+these Programs without realising the inner Calls were unreachable.
+
 ### Added
 
 - **`core_settings=` forwarding parity across wrapping Programs.**
