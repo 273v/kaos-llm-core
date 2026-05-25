@@ -343,7 +343,16 @@ class RAG(Program):
             top_k: Number of passages to retrieve.
             max_retries: Retry count on verification failure.
             signature: Override the default ``CorpusQA`` Signature.
-            **call_kwargs: Additional kwargs forwarded to ``Call``.
+            **call_kwargs: Additional kwargs forwarded to the inner
+                :class:`Call` constructor. This is the entry point for
+                grounding the QA call with few-shot examples — pass
+                ``examples=load_examples("...")`` here and they flow
+                through to the inner ``Call(self._signature, ...)`` so
+                callers that enforce a grounded-Signature contract
+                (e.g. kaos-agents'
+                ``Call(SigClass, examples=load_examples("..."))``
+                pattern) preserve calibration when routing through
+                :class:`RAG`.
         """
         self._model = model
         self._retriever = retriever

@@ -64,6 +64,74 @@ def _pricing(monkeypatch: pytest.MonkeyPatch) -> None:
 # ---------------------------------------------------------------------------
 
 
+class TestExamplesForwarding:
+    """Pin the few-shot grounding forwarding contract for both inner Calls.
+
+    Callers that enforce a grounded-Signature contract (e.g. kaos-agents'
+    ``Call(SigClass, examples=load_examples("..."))`` pattern) need to
+    keep the same calibration when routing through ``ProgramOfThought``.
+    The two inner Calls (code writer + interpreter) operate on different
+    synthesised Signatures, so the kwargs are independent.
+    """
+
+    def test_code_writer_examples_forwarded(self) -> None:
+        from kaos_llm_core.types import Example
+
+        examples = [
+            Example(
+                inputs={"question": "what is 2+2?"},
+                outputs={"code": "print(2 + 2)"},
+            ),
+        ]
+        p = ProgramOfThought(
+            _MathSig,
+            producer_model="function:function-test",
+            code_writer_examples=examples,
+        )
+        assert list(p.code_writer.examples) == examples
+
+    def test_interpreter_examples_forwarded(self) -> None:
+        from kaos_llm_core.types import Example
+
+        examples = [
+            Example(
+                inputs={"question": "what is 2+2?", "raw_output": "4\n"},
+                outputs={"answer": "4"},
+            ),
+        ]
+        p = ProgramOfThought(
+            _MathSig,
+            producer_model="function:function-test",
+            interpreter_examples=examples,
+        )
+        assert list(p.interpreter.examples) == examples
+
+    def test_independent_examples_kwargs(self) -> None:
+        """The writer and interpreter kwargs do NOT cross-contaminate."""
+        from kaos_llm_core.types import Example
+
+        writer_examples = [
+            Example(inputs={"question": "q1"}, outputs={"code": "print(1)"}),
+        ]
+        interpreter_examples = [
+            Example(inputs={"question": "q1", "raw_output": "1\n"}, outputs={"answer": "1"}),
+        ]
+        p = ProgramOfThought(
+            _MathSig,
+            producer_model="function:function-test",
+            code_writer_examples=writer_examples,
+            interpreter_examples=interpreter_examples,
+        )
+        assert list(p.code_writer.examples) == writer_examples
+        assert list(p.interpreter.examples) == interpreter_examples
+
+    def test_examples_default_none_keeps_existing_behaviour(self) -> None:
+        """Omitting both kwargs leaves both inner Calls ungrounded — back-compat."""
+        p = ProgramOfThought(_MathSig, producer_model="function:function-test")
+        assert not getattr(p.code_writer, "examples", None)
+        assert not getattr(p.interpreter, "examples", None)
+
+
 class TestSandbox:
     def test_default_refuses_execution(self) -> None:
         p = ProgramOfThought(_MathSig, producer_model="function:function-test")

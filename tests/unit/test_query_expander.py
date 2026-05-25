@@ -118,6 +118,32 @@ class TestQueryExpander:
         for q in SAMPLE_QUERIES:
             assert q in result
 
+    def test_examples_forwarded_to_inner_call(self) -> None:
+        """``examples=`` flows through to the inner ``Call`` so callers that
+        enforce a grounded-Signature contract preserve their calibration
+        when routing through ``LLMQueryExpander``.
+        """
+        from kaos_llm_core.types import Example
+
+        examples = [
+            Example(
+                inputs={"question": "what does rule 10b-5 prohibit?"},
+                outputs={
+                    "queries": [
+                        "rule 10b-5 anti-fraud provisions",
+                        "securities anti-fraud rule",
+                    ]
+                },
+            ),
+        ]
+        expander = LLMQueryExpander(model="function-test", examples=examples)
+        assert list(expander._call.examples) == examples
+
+    def test_examples_default_none_keeps_existing_behaviour(self) -> None:
+        """Omitting ``examples=`` leaves the inner Call ungrounded — back-compat."""
+        expander = LLMQueryExpander(model="function-test")
+        assert not getattr(expander._call, "examples", None)
+
     async def test_original_question_always_included(self) -> None:
         """The original question is always in the result, even if the LLM omits it."""
         original = "What is the filing fee?"
