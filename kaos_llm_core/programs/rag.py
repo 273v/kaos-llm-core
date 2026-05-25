@@ -319,6 +319,7 @@ class RAG(Program):
         max_context_chars: int = 100_000,
         max_retries: int = 2,
         signature: type[Signature] | None = None,
+        core_settings: Any = None,
         **call_kwargs: Any,
     ) -> None:
         """
@@ -343,6 +344,13 @@ class RAG(Program):
             top_k: Number of passages to retrieve.
             max_retries: Retry count on verification failure.
             signature: Override the default ``CorpusQA`` Signature.
+            core_settings: Optional :class:`KaosLLMCoreSettings`
+                forwarded to the inner ``Call``. Required for
+                ``KAOS_LLM_CORE_TRACE_ENABLED`` and per-request
+                ``_meta.kaos_config`` overrides (from the MCP
+                wrapper) to reach the QA call. Without it,
+                per-request config silently drops on the floor
+                — mirrors the Phase 9d wiring in :class:`Judge`.
             **call_kwargs: Additional kwargs forwarded to the inner
                 :class:`Call` constructor. This is the entry point for
                 grounding the QA call with few-shot examples — pass
@@ -364,16 +372,19 @@ class RAG(Program):
         self._max_context_chars = max_context_chars
         self._max_retries = max_retries
         self._signature = signature or CorpusQA
+        self._core_settings = core_settings
         self._call_kwargs = call_kwargs
 
         # The inner Call is assigned as a public attribute so Program's
         # graph / named_calls / get_learnable_state see it.
-        self.call = Call(
-            self._signature,
-            model=self._model,
-            max_retries=max_retries,
+        call_init_kwargs: dict[str, Any] = {
+            "model": self._model,
+            "max_retries": max_retries,
             **call_kwargs,
-        )
+        }
+        if core_settings is not None:
+            call_init_kwargs["core_settings"] = core_settings
+        self.call = Call(self._signature, **call_init_kwargs)
 
     async def query(
         self,

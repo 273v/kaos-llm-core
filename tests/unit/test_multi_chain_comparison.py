@@ -111,6 +111,41 @@ class TestMultiChainComparison:
         # Pre-fix shape: producer carries no caller-supplied examples.
         assert not getattr(m.producer, "examples", None)
 
+    def test_core_settings_forwarded_to_producer_and_aggregator(self) -> None:
+        """``core_settings=`` flows through to BOTH inner Calls.
+
+        Mirrors the Phase 9d wiring in :class:`Judge`: per-request
+        ``_meta.kaos_config`` overrides and ``KAOS_LLM_CORE_TRACE_ENABLED``
+        must reach every Call constructed by the wrapper. Without this
+        forwarding, MCP-wrapped callers silently drop their per-request
+        configuration inside MCC.
+        """
+        from kaos_llm_core.settings import KaosLLMCoreSettings
+
+        sentinel = KaosLLMCoreSettings()
+        m = MultiChainComparison(
+            _Sig,
+            n=3,
+            producer_model="function:function-test",
+            core_settings=sentinel,
+        )
+        # Both inner Calls (producer + aggregator) must see the same sentinel.
+        # Call stores it under the private ``_core_settings`` attribute.
+        assert m.producer._core_settings is sentinel
+        assert m.aggregator._core_settings is sentinel
+
+    def test_core_settings_default_none_keeps_existing_behaviour(self) -> None:
+        """Omitting ``core_settings=`` lets each Call construct its own default — back-compat.
+
+        ``Call.__init__`` does ``self._core_settings = core_settings or
+        KaosLLMCoreSettings()`` — so when the wrapper passes nothing, each
+        inner Call gets a fresh default instance. The contract here is
+        just: construction succeeds + both Calls have SOMETHING.
+        """
+        m = MultiChainComparison(_Sig, n=3, producer_model="function:function-test")
+        assert m.producer._core_settings is not None
+        assert m.aggregator._core_settings is not None
+
     async def test_forward_aggregates_n_chains(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Run a 3-chain MultiChainComparison through deterministic stubs.
 

@@ -10,6 +10,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`core_settings=` forwarding parity across wrapping Programs.**
+  Four wrapper Programs that construct their inner ``Call``/
+  ``ChainOfThought`` internally now accept and forward a
+  ``core_settings: KaosLLMCoreSettings | None`` kwarg:
+  ``MultiChainComparison`` (forwards to producer + aggregator),
+  ``LLMQueryExpander`` (forwards to inner ``Call(ExpandQuery, ...)``),
+  ``ProgramOfThought`` (single kwarg threads through both the
+  code-writer and interpreter inner Calls), and ``RAG`` (forwards to
+  the inner ``Call(self._signature, ...)``). Mirrors the Phase 9d
+  wiring in :class:`Judge`. Without this forwarding,
+  ``KAOS_LLM_CORE_TRACE_ENABLED`` and per-request
+  ``_meta.kaos_config`` overrides (from the MCP wrapper, the HTTP
+  API, etc.) silently dropped inside the wrapper Programs. Default
+  ``None`` preserves prior behaviour (each inner Call constructs
+  its own default :class:`KaosLLMCoreSettings`). Unit-test coverage:
+  `test_multi_chain_comparison.py::test_core_settings_forwarded_to_producer_and_aggregator`,
+  `test_query_expander.py::test_core_settings_forwarded_to_inner_call`,
+  `test_program_of_thought.py::TestExamplesForwarding::test_core_settings_forwarded_to_both_inner_calls`,
+  `test_rag.py::TestRAGCoreSettingsForwarding`.
+
 - **`MultiChainComparison(examples=...)` parameter.** The constructor
   now accepts a `list[Example] | None` and forwards it to the inner
   `ChainOfThought` producer (which already accepts the parameter).
