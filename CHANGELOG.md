@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] — 2026-05-28
+
+Dynamic deliverable schema architecture (PR-A + PR-B). Two
+upstream primitives that the kaos-agents
+`kaos-agent-design-extraction` tool composes into per-document
+typed fan-out: stable schema_id derivation (`design_schema` PR-A)
+and dispatcher-owned citation identity (`stamp_source_uri` PR-B).
+
 ### Added
 
 - **`stamp_source_uri(cited, source_uri=...)` helper in
