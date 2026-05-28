@@ -23,6 +23,7 @@ design cost.
 
 from __future__ import annotations
 
+import hashlib
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -133,12 +134,29 @@ class SchemaDesignerSignature(Signature):
     )
 
 
+def _auto_schema_id(question: str, corpus_sample: str, model: str) -> str:
+    """Derive a stable, unique schema id from the designer's inputs.
+
+    Two distinct (question, corpus, model) triples produce two distinct
+    ids; identical triples produce the same id (idempotent). Format:
+    ``"sd_<16-hex>"``. Used when the caller does not supply a
+    ``schema_id`` — replaces the legacy ``"synthesized"`` constant
+    default whose collision was a cache + privacy hazard (every
+    distinct question compiled to the same ``Extract_synthesized_v1``
+    runtime class).
+    """
+    digest = hashlib.sha256(
+        b"|".join(part.encode("utf-8") for part in (question, corpus_sample, model))
+    ).hexdigest()[:16]
+    return f"sd_{digest}"
+
+
 async def design_schema(
     question: str,
     corpus_sample: str,
     domain_hint: str = "",
     *,
-    schema_id: str = "synthesized",
+    schema_id: str | None = None,
     model: str = _DEFAULT_DESIGNER_MODEL,
 ) -> ExtractionSchema:
     """Synthesize an ``ExtractionSchema`` for the given review question.
@@ -149,9 +167,17 @@ async def design_schema(
             each document) so the designer sees corpus variation.
         domain_hint: Optional domain context. Defaults to empty.
         schema_id: Stable id assigned to the resulting schema. Defaults
-            to ``"synthesized"`` — callers reviewing distinct deals
-            should pass a unique id (e.g., deal name) so downstream
-            cell tags remain auditable.
+            to ``None``, which derives a sha256-based id from
+            ``(question, corpus_sample, model)`` via
+            :func:`_auto_schema_id`. Two distinct prompts produce two
+            distinct ids; identical inputs are idempotent. Callers
+            with a meaningful external id (deal name, case docket)
+            should pass it explicitly so downstream cell tags use the
+            human-readable handle. The legacy default
+            ``"synthesized"`` is also auto-rewritten to a hashed id
+            because that string collapsed every distinct prompt onto
+            the same ``Extract_synthesized_v1`` runtime class — a
+            cache and cross-session privacy hazard.
         model: Designer model. Defaults to
             ``anthropic:claude-sonnet-4-6`` — the platform's research-
             grade default. Cheap models under-design columns.
@@ -182,7 +208,14 @@ async def design_schema(
         )
         for p in output.columns
     )
-    return ExtractionSchema(id=schema_id, version=1, columns=column_specs)
+    # Resolve the schema_id. Auto-compute when the caller did not pass
+    # one OR passed the legacy ``"synthesized"`` collision-prone constant.
+    resolved_id = (
+        _auto_schema_id(question, corpus_sample, model)
+        if schema_id is None or schema_id == "synthesized"
+        else schema_id
+    )
+    return ExtractionSchema(id=resolved_id, version=1, columns=column_specs)
 
 
 # ---------------------------------------------------------------------------
