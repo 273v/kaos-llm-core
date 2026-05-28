@@ -8,6 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`design_schema` no longer defaults `schema_id` to the constant
+  `"synthesized"`.** That collision-prone default collapsed every
+  distinct caller question onto the same `Extract_synthesized_v1`
+  runtime class — a semantic-cache collision and cross-session
+  privacy hazard surfaced by the 2026-05-28 dynamic-schema
+  architecture pre-mortem (§3.1). The parameter is now
+  `schema_id: str | None = None`; when None (or legacy
+  `"synthesized"` for back-compat), the function auto-derives a
+  stable `sd_<sha256-prefix>` from `(question, corpus_sample,
+  model)`. Distinct triples produce distinct ids; identical
+  triples remain idempotent. The model identity participates in
+  the id per DSPy posture ("compiled prompts are NOT
+  model-agnostic"). Explicit `schema_id="MyDealRoom-2026"` is
+  honored verbatim. Pinned by `tests/unit/test_designers_schema_id.py`
+  (11 cases). The only internal caller (`programs/deal_review.py`)
+  already passes `schema_id` explicitly, so this change is a
+  pure safety upgrade with no migration churn for in-tree code.
+
 ### Changed
 
 - **Two LLM-visible Signature prose strips (prompt-smell audit
