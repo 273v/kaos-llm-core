@@ -8,13 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.6] — 2026-05-28
+## [0.1.7] — 2026-05-28
 
 Dynamic deliverable schema architecture, PR-C. Adds the synthesizer
 Signature that consumes typed extraction rows and produces the
 user-facing deliverable; iterative-aware via `needs_more_extraction`
 + `requested_columns` outputs so callers can wire an Extract↔Synthesize
 loop.
+
+(0.1.6 was burned by the same `_version.py`-not-bumped-with-tag
+mismatch that burned 0.1.4 — release workflow asserts they match,
+repo ruleset refuses tag deletion. 0.1.7 re-cuts the same payload
+with the version bump in the same commit as the tag.)
 
 ### Added
 
