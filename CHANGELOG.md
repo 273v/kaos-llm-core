@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] — 2026-05-28
+
+Dynamic deliverable schema architecture, PR-C. Adds the synthesizer
+Signature that consumes typed extraction rows and produces the
+user-facing deliverable; iterative-aware via `needs_more_extraction`
++ `requested_columns` outputs so callers can wire an Extract↔Synthesize
+loop.
+
 ### Added
 
 - **`InterpretExtractionSignature` in `kaos_llm_core.programs.interpret_extraction`.**
