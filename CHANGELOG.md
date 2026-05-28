@@ -8,6 +8,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Two LLM-visible Signature prose strips (prompt-smell audit
+  drive-by).** Companion to the kaos-agents prompt-smell audit
+  (`kaos-modules/docs/plans/2026-05-27-kaos-llm-core-prompt-smell-audit.md`).
+  The kaos-llm-core audit found the package **clean** — 0 HIGH,
+  0 MEDIUM, only 2 LOW stylistic strips:
+  - `kaos_llm_core/programs/scoring.py` —
+    `RowJudgmentSignature` docstring dropped the "This is distinct
+    from `:class:~kaos_llm_core.programs.judge.Judge`..."
+    author-to-author sibling-class comparison; replaced with a
+    short imperative ("The row IS the thing being scored. Read
+    the objective and qualitative_guidance, then return a
+    0.0--1.0 score with a one-paragraph reasoning string.").
+  - `kaos_llm_core/programs/deal_review.py` —
+    `_RecommendationSignature.narrative` description dropped the
+    "Audit-grade: a partner should be able to read this and act."
+    editorial phrase; replaced with the operational instruction
+    "citing specific rows + scores by their doc_id" (the
+    `doc_id` column is what rows are keyed by).
+
+  No behavioral change. The InputField / OutputField rule shapes
+  survive; only the editorial / sibling-class commentary is
+  removed.
+
 ## [0.1.3] — 2026-05-25
 
 Dependabot batch.

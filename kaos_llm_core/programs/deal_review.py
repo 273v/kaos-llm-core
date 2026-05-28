@@ -95,8 +95,8 @@ class _RecommendationSignature(Signature):
     narrative: str = OutputField(
         description=(
             "2-3 paragraph human-readable explanation of the "
-            "recommendation, citing specific rows + scores. Audit-grade: "
-            "a partner should be able to read this and act."
+            "recommendation, citing specific rows + scores by their "
+            "doc_id."
         ),
     )
 

@@ -59,11 +59,9 @@ _DEFAULT_JUDGE_MODEL: str = "anthropic:claude-sonnet-4-6"
 class RowJudgmentSignature(Signature):
     """Score one row of a ``TabularDocument`` against qualitative guidance.
 
-    Used by :func:`apply_rubric` for the soft channel. This is distinct
-    from :class:`~kaos_llm_core.programs.judge.Judge`, which scores
-    producer/judge generation pairs (the "did the producer respond well
-    to this task?" shape). Here the row IS the thing being scored, not
-    a generation under quality review.
+    The row IS the thing being scored. Read the objective and
+    qualitative_guidance, then return a 0.0--1.0 score with a
+    one-paragraph reasoning string.
     """
 
     objective: str = InputField(description="The scoring objective.")
