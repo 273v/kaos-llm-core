@@ -8,13 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.4] — 2026-05-28
+## [0.1.5] — 2026-05-28
 
 Dynamic deliverable schema architecture (PR-A + PR-B). Two
 upstream primitives that the kaos-agents
 `kaos-agent-design-extraction` tool composes into per-document
 typed fan-out: stable schema_id derivation (`design_schema` PR-A)
 and dispatcher-owned citation identity (`stamp_source_uri` PR-B).
+
+(0.1.4 was burned by a tag-protection rule mismatch — the
+release workflow's "verify version matches tag" assertion fired
+because `_version.py` wasn't bumped in the same commit as the
+tag push, and the repo ruleset refused tag deletion. 0.1.5
+re-cuts the same payload.)
 
 ### Added
 
