@@ -8,6 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`stamp_source_uri(cited, source_uri=...)` helper in
+  `kaos_llm_core.signatures.grounding`.** Returns a new `Cited[T]`
+  with every span's `source_uri` overridden by the dispatcher-
+  supplied value. `Cited[T]`'s Pydantic validation enforces
+  `source_uri` is non-empty per `Span` but cannot enforce that the
+  value MATCHES the document the LLM was shown (extraction-time
+  literature documents 3-13% URL-hallucination rates on
+  uncontrolled `source_uri` outputs). The helper closes the gap
+  by giving dispatchers a typed way to stamp the authoritative
+  identity onto every span post-extraction. Canonical case: an
+  extraction Program calls one document at a time; the dispatcher
+  already knows which document went in, so the LLM's emitted
+  `source_uri` is at best redundant and at worst fabricated. This
+  is PR-B of the dynamic deliverable schema architecture (plan:
+  `kaos-modules/docs/plans/2026-05-28-dynamic-deliverable-schema-architecture.md`).
+  Re-exported from `kaos_llm_core.signatures`. Pinned by
+  `tests/unit/test_stamp_source_uri.py` (15 cases).
+
 ### Fixed
 
 - **`design_schema` no longer defaults `schema_id` to the constant

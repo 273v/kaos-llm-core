@@ -862,6 +862,62 @@ class Cited[T](BaseModel):
         )
 
 
+# --- Source-uri stamping (dispatcher-owned citation identity) ----------
+
+
+def stamp_source_uri[T](cited: Cited[T], *, source_uri: str) -> Cited[T]:
+    """Return a new ``Cited[T]`` with every span's ``source_uri`` overridden.
+
+    Use this in dispatchers that know the source identity better than
+    the LLM does.  The canonical case: an extraction Program calls
+    one document at a time; the dispatcher already knows which
+    document went in, so the LLM's emitted ``source_uri`` is at best
+    redundant and at worst fabricated.  Pydantic validation enforces
+    ``source_uri`` is non-empty per :class:`Span`, but cannot enforce
+    that the value MATCHES the document the LLM was shown — the
+    extraction-time literature documents 3-13% URL-hallucination
+    rates on uncontrolled ``source_uri`` outputs.
+
+    This helper closes the gap by stamping the dispatcher-supplied
+    identity onto every span post-extraction.  The ``value`` and
+    ``confidence`` fields are preserved verbatim; only the
+    ``source_uri`` field of each :class:`Span` changes.  ``quote``,
+    ``char_span``, ``page``, and ``quote_hash`` are preserved (their
+    integrity is enforced by :class:`Span`'s own validators — see
+    ``_force_recompute_quote_hash`` and :meth:`Span.verify`).
+
+    Args:
+        cited: The value to stamp.  Treated as immutable — a new
+            :class:`Cited` is returned; the input is not mutated.
+        source_uri: The authoritative identifier the dispatcher
+            assigns.  Must be non-empty (Pydantic enforces).
+
+    Returns:
+        A new :class:`Cited` whose ``spans`` are new :class:`Span`
+        instances with the overridden ``source_uri``.
+
+    Raises:
+        pydantic.ValidationError: If ``source_uri`` is empty (per
+            :class:`Span`'s ``min_length=1`` constraint).
+    """
+    stamped_spans = [
+        Span(
+            source_uri=source_uri,
+            page=span.page,
+            char_span=span.char_span,
+            quote=span.quote,
+            # quote_hash is force-recomputed by Span's validator;
+            # passing it through is harmless but the validator wins.
+        )
+        for span in cited.spans
+    ]
+    return Cited[T](
+        value=cited.value,
+        spans=stamped_spans,
+        confidence=cited.confidence,
+    )
+
+
 # --- Diagnostic helpers -----------------------------------------------
 
 

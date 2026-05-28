@@ -22,6 +22,7 @@ from kaos_llm_core.signatures.grounding import (
     Span,
     SpanError,
     StrategyResult,
+    stamp_source_uri,
 )
 from kaos_llm_core.signatures.introspection import (
     create_output_model,
@@ -72,6 +73,7 @@ __all__ = [
     "get_instruction",
     "get_output_fields",
     "signature_to_json_schema",
+    "stamp_source_uri",
     "tag_paragraphs",
     "tag_passages",
     "validate_cited_output",
