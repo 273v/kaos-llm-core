@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`InterpretExtractionSignature` in `kaos_llm_core.programs.interpret_extraction`.**
+  The "interpret" half of the dynamic deliverable-schema architecture.
+  Takes typed extraction rows + the user's question and reformulates
+  them into a memo, table, comparison, or whatever the prompt shape
+  implied. Bounded by the extraction (the LLM cannot fabricate facts
+  not in the rows). Iterative-aware via two control outputs:
+  `needs_more_extraction: bool` and
+  `requested_columns: tuple[str, ...]`. When the rows are insufficient
+  to fully answer the user's question, the synthesizer signals the
+  caller to augment the schema and re-extract. The caller wires the
+  loop (typically a kaos-agents tool); the Signature itself remains
+  pure and reusable. Re-exported from `kaos_llm_core.programs`. Pinned
+  by `tests/unit/test_interpret_extraction.py` (17 cases).
+
 ## [0.1.5] — 2026-05-28
 
 Dynamic deliverable schema architecture (PR-A + PR-B). Two
