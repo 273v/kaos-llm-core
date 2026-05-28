@@ -58,6 +58,7 @@ from kaos_llm_core.programs.extract import (
     extract_corpus,
 )
 from kaos_llm_core.programs.hooks import CallHooks
+from kaos_llm_core.programs.interpret_extraction import InterpretExtractionSignature
 from kaos_llm_core.programs.judge import Judge, JudgedResult
 from kaos_llm_core.programs.multi_chain_comparison import (
     MultiChainComparison,
@@ -110,6 +111,7 @@ __all__ = [
     "ExtractionResult",
     "HasOutputs",
     "InputSpec",
+    "InterpretExtractionSignature",
     "Invocation",
     "Iteration",
     "JsonlBatchWriter",
