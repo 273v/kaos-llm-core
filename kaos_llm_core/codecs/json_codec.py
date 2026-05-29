@@ -113,14 +113,46 @@ class JSONCodec:
         signature: type[Signature],
         response: ProviderResponse,
     ) -> dict[str, Any]:
-        """Decode JSON from the provider response."""
-        # Try response.output_json first (provider already parsed)
-        if response.output_json is not None:
-            parsed = response.output_json
-            if isinstance(parsed, dict):
-                return _validate_outputs(parsed, signature)
+        """Decode JSON from the provider response.
 
+        Reconciles two candidate parses and prefers the more complete one:
+
+        1. ``response.output_json`` — the provider/client convenience parse.
+           This can be a *partial* recovery (``pydantic_core`` with
+           ``allow_partial``) that silently drops trailing fields when a string
+           value contains an inline unescaped quote.
+        2. ``_extract_json(response.text)`` — this codec's own fence-aware,
+           inline-quote-repairing parse of the full text.
+
+        Historically (1) was returned unconditionally whenever non-``None``,
+        so a truncated fragment hid the complete output. We now validate both
+        and keep whichever satisfies the Signature's required fields, breaking
+        ties toward the candidate with more keys. This guarantees a complete
+        object with quoted text round-trips without content loss while
+        preserving the genuine-truncation salvage path.
+        """
         text = response.text
+
+        # Candidate A: this codec's own parse of the full text (fence-aware,
+        # inline-quote repair, truncation closure).
+        text_parsed: dict[str, Any] | None = None
+        text_error: CodecError | None = None
+        if text:
+            try:
+                text_parsed = _extract_json(text)
+            except CodecError as exc:
+                text_error = exc
+
+        # Candidate B: the client-side convenience parse.
+        output_json = response.output_json
+        oj_parsed = output_json if isinstance(output_json, dict) else None
+
+        # Prefer the more complete VALID candidate. A candidate is "valid"
+        # when it carries every required output field.
+        chosen = _pick_more_complete(text_parsed, oj_parsed, signature)
+        if chosen is not None:
+            return _validate_outputs(chosen, signature)
+
         if not text:
             raise CodecError(
                 "Empty response from LLM. "
@@ -128,7 +160,17 @@ class JSONCodec:
                 "Try a different model or increase max_tokens."
             )
 
-        # Try to extract JSON
+        # Neither candidate validated. Surface the schema-aware error from the
+        # full-text parse when we have a dict (e.g. missing required field),
+        # otherwise the extraction error.
+        if text_parsed is not None:
+            return _validate_outputs(text_parsed, signature)
+        if oj_parsed is not None:
+            return _validate_outputs(oj_parsed, signature)
+        if text_error is not None:
+            raise text_error
+        # No dict from either path: run extraction once more to raise the
+        # canonical "could not extract JSON" error.
         parsed = _extract_json(text)
         return _validate_outputs(parsed, signature)
 
@@ -201,6 +243,56 @@ def _compute_truncation_closure(text: str) -> str:
     return "".join(suffix_parts)
 
 
+def _repair_inline_quotes(text: str) -> str | None:
+    """Escape unescaped ``"`` that appear *inside* JSON string values.
+
+    Single forward pass. A ``"`` encountered while inside a string is treated
+    as that string's closing quote only when the next non-whitespace character
+    is structural (``,``, ``}``, ``]``, ``:``) or end-of-input. Any other ``"``
+    inside a string is an inline quote and is escaped to ``\\"``. Returns the
+    repaired text, or ``None`` when no change was needed (already balanced),
+    so callers can skip a redundant reparse.
+
+    This salvages the common legal-product failure mode where a model quotes
+    document text verbatim inside an output field, producing a COMPLETE object
+    that strict ``json.loads`` rejects at the inline quote.
+    """
+    out: list[str] = []
+    in_string = False
+    escape = False
+    changed = False
+    n = len(text)
+    for i, ch in enumerate(text):
+        if escape:
+            out.append(ch)
+            escape = False
+            continue
+        if in_string:
+            if ch == "\\":
+                out.append(ch)
+                escape = True
+                continue
+            if ch == '"':
+                j = i + 1
+                while j < n and text[j] in " \t\r\n":
+                    j += 1
+                if j >= n or text[j] in ",}]:":
+                    out.append(ch)
+                    in_string = False
+                else:
+                    out.append('\\"')
+                    changed = True
+                continue
+            out.append(ch)
+            continue
+        if ch == '"':
+            in_string = True
+        out.append(ch)
+    if not changed:
+        return None
+    return "".join(out)
+
+
 def _try_loads_dict(candidate: str) -> dict[str, Any] | None:
     """Parse ``candidate`` as JSON; return it only if it's a top-level dict."""
     try:
@@ -229,9 +321,19 @@ def _extract_json(text: str) -> dict[str, Any]:
     start = text.find("{")
     end = text.rfind("}")
     if start != -1 and end != -1 and end > start:
-        result = _try_loads_dict(text[start : end + 1])
+        candidate = text[start : end + 1]
+        result = _try_loads_dict(candidate)
         if result is not None:
             return result
+        # Salvage a COMPLETE object whose string value contains an inline
+        # unescaped double-quote (e.g. a memo quoting document text verbatim).
+        # Without this, strict json.loads breaks at the quote and the whole
+        # object is lost / silently truncated downstream.
+        repaired = _repair_inline_quotes(candidate)
+        if repaired is not None:
+            result = _try_loads_dict(repaired)
+            if result is not None:
+                return result
 
     # Salvage truncated responses: models that hit max_tokens mid-string
     # produce ``'{"summary":"..." <cut>'`` with no closing ``"`` or ``}``.
@@ -253,6 +355,37 @@ def _extract_json(text: str) -> dict[str, Any]:
         f"Try increasing max_tokens or using a model that supports native "
         f"structured output."
     )
+
+
+def _has_required_fields(parsed: dict[str, Any], signature: type[Signature]) -> bool:
+    """Whether ``parsed`` carries every required output field of ``signature``."""
+    output_fields = get_output_fields(signature)
+    return all(name in parsed for name, fi in output_fields.items() if fi.is_required())
+
+
+def _pick_more_complete(
+    text_parsed: dict[str, Any] | None,
+    oj_parsed: dict[str, Any] | None,
+    signature: type[Signature],
+) -> dict[str, Any] | None:
+    """Choose the more complete VALID parse between the two candidates.
+
+    A candidate is preferred only when it satisfies the Signature's required
+    fields. When both are valid, the one with more keys wins (the partial
+    recovery that dropped trailing fields therefore loses to the full parse).
+    Returns ``None`` when neither candidate validates, so the caller can raise
+    a schema-aware error.
+    """
+    text_ok = text_parsed is not None and _has_required_fields(text_parsed, signature)
+    oj_ok = oj_parsed is not None and _has_required_fields(oj_parsed, signature)
+    if text_ok and oj_ok:
+        assert text_parsed is not None and oj_parsed is not None
+        return text_parsed if len(text_parsed) >= len(oj_parsed) else oj_parsed
+    if text_ok:
+        return text_parsed
+    if oj_ok:
+        return oj_parsed
+    return None
 
 
 def _validate_outputs(parsed: dict[str, Any], signature: type[Signature]) -> dict[str, Any]:

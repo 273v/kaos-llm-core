@@ -8,6 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`JSONCodec.decode` silently shipped a truncated fragment when a complete
+  structured output contained an inline unescaped quote.** The codec returned
+  `response.output_json` unconditionally whenever it was non-`None`. When a
+  model quoted document text verbatim in a string field
+  (`...survival clause states "shall remain in full force..."`), the
+  client-side `output_json` could be a partial recovery truncated to its first
+  field — so trailing fields like `needs_more_extraction` fell back to their
+  Signature defaults and iterative extraction loops falsely "converged" on a
+  partial deliverable.
+  - `decode` now reconciles two candidate parses (the client `output_json` and
+    this codec's own fence-aware `_extract_json(text)`) and returns the more
+    complete one that satisfies the Signature's required fields. A partial
+    recovery that dropped fields can no longer win over the full parse.
+  - `_extract_json` gained an inline-unescaped-quote repair
+    (`_repair_inline_quotes`) so a complete object with quoted text round-trips
+    without content loss. The genuine-truncation closure salvage is unchanged.
+
 ## [0.1.7] — 2026-05-28
 
 Dynamic deliverable schema architecture, PR-C. Adds the synthesizer
