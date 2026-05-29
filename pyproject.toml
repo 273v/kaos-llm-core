@@ -43,7 +43,7 @@ classifiers = [
 dependencies = [
   "kaos-content>=0.1.0,<0.2",
   "kaos-core>=0.1.0,<0.2",
-  "kaos-llm-client>=0.1.0,<0.2",
+  "kaos-llm-client>=0.1.9,<0.2",
   # 0.1.0a5 added kaos_nlp_core.{chunking,aggregation,similarity}
   # consumed by Programs/composition. 0.1.0a6 added the
   # SIMD-dispatched ``cosine_one_to_many_normalized`` /
