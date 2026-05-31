@@ -17,6 +17,9 @@ from pathlib import Path
 from typing import Any, cast
 
 import pytest
+
+pytest.importorskip("mcp")
+
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
