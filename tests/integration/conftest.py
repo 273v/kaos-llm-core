@@ -10,6 +10,7 @@ end-to-end harness (``test_grounding_e2e.py``) and the calibration script.
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import pathlib
@@ -195,3 +196,27 @@ def multiformat_paths() -> list[pathlib.Path]:
         for p in _MULTIFORMAT_DIR.iterdir()
         if p.suffix.lower() in supported and p.stem not in excluded_stems
     )
+
+
+# ── Compat / minimal-env collection guard ──────────────────────────────
+# The OS/Python drift ("compat") lane installs only the dev group, not the
+# optional sibling packages (kaos-ml-core, …). Integration modules that import
+# an absent sibling (at module or function level) would error during
+# collection/execution and turn the compat smoke red. Skip-collect them when
+# the sibling is absent; the full test lane installs the siblings and runs
+# them normally.
+_OPTIONAL_SIBLING_MODULES: dict[str, tuple[str, ...]] = {
+    "kaos_ml_core": (
+        "test_rag_ecfr_scale.py",
+        "test_rag_ecfr_tax.py",
+        "test_rag_edgar_10k.py",
+        "test_rag_federal_register.py",
+        "test_multiformat_smoke.py",
+    ),
+}
+collect_ignore = [
+    module
+    for sibling, modules in _OPTIONAL_SIBLING_MODULES.items()
+    if importlib.util.find_spec(sibling) is None
+    for module in modules
+]

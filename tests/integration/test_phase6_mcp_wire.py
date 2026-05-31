@@ -19,6 +19,9 @@ from __future__ import annotations
 import os
 
 import pytest
+
+pytest.importorskip("mcp")
+
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
