@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.10] — 2026-06-02
+
+### Added
+
+- **`ClusterNamer`** (+ the `NameCluster` Signature) in
+  `kaos_llm_core.programs` — the optional LLM tier that turns a cluster's
+  c-TF-IDF keywords + a representative exemplar into a human-readable topic
+  title (e.g. `["summary judgment", "motion", "dismiss"]` → "Dispositive
+  Motions"). `await ClusterNamer(model=...).name(keywords, excerpt=...)`;
+  `name_all(...)` fans out concurrently. Backend-agnostic over the `Call`
+  machinery. Completes the model-vs-program split for clustering: the
+  keywords are computed in Rust (kaos-nlp-core), only the naming — which
+  genuinely needs a language model — lives here.
+
 ## [0.1.9] — 2026-06-02
 
 ### Added
