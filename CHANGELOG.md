@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.9] — 2026-06-02
+
+### Added
+
+- **Claim verification** in `kaos_llm_core.programs.classify`
+  (`kaos_llm_core.programs.classify.nli`): `verify_claim(scorer, claim,
+  evidence)` and `verify_claims(scorer, claims, evidence)`, plus the
+  `ClaimVerdict` result type. The fact-checking framing of NLI — premise
+  is the evidence, hypothesis is the claim — returning a labelled verdict
+  (`entailment` / `neutral` / `contradiction`) with `confidence`, the full
+  three-class distribution, and `supported` / `refuted` convenience
+  properties. Backend-agnostic over the existing `NLIScorer` Protocol
+  (any scorer, including `kaos_nlp_transformers.NliModel`); a sibling of
+  `ZeroShotNLIClassifier`, sharing its deterministic argmax tie-break.
+  All claims against one body of evidence batch into a single scorer
+  forward pass. The NLI model stays in `kaos-nlp-transformers`; this
+  decision layer stays in `kaos-llm-core`.
+
 ## [0.1.8] — 2026-05-29
 
 ### Fixed
