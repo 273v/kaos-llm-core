@@ -29,6 +29,7 @@ from kaos_llm_core.programs.batch_bridges import (
 from kaos_llm_core.programs.best_of_n import BestOfN, BestOfNResult
 from kaos_llm_core.programs.call import Call, CallPlan
 from kaos_llm_core.programs.chain_of_thought import ChainOfThought
+from kaos_llm_core.programs.cluster_namer import ClusterNamer, NameCluster
 from kaos_llm_core.programs.deal_review import DealReviewProgram, DealReviewResult
 from kaos_llm_core.programs.decorator import llm_call
 from kaos_llm_core.programs.designers import (
@@ -98,6 +99,7 @@ __all__ = [
     "CallPlan",
     "ChainOfThought",
     "ClientSpec",
+    "ClusterNamer",
     "CorpusExtractionResult",
     "CorpusInputSource",
     "CorpusQA",
@@ -123,6 +125,7 @@ __all__ = [
     "ListInputSource",
     "MultiChainComparison",
     "MultiChainComparisonResult",
+    "NameCluster",
     "OutputForwardingMixin",
     "PdfPagesInputSource",
     "Program",
