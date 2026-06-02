@@ -49,7 +49,9 @@ from kaos_llm_core.programs.classify.hierarchical import HierarchicalClassify
 from kaos_llm_core.programs.classify.multi_label import MultiLabelClassify
 from kaos_llm_core.programs.classify.nli import (
     DEFAULT_HYPOTHESIS_TEMPLATE,
+    ClaimJudge,
     ClaimVerdict,
+    JudgeVerdict,
     NLIScore,
     NLIScorer,
     ZeroShotNLIClassifier,
@@ -69,11 +71,13 @@ from kaos_llm_core.programs.classify.zero_shot import (
 __all__ = [
     "DEFAULT_HYPOTHESIS_TEMPLATE",
     "ChunkedClassify",
+    "ClaimJudge",
     "ClaimVerdict",
     "Embedder",
     "EnsembleClassify",
     "FewShotClassify",
     "HierarchicalClassify",
+    "JudgeVerdict",
     "MultiLabelClassify",
     "NLIScore",
     "NLIScorer",

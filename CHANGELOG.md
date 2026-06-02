@@ -8,6 +8,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.11] — 2026-06-02
+
+### Added
+
+- **Hybrid claim verification** in `kaos_llm_core.programs.classify`
+  (`kaos_llm_core.programs.classify.nli`): `verify_claim` and
+  `verify_claims` gain opt-in keyword-only parameters
+  (`judge=None`, `embedder=None`, `confident=0.5`, `neutral_floor=0.5`,
+  `gate=0.5`) plus the new `ClaimJudge` / `JudgeVerdict` Protocols. NLI
+  cross-encoders sometimes return high-confidence `neutral` on a claim the
+  evidence actually supports but phrases very differently (a lexical /
+  structural mismatch the entailment head does not bridge); the hybrid path
+  escalates only that neutral band to an injected LLM second opinion. The
+  escalation is cost-gated: when an `embedder` (the existing
+  `kaos_llm_core.programs.classify.Embedder` Protocol) is supplied, the
+  judge runs only when claim/evidence embedding cosine — computed via the
+  Rust-backed `kaos_nlp_core.similarity.cosine` — is at or above `gate`;
+  below it the NLI neutral verdict is kept and no judge call is made.
+  Cosine only gates the judge and never flips a verdict on its own. The
+  judge is supplied by the caller, so the core stays backend-agnostic with
+  no provider dependency. Fully non-breaking: with no `judge`/`embedder`
+  the functions behave exactly as before, all claims still share a single
+  batched NLI forward pass, and only the neutral-band subset escalates.
+- **`ClaimVerdict` provenance fields**: optional `method` (`"nli"` or
+  `"llm_judge"`), `gate_cosine`, and `rationale`, appended with defaults
+  that reproduce the pure-NLI verdict so existing construction and equality
+  stay intact. They record which method decided each verdict and the gate
+  cosine when one was computed.
+
 ## [0.1.10] — 2026-06-02
 
 ### Added

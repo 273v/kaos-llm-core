@@ -5,6 +5,43 @@ language hypothesis (``"This text is about {label}."`` by default) and
 asks an NLI scorer to grade ``(premise=text, hypothesis=…)`` for
 entailment. The label with the highest entailment probability wins.
 
+Claim verification (:func:`verify_claim` / :func:`verify_claims`) reuses
+the same scorer for fact-checking: evidence is the premise, the claim is
+the hypothesis, and the argmax over the three-class distribution decides
+support / refutation / neutrality.
+
+Hybrid fallback (opt-in)
+------------------------
+NLI cross-encoders sometimes return a high-confidence ``neutral`` verdict
+on a claim that the evidence actually supports but phrases very
+differently — a lexical or structural mismatch the entailment head does
+not bridge. To recover those cases, :func:`verify_claim` /
+:func:`verify_claims` accept an optional second-opinion ``judge`` (any
+object satisfying :class:`ClaimJudge`) and an optional ``embedder`` (the
+:class:`~kaos_llm_core.programs.classify.prototype.Embedder` Protocol),
+both injected by the caller so the core stays backend-agnostic and free
+of any provider dependency. The escalation is narrow and cost-gated:
+
+- Confident entailment or contradiction verdicts are returned unchanged —
+  NLI is reliable there and never escalates.
+- Only a high-confidence ``neutral`` verdict (neutral probability at or
+  above ``neutral_floor``) is eligible to escalate.
+- When an ``embedder`` is supplied, the embedding cosine between claim and
+  evidence acts as a cheap pre-filter: escalate to the judge only when the
+  cosine is at or above ``gate`` (enough semantic overlap to be worth a
+  closer look); below the gate the NLI ``neutral`` verdict is kept and no
+  judge call is made. Cosine only gates the judge — it never flips a
+  verdict on its own, because a claim and its negation both sit close to
+  the evidence in embedding space.
+- The judge's supported / refuted / neutral outcome then becomes the
+  verdict. With no judge supplied, behaviour is exactly the pure-NLI path.
+
+Each verdict records which method decided it (:attr:`ClaimVerdict.method`
+is ``"nli"`` or ``"llm_judge"``), the gate cosine when one was computed,
+and any judge rationale, so callers can audit and cost-account the
+escalation. All claims still share a single batched scorer forward pass;
+only the neutral-band subset escalates.
+
 The NLI model itself is **not** bundled in :mod:`kaos_llm_core` — the
 canonical implementation belongs in :mod:`kaos_nlp_transformers` once
 a licence-audited checkpoint ships through that package's registry
@@ -36,9 +73,13 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
+import numpy as np
+from kaos_nlp_core.similarity import cosine as _cosine
+
 from kaos_llm_core.errors import CallError
 from kaos_llm_core.labels import ABSTAIN_LABEL, Label, LabelSet
 from kaos_llm_core.programs.base import Program
+from kaos_llm_core.programs.classify.prototype import Embedder
 from kaos_llm_core.results import Classification
 
 DEFAULT_HYPOTHESIS_TEMPLATE = "This text is about {}."
@@ -271,6 +312,15 @@ class ClaimVerdict:
     *claim*. ``label`` is the argmax of the three-class distribution and
     ``confidence`` is that label's probability; the full distribution is
     kept in ``entailment`` / ``neutral`` / ``contradiction``.
+
+    The provenance fields (``method`` / ``gate_cosine`` / ``rationale``)
+    are appended after the original fields with defaults that reproduce
+    the pure-NLI verdict, so adding them is non-breaking: existing
+    positional and keyword construction sites still work, and two
+    pure-NLI verdicts that were equal before remain equal (they all carry
+    the same defaults). Extending the frozen dataclass keeps the single
+    ``ClaimVerdict`` return type rather than introducing a richer subtype
+    callers would have to branch on.
     """
 
     claim: str
@@ -281,6 +331,12 @@ class ClaimVerdict:
     entailment: float
     neutral: float
     contradiction: float
+    method: str = "nli"
+    """Which path decided this verdict: ``"nli"`` or ``"llm_judge"``."""
+    gate_cosine: float | None = None
+    """Claim/evidence embedding cosine, when the gate was evaluated; else ``None``."""
+    rationale: str | None = None
+    """Optional judge rationale when the verdict came from a ``ClaimJudge``."""
 
     @property
     def supported(self) -> bool:
@@ -291,6 +347,55 @@ class ClaimVerdict:
     def refuted(self) -> bool:
         """``True`` iff the evidence contradicts (refutes) the claim."""
         return self.label == "contradiction"
+
+
+@runtime_checkable
+class JudgeVerdict(Protocol):
+    """Structural type for a :class:`ClaimJudge` second-opinion result.
+
+    The judge returns a three-way ``label`` for whether the evidence
+    supports the claim, a ``confidence`` in ``[0, 1]``, and an optional
+    short ``rationale``. ``label`` is mapped onto the NLI verdict space:
+    ``"supported"`` → ``entailment``, ``"refuted"`` → ``contradiction``,
+    ``"neutral"`` → ``neutral`` (synonyms ``"entailment"`` /
+    ``"contradiction"`` are also accepted).
+    """
+
+    label: str
+    confidence: float
+    rationale: str | None
+
+
+@runtime_checkable
+class ClaimJudge(Protocol):
+    """Structural type for an LLM second opinion on a claim.
+
+    Implementations grade a single ``(claim, evidence)`` pair and return a
+    :class:`JudgeVerdict`. The judge is injected by the caller so the core
+    stays backend-agnostic and free of any provider dependency; a natural
+    in-repo implementation wraps a :class:`~kaos_llm_core.programs.call.Call`
+    over a small :class:`~kaos_llm_core.signatures.signature.Signature`,
+    but :func:`verify_claim` / :func:`verify_claims` depend only on this
+    Protocol, never on a concrete backend.
+    """
+
+    def judge(
+        self,
+        claim: str,
+        evidence: str,
+    ) -> JudgeVerdict:  # pragma: no cover - protocol
+        ...
+
+
+# Judge label vocabulary → NLI verdict label. Accept both the
+# fact-checking phrasing (supported / refuted) and the raw NLI phrasing.
+_JUDGE_LABEL_MAP: dict[str, str] = {
+    "supported": "entailment",
+    "entailment": "entailment",
+    "refuted": "contradiction",
+    "contradiction": "contradiction",
+    "neutral": "neutral",
+}
 
 
 def _to_verdict(claim: str, score: NLIScore) -> ClaimVerdict:
@@ -307,10 +412,69 @@ def _to_verdict(claim: str, score: NLIScore) -> ClaimVerdict:
     )
 
 
+def _embedding_cosine(embedder: Embedder, claim: str, evidence: str) -> float:
+    """Cosine similarity between the claim and evidence embeddings.
+
+    Embeds both in a single batched :meth:`Embedder.embed` call and uses
+    the Rust-backed :func:`kaos_nlp_core.similarity.cosine` primitive (the
+    same module :mod:`prototype` already wires in). ``cosine`` (not the
+    pre-normalised fast path) is used so a non-unit-norm row never yields
+    a silently wrong value.
+    """
+    matrix = np.asarray(embedder.embed([claim, evidence]), dtype=np.float32)
+    claim_vec = np.ascontiguousarray(matrix[0])
+    evidence_vec = np.ascontiguousarray(matrix[1])
+    return float(_cosine(claim_vec, evidence_vec))
+
+
+def _judge_to_verdict(
+    claim: str,
+    result: JudgeVerdict,
+    *,
+    gate_cosine: float | None,
+) -> ClaimVerdict:
+    """Map a :class:`JudgeVerdict` onto a ``method="llm_judge"`` verdict.
+
+    The judge reports only the winning label and its confidence, so the
+    three-class distribution is reconstructed by placing ``confidence`` on
+    the winning class and splitting the remainder evenly across the other
+    two. This keeps :attr:`ClaimVerdict.confidence` consistent with the
+    distribution without claiming false precision the judge did not give.
+    """
+    raw = str(result.label).strip().lower()
+    label = _JUDGE_LABEL_MAP.get(raw)
+    if label is None:
+        raise CallError(
+            f"ClaimJudge returned unrecognised label {result.label!r}; expected one of "
+            "supported/refuted/neutral (or entailment/contradiction)."
+        )
+    confidence = float(result.confidence)
+    rest = max(0.0, (1.0 - confidence) / 2.0)
+    dist = {"entailment": rest, "neutral": rest, "contradiction": rest}
+    dist[label] = confidence
+    return ClaimVerdict(
+        claim=claim,
+        label=label,
+        confidence=confidence,
+        entailment=dist["entailment"],
+        neutral=dist["neutral"],
+        contradiction=dist["contradiction"],
+        method="llm_judge",
+        gate_cosine=gate_cosine,
+        rationale=result.rationale,
+    )
+
+
 def verify_claims(
     scorer: NLIScorer,
     claims: Sequence[str],
     evidence: str,
+    *,
+    judge: ClaimJudge | None = None,
+    embedder: Embedder | None = None,
+    confident: float = 0.5,
+    neutral_floor: float = 0.5,
+    gate: float = 0.5,
 ) -> list[ClaimVerdict]:
     """Check each claim against a body of evidence in one scorer call.
 
@@ -322,11 +486,34 @@ def verify_claims(
     single :meth:`NLIScorer.score` call (one model forward pass), not one
     call per claim.
 
+    With no ``judge`` and no ``embedder`` this is the pure-NLI reduction.
+    When a ``judge`` is supplied, a high-confidence ``neutral`` verdict is
+    escalated for a second opinion (see the module docstring); an optional
+    ``embedder`` first gates that escalation on claim/evidence embedding
+    cosine so the expensive judge runs only when the two are semantically
+    close. The one batched scorer call still covers all claims; only the
+    neutral-band subset escalates.
+
     Args:
         scorer: any object satisfying the :class:`NLIScorer` Protocol
             (e.g. ``kaos_nlp_transformers.NliModel``).
         claims: the claim texts to check, each against ``evidence``.
         evidence: the premise — the source / authority text.
+        judge: optional :class:`ClaimJudge` second opinion. When ``None``,
+            no escalation happens and the pure-NLI verdict is returned.
+        embedder: optional :class:`Embedder` used as the cost gate; when
+            ``None`` the judge is consulted directly on every neutral-band
+            claim.
+        confident: NLI confidence at or above which an entailment or
+            contradiction verdict is trusted and never escalated, in
+            ``[0, 1]``. Default ``0.5``.
+        neutral_floor: neutral probability at or above which a ``neutral``
+            verdict is eligible to escalate, in ``[0, 1]``. Default
+            ``0.5``.
+        gate: embedding-cosine threshold in ``[-1, 1]``; the judge is
+            consulted only when claim/evidence cosine is at or above this
+            value. Ignored when no ``embedder`` is supplied. Default
+            ``0.5``.
 
     Returns:
         One :class:`ClaimVerdict` per claim, in input order. Empty input
@@ -334,8 +521,17 @@ def verify_claims(
 
     Raises:
         CallError: if the scorer returns a number of scores that does not
-            match the number of claims.
+            match the number of claims, or the judge returns an
+            unrecognised label.
+        ValueError: if ``confident`` / ``neutral_floor`` are outside
+            ``[0, 1]`` or ``gate`` is outside ``[-1, 1]``.
     """
+    if not (0.0 <= confident <= 1.0):
+        raise ValueError(f"confident must be in [0, 1], got {confident}")
+    if not (0.0 <= neutral_floor <= 1.0):
+        raise ValueError(f"neutral_floor must be in [0, 1], got {neutral_floor}")
+    if not (-1.0 <= gate <= 1.0):
+        raise ValueError(f"gate must be in [-1, 1], got {gate}")
     if not claims:
         return []
     scores = list(scorer.score(evidence, claims))
@@ -344,29 +540,96 @@ def verify_claims(
             f"NLIScorer returned {len(scores)} scores for {len(claims)} claims — "
             "implementations must produce one score per hypothesis in input order."
         )
-    return [_to_verdict(claim, score) for claim, score in zip(claims, scores, strict=True)]
+
+    verdicts = [_to_verdict(claim, score) for claim, score in zip(claims, scores, strict=True)]
+    if judge is None:
+        return verdicts
+
+    for i, verdict in enumerate(verdicts):
+        # Eligibility for a second opinion:
+        #   - a high-confidence ``neutral`` (neutral prob >= neutral_floor),
+        #     the lexical/structural-mismatch band the judge recovers; or
+        #   - an entailment / contradiction the NLI head is NOT confident
+        #     about (confidence < ``confident``).
+        # A confident entailment / contradiction is trusted and kept, and a
+        # low-confidence neutral is left as NLI neutral — neither spends a
+        # judge call.
+        if verdict.label == "neutral":
+            eligible = verdict.neutral >= neutral_floor
+        else:
+            eligible = verdict.confidence < confident
+        if not eligible:
+            continue
+        gate_cosine: float | None = None
+        if embedder is not None:
+            gate_cosine = _embedding_cosine(embedder, verdict.claim, evidence)
+            if gate_cosine < gate:
+                # Genuinely unrelated: keep the NLI neutral verdict, but
+                # record the cosine that gated the (skipped) judge call.
+                verdicts[i] = ClaimVerdict(
+                    claim=verdict.claim,
+                    label=verdict.label,
+                    confidence=verdict.confidence,
+                    entailment=verdict.entailment,
+                    neutral=verdict.neutral,
+                    contradiction=verdict.contradiction,
+                    method="nli",
+                    gate_cosine=gate_cosine,
+                )
+                continue
+        verdicts[i] = _judge_to_verdict(
+            verdict.claim, judge.judge(verdict.claim, evidence), gate_cosine=gate_cosine
+        )
+    return verdicts
 
 
-def verify_claim(scorer: NLIScorer, claim: str, evidence: str) -> ClaimVerdict:
+def verify_claim(
+    scorer: NLIScorer,
+    claim: str,
+    evidence: str,
+    *,
+    judge: ClaimJudge | None = None,
+    embedder: Embedder | None = None,
+    confident: float = 0.5,
+    neutral_floor: float = 0.5,
+    gate: float = 0.5,
+) -> ClaimVerdict:
     """Check a single claim against a body of evidence.
 
     Convenience wrapper over :func:`verify_claims` for the one-claim
-    case; see it for the premise/hypothesis (evidence/claim) framing.
+    case; see it for the premise/hypothesis (evidence/claim) framing and
+    the optional hybrid ``judge`` / ``embedder`` fallback.
 
     Args:
         scorer: any object satisfying the :class:`NLIScorer` Protocol.
         claim: the claim text.
         evidence: the premise the claim is checked against.
+        judge: optional :class:`ClaimJudge` second opinion.
+        embedder: optional :class:`Embedder` cost gate.
+        confident: NLI confidence floor for trusting entail/contradict.
+        neutral_floor: neutral probability floor for escalation eligibility.
+        gate: embedding-cosine gate threshold.
 
     Returns:
         A single :class:`ClaimVerdict`.
     """
-    return verify_claims(scorer, [claim], evidence)[0]
+    return verify_claims(
+        scorer,
+        [claim],
+        evidence,
+        judge=judge,
+        embedder=embedder,
+        confident=confident,
+        neutral_floor=neutral_floor,
+        gate=gate,
+    )[0]
 
 
 __all__ = [
     "DEFAULT_HYPOTHESIS_TEMPLATE",
+    "ClaimJudge",
     "ClaimVerdict",
+    "JudgeVerdict",
     "NLIScore",
     "NLIScorer",
     "ZeroShotNLIClassifier",

@@ -7,13 +7,21 @@ The real ``kaos_nlp_transformers.NliModel`` satisfies the same Protocol.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 
+import numpy as np
 import pytest
 
 from kaos_llm_core.errors import CallError
-from kaos_llm_core.programs.classify import ClaimVerdict, verify_claim, verify_claims
+from kaos_llm_core.programs.classify import (
+    ClaimJudge,
+    ClaimVerdict,
+    Embedder,
+    JudgeVerdict,
+    verify_claim,
+    verify_claims,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -117,3 +125,188 @@ def test_claim_verdict_is_frozen() -> None:
     )
     with pytest.raises((AttributeError, TypeError)):
         v.label = "entailment"  # ty: ignore[invalid-assignment]  # frozen by design
+
+
+# --------------------------------------------------------------------------
+# Hybrid fallback: NLI-neutral-band escalation to an injected ClaimJudge,
+# cost-gated by an optional Embedder. Offline fakes; the judge call-count is
+# the cost contract and is asserted precisely.
+# --------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class _StubJudgeVerdict:
+    label: str
+    confidence: float
+    rationale: str | None = None
+
+
+class _CountingJudge:
+    """Records every judge call; returns a pre-baked verdict per claim."""
+
+    def __init__(self, table: dict[str, tuple[str, float]]) -> None:
+        self._table = table
+        self.calls: list[tuple[str, str]] = []
+
+    def judge(self, claim: str, evidence: str) -> JudgeVerdict:
+        self.calls.append((claim, evidence))
+        label, conf = self._table.get(claim, ("neutral", 0.5))
+        return _StubJudgeVerdict(label=label, confidence=conf, rationale="because")
+
+
+class _StubEmbedder:
+    """Deterministic embedder: maps each text to a pre-baked unit vector."""
+
+    def __init__(self, vectors: dict[str, list[float]]) -> None:
+        self._vectors = vectors
+        self.calls = 0
+
+    def embed(self, texts: Iterable[str], *, batch_size: int = 32) -> np.ndarray:
+        self.calls += 1
+        rows = [self._vectors[t] for t in texts]
+        arr = np.asarray(rows, dtype=np.float32)
+        # L2-normalise rows to honour the Embedder contract.
+        norms = np.linalg.norm(arr, axis=1, keepdims=True)
+        norms[norms == 0.0] = 1.0
+        return arr / norms
+
+
+def test_protocols_are_runtime_checkable() -> None:
+    judge = _CountingJudge({})
+    embedder = _StubEmbedder({})
+    assert isinstance(judge, ClaimJudge)
+    assert isinstance(embedder, Embedder)
+    assert isinstance(_StubJudgeVerdict("neutral", 0.5), JudgeVerdict)
+
+
+def test_confident_entail_does_not_escalate() -> None:
+    scorer = _StubScorer({"supported claim": (0.95, 0.04, 0.01)})
+    judge = _CountingJudge({"supported claim": ("refuted", 0.9)})
+    v = verify_claim(scorer, "supported claim", evidence="evidence", judge=judge)
+    assert v.label == "entailment"
+    assert v.method == "nli"
+    assert judge.calls == []  # confident NLI is trusted; judge NOT called
+
+
+def test_confident_contradiction_does_not_escalate() -> None:
+    scorer = _StubScorer({"refuted claim": (0.02, 0.03, 0.95)})
+    judge = _CountingJudge({"refuted claim": ("supported", 0.9)})
+    v = verify_claim(scorer, "refuted claim", evidence="evidence", judge=judge)
+    assert v.label == "contradiction"
+    assert v.method == "nli"
+    assert judge.calls == []
+
+
+def test_neutral_below_gate_keeps_nli_and_skips_judge() -> None:
+    scorer = _StubScorer({"mismatch claim": (0.1, 0.85, 0.05)})
+    judge = _CountingJudge({"mismatch claim": ("supported", 0.9)})
+    # Orthogonal vectors → cosine 0.0, below the default gate of 0.5.
+    embedder = _StubEmbedder(
+        {"mismatch claim": [1.0, 0.0], "evidence": [0.0, 1.0]},
+    )
+    v = verify_claim(scorer, "mismatch claim", evidence="evidence", judge=judge, embedder=embedder)
+    assert v.label == "neutral"  # NLI neutral kept
+    assert v.method == "nli"
+    assert v.gate_cosine == pytest.approx(0.0, abs=1e-6)
+    assert judge.calls == []  # below gate → judge NOT called (the cost contract)
+    assert embedder.calls == 1  # one batched embed of [claim, evidence]
+
+
+def test_neutral_above_gate_escalates_and_verdict_flips() -> None:
+    scorer = _StubScorer({"paraphrased claim": (0.1, 0.85, 0.05)})
+    judge = _CountingJudge({"paraphrased claim": ("supported", 0.88)})
+    # Identical vectors → cosine 1.0, above the default gate of 0.5.
+    embedder = _StubEmbedder(
+        {"paraphrased claim": [1.0, 1.0], "evidence": [1.0, 1.0]},
+    )
+    v = verify_claim(
+        scorer, "paraphrased claim", evidence="evidence", judge=judge, embedder=embedder
+    )
+    assert v.label == "entailment"  # flipped neutral → supported by the judge
+    assert v.supported is True
+    assert v.method == "llm_judge"
+    assert v.confidence == pytest.approx(0.88)
+    assert v.gate_cosine == pytest.approx(1.0, abs=1e-6)
+    assert v.rationale == "because"
+    assert len(judge.calls) == 1
+    assert judge.calls[0] == ("paraphrased claim", "evidence")
+
+
+def test_neutral_with_judge_no_embedder_escalates_directly() -> None:
+    scorer = _StubScorer({"claim": (0.1, 0.85, 0.05)})
+    judge = _CountingJudge({"claim": ("refuted", 0.7)})
+    v = verify_claim(scorer, "claim", evidence="evidence", judge=judge)
+    assert v.label == "contradiction"
+    assert v.method == "llm_judge"
+    assert v.gate_cosine is None  # no embedder → no cosine computed
+    assert len(judge.calls) == 1
+
+
+def test_no_judge_supplied_preserves_pure_nli() -> None:
+    scorer = _StubScorer({"claim": (0.1, 0.85, 0.05)})
+    embedder = _StubEmbedder({"claim": [1.0, 1.0], "evidence": [1.0, 1.0]})
+    # Embedder but no judge: pure NLI, no embed call (nothing to gate).
+    v = verify_claim(scorer, "claim", evidence="evidence", embedder=embedder)
+    assert v.label == "neutral"
+    assert v.method == "nli"
+    assert v.gate_cosine is None
+    assert embedder.calls == 0
+
+
+def test_batch_one_nli_call_only_neutral_band_escalates() -> None:
+    table = {
+        "entail": (0.9, 0.05, 0.05),  # confident entail → no escalation
+        "contra": (0.05, 0.05, 0.9),  # confident contra → no escalation
+        "neutral_close": (0.1, 0.85, 0.05),  # neutral, cosine high → escalate
+        "neutral_far": (0.1, 0.85, 0.05),  # neutral, cosine low → keep NLI
+    }
+    scorer = _StubScorer(table)
+    judge = _CountingJudge({"neutral_close": ("supported", 0.8)})
+    embedder = _StubEmbedder(
+        {
+            "neutral_close": [1.0, 0.0],
+            "neutral_far": [0.0, 1.0],
+            "evidence": [1.0, 0.0],
+        }
+    )
+    claims = ["entail", "contra", "neutral_close", "neutral_far"]
+    verdicts = verify_claims(scorer, claims, evidence="evidence", judge=judge, embedder=embedder)
+    # ONE NLI forward pass for all four claims.
+    assert len(scorer.calls) == 1
+    assert scorer.calls[0] == ("evidence", claims)
+    assert [v.label for v in verdicts] == [
+        "entailment",
+        "contradiction",
+        "entailment",  # neutral_close flipped by judge
+        "neutral",  # neutral_far kept (below gate)
+    ]
+    assert [v.method for v in verdicts] == ["nli", "nli", "llm_judge", "nli"]
+    # Judge called exactly once: only neutral_close cleared the gate.
+    assert judge.calls == [("neutral_close", "evidence")]
+
+
+def test_low_confidence_entail_escalates() -> None:
+    # Entailment the NLI head is not confident about (below ``confident``).
+    scorer = _StubScorer({"weak claim": (0.4, 0.35, 0.25)})
+    judge = _CountingJudge({"weak claim": ("refuted", 0.9)})
+    v = verify_claim(scorer, "weak claim", evidence="evidence", judge=judge, confident=0.5)
+    assert v.label == "contradiction"
+    assert v.method == "llm_judge"
+    assert len(judge.calls) == 1
+
+
+def test_unrecognised_judge_label_raises() -> None:
+    scorer = _StubScorer({"claim": (0.1, 0.85, 0.05)})
+    judge = _CountingJudge({"claim": ("maybe", 0.5)})
+    with pytest.raises(CallError, match="unrecognised label"):
+        verify_claim(scorer, "claim", evidence="evidence", judge=judge)
+
+
+def test_threshold_validation() -> None:
+    scorer = _StubScorer({})
+    with pytest.raises(ValueError, match="confident"):
+        verify_claim(scorer, "c", evidence="e", confident=1.5)
+    with pytest.raises(ValueError, match="neutral_floor"):
+        verify_claim(scorer, "c", evidence="e", neutral_floor=-0.1)
+    with pytest.raises(ValueError, match="gate"):
+        verify_claim(scorer, "c", evidence="e", gate=2.0)
