@@ -168,6 +168,119 @@ class TestIssue2HooksFire:
         # One iteration: index 0
         assert seen_iterations == [0]
 
+    async def test_react_per_tool_hooks_bracket_each_call(self) -> None:
+        """``on_tool_start`` / ``on_tool_end`` fire once per tool call, in
+        order, bracketing each dispatch — the finer grain a live UI needs
+        (``on_iteration`` only fires once per loop turn, after the tools)."""
+        from kaos_llm_client.types import ToolCall
+
+        from kaos_llm_core.programs.react import ToolObservation
+
+        events: list[str] = []
+
+        def on_tool_start(prog: Any, tc: Any, *, context: Any = None) -> None:
+            assert isinstance(tc, ToolCall)
+            events.append(f"start:{tc.name}")
+
+        def on_tool_end(prog: Any, obs: Any, *, context: Any = None) -> None:
+            assert isinstance(obs, ToolObservation)
+            events.append(f"end:{obs.tool_name}:err={obs.is_error}")
+
+        prog_hooks = ProgramHooks(on_tool_start=on_tool_start, on_tool_end=on_tool_end)
+
+        def my_api(query: str) -> str:
+            return "tool-output"
+
+        call_count = {"n": 0}
+
+        def handler(messages: list[dict[str, Any]], profile: ModelProfile) -> ProviderResponse:
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                return ProviderResponse.model_construct(
+                    provider="function",
+                    model="function-test",
+                    raw={},
+                    parts=[
+                        ContentPart.model_construct(
+                            type="tool_use",
+                            tool_call=ToolCall.model_construct(
+                                id="call_1", name="my_api", arguments={"query": "x"}
+                            ),
+                        )
+                    ],
+                    usage=UsageInfo.model_construct(
+                        input_tokens=5, output_tokens=5, total_tokens=10
+                    ),
+                    stop_reason="tool_use",
+                    status_code=200,
+                    response_headers={},
+                )
+            return _json_response({"answer": "done"})
+
+        client = FunctionClient(function=handler)
+        react = ReAct(
+            AnswerSig,
+            tools=[Tool.from_callable(my_api)],
+            model="function-test",
+            client=client,
+            program_hooks=prog_hooks,
+        )
+        await react(question="anything")
+        # start fires before end, once each, for the single tool call.
+        assert events == ["start:my_api", "end:my_api:err=False"]
+
+    async def test_per_tool_hooks_optional_and_isolated(self) -> None:
+        """A raising per-tool hook is swallowed and never breaks the loop;
+        absent hooks are a no-op (back-compat)."""
+        from kaos_llm_client.types import ToolCall
+
+        def boom(prog: Any, *args: Any, **kwargs: Any) -> None:
+            raise RuntimeError("observer blew up")
+
+        prog_hooks = ProgramHooks(on_tool_start=boom, on_tool_end=boom)
+
+        def my_api(query: str) -> str:
+            return "ok"
+
+        call_count = {"n": 0}
+
+        def handler(messages: list[dict[str, Any]], profile: ModelProfile) -> ProviderResponse:
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                return ProviderResponse.model_construct(
+                    provider="function",
+                    model="function-test",
+                    raw={},
+                    parts=[
+                        ContentPart.model_construct(
+                            type="tool_use",
+                            tool_call=ToolCall.model_construct(
+                                id="call_1", name="my_api", arguments={"query": "x"}
+                            ),
+                        )
+                    ],
+                    usage=UsageInfo.model_construct(
+                        input_tokens=5, output_tokens=5, total_tokens=10
+                    ),
+                    stop_reason="tool_use",
+                    status_code=200,
+                    response_headers={},
+                )
+            return _json_response({"answer": "survived"})
+
+        client = FunctionClient(function=handler)
+        react = ReAct(
+            AnswerSig,
+            tools=[Tool.from_callable(my_api)],
+            model="function-test",
+            client=client,
+            program_hooks=prog_hooks,
+        )
+        result = await react(question="anything")
+        # The raising hooks did not abort the loop — the tool ran and the
+        # final answer came through.
+        assert result.trajectory[0].tool_results[0].tool_name == "my_api"
+
 
 # ---------------------------------------------------------------------------
 # #3 — User tools that return {"error": True, ...} are NOT mis-flagged

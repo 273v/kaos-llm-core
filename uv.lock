@@ -11,7 +11,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
+exclude-newer = "2026-05-30T19:39:54.645781364Z"
 exclude-newer-span = "PT72H"
 
 [options.exclude-newer-package]
@@ -434,7 +434,7 @@ wheels = [
 
 [[package]]
 name = "kaos-llm-client"
-version = "0.1.6"
+version = "0.1.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx", extra = ["http2"] },
@@ -442,9 +442,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "pydantic-settings" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/de/8b/d90b56413c7185301ea9d64c4adc876ac4d88ce0fbf0bba4ca650861b2c4/kaos_llm_client-0.1.6.tar.gz", hash = "sha256:16ee734ed8da16f7020fbc989733e64ae061166ca4a4ea43e115819e7505bf1e", size = 265003, upload-time = "2026-05-23T19:35:57.212Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/dd/99/00f3378d59b7a31c2497024bef811735269382ee247322484fbb099ac906/kaos_llm_client-0.1.9.tar.gz", hash = "sha256:e51237aa418ada7c69f5bf163023ad45d25e5c21adf27b2f0dc96a3a6c3b6ac2", size = 274783, upload-time = "2026-05-29T16:58:01.805Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3c/72/b33536c7a008fe72344b1021658c27af4f9605fa5679f6657b5105c1584f/kaos_llm_client-0.1.6-py3-none-any.whl", hash = "sha256:67b11ee2527abf98c9ae6bfb7f238c2b6cf873563c1469559868de81078a82a5", size = 157557, upload-time = "2026-05-23T19:35:55.158Z" },
+    { url = "https://files.pythonhosted.org/packages/1a/f5/3d49ba40a5aa6134f8fbcb4027f023f6893dd33482c6eb694bb8d12ba08a/kaos_llm_client-0.1.9-py3-none-any.whl", hash = "sha256:9b39624ca8301d666b9d64274acdb62ed381502ad36374a7be6ee04072359311", size = 162677, upload-time = "2026-05-29T16:57:59.927Z" },
 ]
 
 [[package]]
@@ -483,7 +483,7 @@ requires-dist = [
     { name = "kaos-content", specifier = ">=0.1.0,<0.2" },
     { name = "kaos-content", extras = ["images"], marker = "extra == 'vision'", specifier = ">=0.1.0,<0.2" },
     { name = "kaos-core", specifier = ">=0.1.0,<0.2" },
-    { name = "kaos-llm-client", specifier = ">=0.1.0,<0.2" },
+    { name = "kaos-llm-client", specifier = ">=0.1.9,<0.2" },
     { name = "kaos-mcp", marker = "extra == 'mcp'", specifier = ">=0.1.0,<0.2" },
     { name = "kaos-nlp-core", specifier = ">=0.1.0,<0.2" },
     { name = "opentelemetry-api", marker = "extra == 'otel'", specifier = ">=1.20" },
