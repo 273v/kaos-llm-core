@@ -85,6 +85,20 @@ class ProgramHooks:
     - ``on_iteration(program, iteration, payload, *, context=None)`` —
       fires per iteration. ``iteration`` is 0-indexed. ``payload`` is a
       program-specific dict — see each program's docstring for the keys.
+    - ``on_tool_start(program, tool_call, *, context=None)`` — fires
+      immediately *before* a single tool call is dispatched, once per
+      tool call, with the :class:`~kaos_llm_core.programs.tool.ToolCall`
+      about to run (``.id`` / ``.name`` / ``.arguments``). This is a
+      finer grain than ``on_iteration`` (which fires once per loop turn,
+      after every tool in that turn has already executed): it lets an
+      observer surface "tool X is running now" *while* the call is in
+      flight, which is what a live UI needs. Only ReAct fires it.
+    - ``on_tool_end(program, observation, *, context=None)`` — fires
+      immediately *after* each tool call returns, once per tool call,
+      with the :class:`~kaos_llm_core.programs.react.ToolObservation`
+      (carrying ``tool_call_id`` / ``tool_name`` / ``arguments`` /
+      ``result`` / ``is_error``). Pairs with ``on_tool_start`` to bracket
+      one tool's execution. Only ReAct fires it.
     - ``on_program_end(program, inputs, invocation, *, context=None)``
       — fires once after the program completes successfully. ``trace`` is
       the assembled parent :class:`ExecutionTrace`.
@@ -95,6 +109,8 @@ class ProgramHooks:
 
     on_program_start: ProgramHook | None = None
     on_iteration: ProgramHook | None = None
+    on_tool_start: ProgramHook | None = None
+    on_tool_end: ProgramHook | None = None
     on_program_end: ProgramHook | None = None
     on_program_error: ProgramHook | None = None
 

@@ -999,21 +999,62 @@ class ReAct(Program):
         tool_lookup: dict[str, Tool],
         messages: list[dict[str, Any]],
     ) -> list[ToolObservation]:
-        """Execute every tool call sequentially and append tool_result messages."""
+        """Execute every tool call sequentially and append tool_result messages.
+
+        Fires the per-tool ``ProgramHooks`` (``on_tool_start`` before each
+        dispatch, ``on_tool_end`` after each returns) so an observer — e.g.
+        a streaming UI bridge — can surface each tool call live, *during*
+        the loop, instead of reconstructing the trajectory after the whole
+        program returns. Hook errors are swallowed by ``fire_program_hook``;
+        observability never alters tool dispatch.
+        """
         tool_results: list[ToolObservation] = []
         for tc in tool_calls:
+            self._fire_tool_start_hook(tc)
             payload, is_error = await self._invoke_one(tc, tool_lookup)
             messages.append(ToolResultMessage(tc.id, payload, name=tc.name))
-            tool_results.append(
-                ToolObservation(
-                    tool_call_id=tc.id,
-                    tool_name=tc.name,
-                    arguments=dict(tc.arguments),
-                    result=payload,
-                    is_error=is_error,
-                )
+            observation = ToolObservation(
+                tool_call_id=tc.id,
+                tool_name=tc.name,
+                arguments=dict(tc.arguments),
+                result=payload,
+                is_error=is_error,
             )
+            tool_results.append(observation)
+            self._fire_tool_end_hook(observation)
         return tool_results
+
+    def _fire_tool_start_hook(self, tool_call: ToolCall) -> None:
+        """Fire :class:`ProgramHooks` ``on_tool_start`` for one tool call.
+
+        Fired just before :meth:`_invoke_one` dispatches ``tool_call`` so a
+        live observer sees the call enter flight. No-op when no hook is
+        attached; hook errors are swallowed by ``fire_program_hook``.
+        """
+        if self.program_hooks is None or self.program_hooks.on_tool_start is None:
+            return
+        fire_program_hook(
+            self.program_hooks.on_tool_start,
+            self,
+            tool_call,
+            context=_call_context_var.get(),
+        )
+
+    def _fire_tool_end_hook(self, observation: ToolObservation) -> None:
+        """Fire :class:`ProgramHooks` ``on_tool_end`` for one tool call.
+
+        Fired right after :meth:`_invoke_one` returns, with the executed
+        call's :class:`ToolObservation`. No-op when no hook is attached;
+        hook errors are swallowed by ``fire_program_hook``.
+        """
+        if self.program_hooks is None or self.program_hooks.on_tool_end is None:
+            return
+        fire_program_hook(
+            self.program_hooks.on_tool_end,
+            self,
+            observation,
+            context=_call_context_var.get(),
+        )
 
     def _build_overrun_result(
         self, plan: CallPlan, last_response: ProviderResponse | None

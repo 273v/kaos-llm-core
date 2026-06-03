@@ -8,6 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.12] — 2026-06-02
+
+### Added
+
+- **Per-tool lifecycle hooks** on `ProgramHooks`
+  (`kaos_llm_core.programs.program_hooks`): two new optional callbacks,
+  `on_tool_start(program, tool_call, *, context=None)` and
+  `on_tool_end(program, observation, *, context=None)`. `ReAct` fires
+  them in `_execute_tool_calls` immediately before and after each
+  individual tool dispatch, bracketing one tool's execution. This is a
+  finer grain than the existing `on_iteration` (which fires once per loop
+  turn, *after* every tool in that turn has already run), so a live
+  observer — e.g. a streaming UI bridge — can surface each tool call
+  *while it is in flight* instead of reconstructing the trajectory after
+  the whole program returns. Both hooks are optional; when unset behavior
+  is unchanged, and a hook that raises is logged and swallowed
+  (`fire_program_hook` policy) so observability never alters tool
+  dispatch. `on_tool_start` receives the
+  `kaos_llm_client.types.ToolCall`; `on_tool_end` receives the executed
+  `kaos_llm_core.programs.react.ToolObservation`.
+
 ## [0.1.11] — 2026-06-02
 
 ### Added
