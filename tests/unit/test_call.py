@@ -226,6 +226,7 @@ class TestCallRetry:
         # The result itself is just the validated output; the trace lives on
         # the Invocation.
         assert result is not None
+        assert invocation.trace is not None
         assert invocation.trace.total_tokens == 150
 
 

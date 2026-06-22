@@ -78,7 +78,7 @@ def _get_field_kind(field_info: FieldInfo) -> str | None:
     extra = field_info.json_schema_extra
     if not isinstance(extra, dict):
         return None
-    return extra.get(_FIELD_KIND_KEY)  # ty: ignore[invalid-argument-type]
+    return extra.get(_FIELD_KIND_KEY)  # ty: ignore[invalid-return-type]
 
 
 def is_input_field(field_info: FieldInfo) -> bool:
