@@ -106,7 +106,7 @@ class TestSemanticCache:
         assert call_count == 1
 
         # Second call: very similar embedding → cache hit
-        cache._embed = AsyncMock(return_value=[0.99, 0.01])
+        cache._embed = AsyncMock(return_value=[0.99, 0.01])  # ty: ignore[invalid-assignment]
         result = await cache.call(call, text="hello there world")
         assert result.entities == ["X"]
         assert call_count == 1  # NOT called again
