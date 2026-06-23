@@ -147,7 +147,7 @@ class ModelOptimizer(OptimizerBase):
         mutations: list[Mutation] = []
         stop_reason: str = StopReason.COMPLETED.value
 
-        logger.info(
+        logger.debug(
             "ModelOptimizer: scoring %d model(s) on %d examples (min_score=%.2f)",
             len(self.models),
             len(val_set),
@@ -160,7 +160,7 @@ class ModelOptimizer(OptimizerBase):
                     exhausted = tracker.exhausted()
                     if exhausted is not None:
                         stop_reason = exhausted.value
-                        logger.info("ModelOptimizer: budget exhausted (%s)", stop_reason)
+                        logger.debug("ModelOptimizer: budget exhausted (%s)", stop_reason)
                         break
 
                 call._model = model
@@ -242,7 +242,7 @@ class ModelOptimizer(OptimizerBase):
         # Apply the selected model to the Call.
         call._model = best_model
 
-        logger.info(
+        logger.debug(
             "ModelOptimizer: selected %s (score=%.3f, cost=$%.6f, stop=%s)",
             best_model,
             best_score,

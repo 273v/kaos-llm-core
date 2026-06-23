@@ -236,7 +236,7 @@ async def run_model(
             elif result.outcome == "answer":
                 report.unanswerable_answered += 1
 
-        logger.info(
+        logger.debug(
             "[%s] %s (answerable=%s) -> %s verified=%s conf=%.2f cost=$%.6f %dms",
             model,
             question.id,

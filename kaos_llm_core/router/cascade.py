@@ -145,7 +145,7 @@ class CascadeRouter:
 
                 if self.escalation_check(step_invocation.output):
                     model_used = model
-                    logger.info(
+                    logger.debug(
                         "CascadeRouter: %s accepted from %s (model %d/%d)",
                         parent_call.signature.__name__,
                         model,
@@ -157,7 +157,7 @@ class CascadeRouter:
                     self._model_used = model_used
                     return step_invocation
 
-                logger.info(
+                logger.debug(
                     "CascadeRouter: %s escalating from %s (model %d/%d)",
                     parent_call.signature.__name__,
                     model,

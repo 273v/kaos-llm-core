@@ -339,7 +339,7 @@ class ChunkRetry:
             min_chars=self.config.min_chunk_chars,
         )
         if len(chunks) > self.config.max_chunks_per_doc:
-            logger.info(
+            logger.debug(
                 "ChunkRetry skipped: document would yield %d chunks (cap=%d)",
                 len(chunks),
                 self.config.max_chunks_per_doc,
@@ -352,7 +352,7 @@ class ChunkRetry:
             # Skip retry entirely.
             return cells, 0.0
 
-        logger.info(
+        logger.debug(
             "ChunkRetry firing: doc=%s chunks=%d refused_cells=%d budget=$%.2f",
             doc_id,
             len(chunks),
@@ -405,7 +405,7 @@ class ChunkRetry:
                 continue
             promoted = self._promote_candidates(cell, cell_candidates)
             new_cells[i] = promoted
-            logger.info(
+            logger.debug(
                 "ChunkRetry recovered cell column=%s doc=%s candidates=%d",
                 cell.column_id,
                 doc_id,

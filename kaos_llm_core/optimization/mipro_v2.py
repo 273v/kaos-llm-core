@@ -427,7 +427,7 @@ class MiproV2Optimizer(MetaOptimizerBase):
                 proposer_calls=proposer_call_count,
                 stop_reason=stop_reason,
             )
-        logger.info("MIPROv2: baseline %.1f%%", metric_before * 100)
+        logger.debug("MIPROv2: baseline %.1f%%", metric_before * 100)
 
         # ------------------------------------------------------------------
         # Phase 2: bootstrap N demo candidate sets (or skip if zero-shot)
@@ -641,7 +641,7 @@ class MiproV2Optimizer(MetaOptimizerBase):
                 if consumed is not None:
                     stop_reason = consumed.value
                     break
-                logger.info(
+                logger.debug(
                     "MIPROv2: trial %d/%d (instr=%d, demos=%d) minibatch=%.1f%%",
                     trial_idx + 1,
                     num_trials,
@@ -722,7 +722,7 @@ class MiproV2Optimizer(MetaOptimizerBase):
             call.instructions = best_config.instruction
             call.examples = list(best_config.demos)
             metric_after = best_full_score
-            logger.info(
+            logger.debug(
                 "MIPROv2: ACCEPTED %.1f%% -> %.1f%%",
                 metric_before * 100,
                 metric_after * 100,
@@ -732,7 +732,7 @@ class MiproV2Optimizer(MetaOptimizerBase):
             call.examples = list(original_examples)
             metric_after = metric_before
             best_eval_after = eval_before
-            logger.info(
+            logger.debug(
                 "MIPROv2: REJECTED — best %.1f%% did not improve baseline %.1f%%",
                 best_full_score * 100,
                 metric_before * 100,

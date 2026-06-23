@@ -193,7 +193,7 @@ class CoOptimizer(MetaOptimizerBase):
         )
         metric_before = eval_before.score
         baseline_exhausted = self._consume_trial(shared_tracker, baseline_trial)
-        logger.info("CoOptimizer: baseline %.1f%%", metric_before * 100)
+        logger.debug("CoOptimizer: baseline %.1f%%", metric_before * 100)
 
         bootstrap_result: BootstrapResult | None = None
         instruction_result: InstructionResult | None = None
@@ -216,7 +216,7 @@ class CoOptimizer(MetaOptimizerBase):
 
         # Stage 1: Bootstrap
         if "bootstrap" in self.strategies and train_set and not _budget_hit():
-            logger.info("CoOptimizer: running bootstrap stage")
+            logger.debug("CoOptimizer: running bootstrap stage")
             stages_run.append("bootstrap")
             opt = BootstrapOptimizer(
                 metric=self.metric,
@@ -235,11 +235,11 @@ class CoOptimizer(MetaOptimizerBase):
             current = bootstrap_result.metric_after
             if bootstrap_result.stop_reason != StopReason.COMPLETED.value:
                 stop_reason = bootstrap_result.stop_reason
-            logger.info("CoOptimizer: after bootstrap %.1f%%", current * 100)
+            logger.debug("CoOptimizer: after bootstrap %.1f%%", current * 100)
 
         # Stage 2: Instruction tuning
         if "instruction" in self.strategies and not _budget_hit():
-            logger.info("CoOptimizer: running instruction stage")
+            logger.debug("CoOptimizer: running instruction stage")
             stages_run.append("instruction")
             opt_inst = InstructionOptimizer(
                 metric=self.metric,
@@ -255,11 +255,11 @@ class CoOptimizer(MetaOptimizerBase):
             current = instruction_result.metric_after
             if instruction_result.stop_reason != StopReason.COMPLETED.value:
                 stop_reason = instruction_result.stop_reason
-            logger.info("CoOptimizer: after instruction %.1f%%", current * 100)
+            logger.debug("CoOptimizer: after instruction %.1f%%", current * 100)
 
         # Stage 3: Hyperparameter search
         if "hyperparameter" in self.strategies and not _budget_hit():
-            logger.info("CoOptimizer: running hyperparameter stage")
+            logger.debug("CoOptimizer: running hyperparameter stage")
             stages_run.append("hyperparameter")
             opt_hp = HyperparameterOptimizer(
                 metric=self.metric,
@@ -275,7 +275,7 @@ class CoOptimizer(MetaOptimizerBase):
             current = hyperparameter_result.metric_after
             if hyperparameter_result.stop_reason != StopReason.COMPLETED.value:
                 stop_reason = hyperparameter_result.stop_reason
-            logger.info("CoOptimizer: after hyperparameter %.1f%%", current * 100)
+            logger.debug("CoOptimizer: after hyperparameter %.1f%%", current * 100)
 
         # Final score
         eval_after, final_trial = await self._evaluate_in_trial(
@@ -288,7 +288,7 @@ class CoOptimizer(MetaOptimizerBase):
         self._consume_trial(shared_tracker, final_trial)
         metric_after = eval_after.score
 
-        logger.info(
+        logger.debug(
             "CoOptimizer: complete %.1f%% → %.1f%%", metric_before * 100, metric_after * 100
         )
 

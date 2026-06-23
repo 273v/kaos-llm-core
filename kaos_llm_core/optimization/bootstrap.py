@@ -177,7 +177,7 @@ class BootstrapOptimizer(OptimizerBase):
         stop_reason: str = StopReason.COMPLETED.value
 
         # Step 1: Baseline evaluation on val_set
-        logger.info("BootstrapOptimizer: baseline evaluation on %d val examples", len(val_set))
+        logger.debug("BootstrapOptimizer: baseline evaluation on %d val examples", len(val_set))
         eval_before, baseline_trial = await self._evaluate_in_trial(
             call,
             val_set,
@@ -189,7 +189,7 @@ class BootstrapOptimizer(OptimizerBase):
         exhausted = self._consume_trial(tracker, baseline_trial)
         if exhausted is not None:
             stop_reason = exhausted.value
-            logger.info("BootstrapOptimizer: budget exhausted after baseline (%s)", stop_reason)
+            logger.debug("BootstrapOptimizer: budget exhausted after baseline (%s)", stop_reason)
             return BootstrapResult(
                 metric_before=metric_before,
                 metric_after=metric_before,
@@ -205,7 +205,7 @@ class BootstrapOptimizer(OptimizerBase):
         # filter + slice that the inline code used to do; extracted in
         # Phase 17.1 so MiproV2Optimizer can reuse it for its
         # multi-set bootstrap loop.
-        logger.info("BootstrapOptimizer: running on %d training examples", len(train_set))
+        logger.debug("BootstrapOptimizer: running on %d training examples", len(train_set))
         selected, train_trial = await bootstrap_one_demo_set(
             call=call,
             train_slice=train_set,
@@ -219,7 +219,7 @@ class BootstrapOptimizer(OptimizerBase):
         self._consume_trial(tracker, train_trial)
 
         if not selected:
-            logger.info("BootstrapOptimizer: no passing examples found in training set")
+            logger.debug("BootstrapOptimizer: no passing examples found in training set")
             mutation = ctx.make_mutation(
                 strategy="bootstrap",
                 mutation_type="add_examples",
@@ -247,7 +247,7 @@ class BootstrapOptimizer(OptimizerBase):
         original_examples = list(call.examples)
         call.examples = original_examples + selected
 
-        logger.info("BootstrapOptimizer: re-evaluating with %d demos", len(selected))
+        logger.debug("BootstrapOptimizer: re-evaluating with %d demos", len(selected))
         eval_after, after_trial = await self._evaluate_in_trial(
             call,
             val_set,
@@ -261,13 +261,13 @@ class BootstrapOptimizer(OptimizerBase):
         accepted = metric_after > metric_before
         if not accepted:
             call.examples = original_examples
-            logger.info(
+            logger.debug(
                 "BootstrapOptimizer: rejected — val score %.1f%% → %.1f%%",
                 metric_before * 100,
                 metric_after * 100,
             )
         else:
-            logger.info(
+            logger.debug(
                 "BootstrapOptimizer: accepted — val score %.1f%% → %.1f%% (+%.1f%%)",
                 metric_before * 100,
                 metric_after * 100,

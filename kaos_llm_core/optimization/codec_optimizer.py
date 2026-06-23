@@ -131,7 +131,7 @@ class CodecOptimizer(OptimizerBase):
         best_score: float = float("-inf")
         stop_reason: str = StopReason.COMPLETED.value
 
-        logger.info(
+        logger.debug(
             "CodecOptimizer: evaluating %d codec(s) on %d examples",
             len(self.codecs),
             len(val_set),
@@ -143,7 +143,7 @@ class CodecOptimizer(OptimizerBase):
                     exhausted = tracker.exhausted()
                     if exhausted is not None:
                         stop_reason = exhausted.value
-                        logger.info("CodecOptimizer: budget exhausted (%s)", stop_reason)
+                        logger.debug("CodecOptimizer: budget exhausted (%s)", stop_reason)
                         break
 
                 before_codec_name = type(call._codec).__name__
@@ -195,7 +195,7 @@ class CodecOptimizer(OptimizerBase):
                 if score > best_score:
                     best_score = score
                     best_codec = codec_cls
-                    logger.info("CodecOptimizer: %s improved to %.3f", codec_cls.__name__, score)
+                    logger.debug("CodecOptimizer: %s improved to %.3f", codec_cls.__name__, score)
 
                 self._consume_trial(tracker, trial)
         finally:

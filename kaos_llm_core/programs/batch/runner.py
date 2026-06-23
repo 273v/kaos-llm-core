@@ -135,7 +135,7 @@ async def batch_run(
     if resume and log_path.exists():
         scan = _scan_existing_log(log_path, program_hash_value)
         skip_set, n_succeeded, n_errored, n_skipped, cost_so_far, tokens_so_far = scan
-        logger.info(
+        logger.debug(
             "batch_run resume: %d items already in log, %d succeeded, %d errored",
             len(skip_set),
             n_succeeded,

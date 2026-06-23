@@ -215,7 +215,7 @@ class HyperparameterOptimizer(OptimizerBase):
         original_kwargs = dict(call._kwargs)
 
         # Baseline with current kwargs
-        logger.info("HyperparameterOptimizer: baseline evaluation")
+        logger.debug("HyperparameterOptimizer: baseline evaluation")
         eval_before, baseline_trial = await self._evaluate_in_trial(
             call,
             val_set,
@@ -233,7 +233,7 @@ class HyperparameterOptimizer(OptimizerBase):
         best_params = dict(original_kwargs)
         best_eval = eval_before
 
-        logger.info(
+        logger.debug(
             "HyperparameterOptimizer: trying %d configurations (strategy=%s)",
             len(configs),
             self.strategy,
@@ -244,7 +244,7 @@ class HyperparameterOptimizer(OptimizerBase):
                 exhausted = tracker.exhausted()
                 if exhausted is not None:
                     stop_reason = exhausted.value
-                    logger.info(
+                    logger.debug(
                         "HyperparameterOptimizer: budget exhausted (%s) after %d configs",
                         stop_reason,
                         i,
@@ -299,7 +299,7 @@ class HyperparameterOptimizer(OptimizerBase):
             self._consume_trial(tracker, trial)
 
             if trial_eval.score > best_score:
-                logger.info(
+                logger.debug(
                     "HyperparameterOptimizer: config %d improved %.1f%% → %.1f%% %s",
                     i + 1,
                     best_score * 100,
