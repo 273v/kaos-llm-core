@@ -126,7 +126,7 @@ class ParetoOptimizer:
 
         stop_reason = getattr(inner_result, "stop_reason", StopReason.COMPLETED.value)
 
-        logger.info("ParetoOptimizer: %d trial(s), %d on frontier", len(trials), len(frontier))
+        logger.debug("ParetoOptimizer: %d trial(s), %d on frontier", len(trials), len(frontier))
 
         return ParetoResult(
             frontier=frontier,

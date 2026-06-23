@@ -225,10 +225,10 @@ class ReflectiveOptimizer(OptimizerBase):
             )
         all_critiques.extend(critiques)
         self._consume_trial(tracker, init_trial)
-        logger.info("ReflectiveOptimizer: initial avg quality %.1f%%", best_score * 100)
+        logger.debug("ReflectiveOptimizer: initial avg quality %.1f%%", best_score * 100)
 
         if best_score >= self.quality_threshold:
-            logger.info("ReflectiveOptimizer: already above threshold, no optimization needed")
+            logger.debug("ReflectiveOptimizer: already above threshold, no optimization needed")
             return ReflectiveResult(
                 avg_score_before=best_score,
                 avg_score_after=best_score,
@@ -248,9 +248,9 @@ class ReflectiveOptimizer(OptimizerBase):
                 exhausted = tracker.exhausted()
                 if exhausted is not None:
                     stop_reason = exhausted.value
-                    logger.info("ReflectiveOptimizer: budget exhausted (%s)", stop_reason)
+                    logger.debug("ReflectiveOptimizer: budget exhausted (%s)", stop_reason)
                     break
-            logger.info(
+            logger.debug(
                 "ReflectiveOptimizer: trial %d/%d (best=%.1f%%)",
                 trial + 1,
                 self.max_trials,
@@ -305,7 +305,7 @@ class ReflectiveOptimizer(OptimizerBase):
             self.mutation_log.record(mutation)
 
             if trial_score > best_score:
-                logger.info(
+                logger.debug(
                     "ReflectiveOptimizer: trial %d improved %.1f%% → %.1f%%",
                     trial + 1,
                     best_score * 100,
@@ -317,10 +317,10 @@ class ReflectiveOptimizer(OptimizerBase):
                 trials_without_improvement = 0
 
                 if best_score >= self.quality_threshold:
-                    logger.info("ReflectiveOptimizer: reached quality threshold, stopping")
+                    logger.debug("ReflectiveOptimizer: reached quality threshold, stopping")
                     break
             else:
-                logger.info(
+                logger.debug(
                     "ReflectiveOptimizer: trial %d no improvement (%.1f%%)",
                     trial + 1,
                     trial_score * 100,
@@ -328,7 +328,7 @@ class ReflectiveOptimizer(OptimizerBase):
                 call.instructions = best_instruction
                 trials_without_improvement += 1
                 if trials_without_improvement >= self.patience:
-                    logger.info("ReflectiveOptimizer: patience exhausted, stopping")
+                    logger.debug("ReflectiveOptimizer: patience exhausted, stopping")
                     stop_reason = StopReason.PATIENCE.value
                     break
 

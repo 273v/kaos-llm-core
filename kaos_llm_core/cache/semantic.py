@@ -177,7 +177,7 @@ class SemanticCache:
             exact_entry = self._exact_index.get(exact_key)
             if exact_entry is not None:
                 exact_entry.hit_count += 1
-                logger.info(
+                logger.debug(
                     "SemanticCache exact hit: %s (hits=%d)",
                     sig_name,
                     exact_entry.hit_count,
@@ -194,7 +194,7 @@ class SemanticCache:
             best_entry, best_sim = self._find_similar(embedding, sig_name, model_id, config_fp)
             if best_entry is not None and best_sim >= self.similarity_threshold:
                 best_entry.hit_count += 1
-                logger.info(
+                logger.debug(
                     "SemanticCache similarity hit: %s (similarity=%.3f, hits=%d)",
                     sig_name,
                     best_sim,
@@ -219,7 +219,7 @@ class SemanticCache:
                     exact_entry = self._exact_index.get(exact_key)
                     if exact_entry is not None:
                         exact_entry.hit_count += 1
-                        logger.info(
+                        logger.debug(
                             "SemanticCache stampede-coalesced hit: %s (hits=%d)",
                             sig_name,
                             exact_entry.hit_count,
@@ -414,7 +414,7 @@ class SemanticCache:
                     )
                 ] = entry
         if loaded:
-            logger.info(
+            logger.debug(
                 "SemanticCache: replayed %d entries from %s",
                 len(loaded),
                 self._disk_path,

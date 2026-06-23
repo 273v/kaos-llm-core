@@ -167,7 +167,7 @@ class InstructionOptimizer(OptimizerBase):
         stop_reason: str = StopReason.COMPLETED.value
 
         # Baseline evaluation
-        logger.info("InstructionOptimizer: baseline evaluation on %d examples", len(examples))
+        logger.debug("InstructionOptimizer: baseline evaluation on %d examples", len(examples))
         eval_before, baseline_trial = await self._evaluate_in_trial(
             call,
             examples,
@@ -190,9 +190,9 @@ class InstructionOptimizer(OptimizerBase):
                 exhausted = tracker.exhausted()
                 if exhausted is not None:
                     stop_reason = exhausted.value
-                    logger.info("InstructionOptimizer: budget exhausted (%s)", stop_reason)
+                    logger.debug("InstructionOptimizer: budget exhausted (%s)", stop_reason)
                     break
-            logger.info(
+            logger.debug(
                 "InstructionOptimizer: trial %d/%d (best=%.1f%%)",
                 trial + 1,
                 self.max_trials,
@@ -204,7 +204,7 @@ class InstructionOptimizer(OptimizerBase):
             failures = current_eval.failures()[: self.max_failures_shown]
 
             if not failures:
-                logger.info("InstructionOptimizer: no failures to analyze, stopping")
+                logger.debug("InstructionOptimizer: no failures to analyze, stopping")
                 break
 
             # Format failures for the proposer
@@ -270,7 +270,7 @@ class InstructionOptimizer(OptimizerBase):
             self._consume_trial(tracker, trial_acc)
 
             if trial_score > best_score:
-                logger.info(
+                logger.debug(
                     "InstructionOptimizer: trial %d improved %.1f%% → %.1f%%",
                     trial + 1,
                     best_score * 100,
@@ -281,7 +281,7 @@ class InstructionOptimizer(OptimizerBase):
                 best_eval = trial_eval
                 trials_without_improvement = 0
             else:
-                logger.info(
+                logger.debug(
                     "InstructionOptimizer: trial %d did not improve (%.1f%% vs %.1f%%)",
                     trial + 1,
                     trial_score * 100,
@@ -290,7 +290,7 @@ class InstructionOptimizer(OptimizerBase):
                 call.instructions = best_instruction
                 trials_without_improvement += 1
                 if trials_without_improvement >= self.patience:
-                    logger.info("InstructionOptimizer: patience exhausted, stopping")
+                    logger.debug("InstructionOptimizer: patience exhausted, stopping")
                     stop_reason = StopReason.PATIENCE.value
                     break
 

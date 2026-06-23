@@ -217,7 +217,7 @@ class MiproLiteOptimizer(MetaOptimizerBase):
         baseline_exhausted = self._consume_trial(shared_tracker, baseline_trial)
         if baseline_exhausted is not None:
             stop_reason = baseline_exhausted.value
-        logger.info("MiproV2: baseline %.1f%%", metric_before * 100)
+        logger.debug("MiproV2: baseline %.1f%%", metric_before * 100)
 
         # ---- Step 1: bootstrap K demo candidate sets ----
         # Phase 17.1 C3: switched from BootstrapOptimizer.optimize()
@@ -248,7 +248,7 @@ class MiproLiteOptimizer(MetaOptimizerBase):
                 self._consume_trial(shared_tracker, bs_trial)
                 if selected:
                     demo_candidates.append(selected)
-                    logger.info(
+                    logger.debug(
                         "MiproV2: demo candidate %d collected (%d examples)",
                         k + 1,
                         len(selected),
@@ -289,7 +289,7 @@ class MiproLiteOptimizer(MetaOptimizerBase):
                     )
                     instruction_candidates.append(str(proposed.proposed_instruction))
                 self._consume_trial(shared_tracker, trial)
-                logger.info(
+                logger.debug(
                     "MiproV2: instruction candidate %d proposed (%d chars)",
                     ell + 1,
                     len(str(proposed.proposed_instruction)),
@@ -335,7 +335,7 @@ class MiproLiteOptimizer(MetaOptimizerBase):
                 )
                 candidates.append(cand)
                 self._consume_trial(shared_tracker, eval_trial)
-                logger.info(
+                logger.debug(
                     "MiproV2: trial %d/%d (instr=%d, demos=%d) minibatch=%.1f%%",
                     trial_idx + 1,
                     len(sampled_pairs),
@@ -372,7 +372,7 @@ class MiproLiteOptimizer(MetaOptimizerBase):
                 cand.full_score = full_eval.score
                 cand.promoted = True
                 self._consume_trial(shared_tracker, full_trial)
-                logger.info(
+                logger.debug(
                     "MiproV2: promotion candidate %d full=%.1f%% (mini=%.1f%%)",
                     cand.index,
                     full_eval.score * 100,
@@ -397,7 +397,7 @@ class MiproLiteOptimizer(MetaOptimizerBase):
         if accepted and best is not None:
             call.instructions = best.instruction
             call.examples = list(best.demos)
-            logger.info(
+            logger.debug(
                 "MiproV2: ACCEPTED — %.1f%% → %.1f%% (instr_idx=%d, demos=%d)",
                 metric_before * 100,
                 metric_after * 100,
@@ -407,7 +407,7 @@ class MiproLiteOptimizer(MetaOptimizerBase):
         else:
             call.instructions = original_instruction
             call.examples = list(original_examples)
-            logger.info(
+            logger.debug(
                 "MiproV2: REJECTED — best %.1f%% did not improve baseline %.1f%%",
                 metric_after * 100,
                 metric_before * 100,
