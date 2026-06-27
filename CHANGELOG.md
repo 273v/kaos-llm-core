@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.14] — 2026-06-26
+
+Expose the VLM vision page programs (OCR / describe / classify) as MCP tools.
+
 ### Added
 
 - **VLM vision MCP tools.** Three new MCP tools wrap the
