@@ -1133,15 +1133,16 @@ class TestSaveLoadTool:
 
 
 class TestRegistration:
-    def test_registration_count_is_32(self) -> None:
-        """register_llm_core_tools should register exactly 32 tools at 0.1.0a10.
+    def test_registration_count_is_35(self) -> None:
+        """register_llm_core_tools registers exactly 35 tools (26 program + 6 alpha + 3 vision).
 
         Tool count history:
         7 (pre-Phase-5) → 11 (5) → 15 (6) → 17 (7) → 18 (15.1) → 22 (15.3)
         → 23 (17.1) → 29 (WS-TR.PR-6f.7: +6 alpha extractors) →
         30 (#91: +kaos-llm-core-program-of-thought dedicated wrapper) →
         32 (0.1.0a10 plan §7.3: +kaos-llm-core-summarize +
-        kaos-llm-core-classify declarative façade tools).
+        kaos-llm-core-classify declarative façade tools) →
+        35 (+3 kaos-llm-core-vision-{ocr,describe,classify} VLM tools).
         """
         from kaos_core import KaosRuntime
 
@@ -1149,7 +1150,7 @@ class TestRegistration:
 
         runtime = KaosRuntime()
         n = register_llm_core_tools(runtime)
-        assert n == 32
+        assert n == 35
         registered = set(runtime.tools.list_tools())
         assert "kaos-llm-core-react" in registered
         assert "kaos-llm-core-refine" in registered
@@ -1168,6 +1169,9 @@ class TestRegistration:
         assert "kaos-llm-core-batch-run" in registered
         assert "kaos-llm-core-batch-status" in registered
         assert "kaos-llm-core-batch-results" in registered
+        assert "kaos-llm-core-vision-ocr" in registered
+        assert "kaos-llm-core-vision-describe" in registered
+        assert "kaos-llm-core-vision-classify" in registered
 
 
 # ---------------------------------------------------------------------------

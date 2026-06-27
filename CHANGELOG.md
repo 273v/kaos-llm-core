@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+
+### Added
+
+- **VLM vision MCP tools.** Three new MCP tools wrap the
+  `kaos_llm_core.vision` page programs so any MCP client (and kaos-agents)
+  can run vision-language-model OCR, structural description, and
+  document-page classification over a page image:
+  - `kaos-llm-core-vision-ocr` — transcribe all text on a page image.
+  - `kaos-llm-core-vision-describe` — describe page structure (headings,
+    tables, signatures, stamps, redactions).
+  - `kaos-llm-core-vision-classify` — classify a page into one of ten
+    document-page categories with confidence + reasoning.
+
+  Each accepts a filesystem `path` or base64 `image_base64`, plus an
+  optional `model` override, and returns `structuredContent`. The vision
+  dependency (`[vision]` extra) is imported lazily, so registration never
+  requires Pillow. A new `register_llm_core_vision_tools` group function is
+  added and the backward-compatible `register_llm_core_tools` union now
+  registers 35 tools (was 32; the 26 program + 6 alpha tools are unchanged).
+
 ## [0.1.13] - 2026-06-23
 
 ## [0.1.12] — 2026-06-02

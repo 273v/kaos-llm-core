@@ -1,7 +1,7 @@
 """register_llm_core_tools — bulk-register every kaos-llm-core MCP tool.
 
 The PRD `kaos-modules/docs/internal/dynamic-tool-planning-prd.md` §4
-splits this registration into two granular entry points that match
+splits this registration into three granular entry points that match
 the SessionToolSet group taxonomy in kaos-agents:
 
 - :func:`register_llm_core_program_tools` — the 26 typed-program
@@ -16,9 +16,12 @@ the SessionToolSet group taxonomy in kaos-agents:
   separated so a SessionToolSet that wants the deterministic
   extractors without the heavier program wrappers can opt in
   selectively.
+- :func:`register_llm_core_vision_tools` — the 3 ``kaos-llm-core-vision-*``
+  VLM page programs (OCR, describe, classify) over a page image. Same
+  "programs" group; require the ``[vision]`` extra (lazy-imported).
 
 :func:`register_llm_core_tools` remains the backward-compatible
-union — every existing caller continues to see the same 32 tools.
+union — every existing caller continues to see the union (program + alpha + vision).
 """
 
 from __future__ import annotations
@@ -57,6 +60,9 @@ from kaos_llm_core.integrations.mcp.recipe_tune import KaosLLMCoreRecipeTuneTool
 from kaos_llm_core.integrations.mcp.refine import KaosLLMCoreRefineTool
 from kaos_llm_core.integrations.mcp.save_load import KaosLLMCoreSaveLoadTool
 from kaos_llm_core.integrations.mcp.summarize import KaosLLMCoreSummarizeTool
+from kaos_llm_core.integrations.mcp.vision_classify import KaosLLMCoreVisionClassifyTool
+from kaos_llm_core.integrations.mcp.vision_describe import KaosLLMCoreVisionDescribeTool
+from kaos_llm_core.integrations.mcp.vision_ocr import KaosLLMCoreVisionOcrTool
 
 
 def _ensure_settings(runtime: KaosRuntime) -> None:
@@ -141,14 +147,41 @@ def register_llm_core_alpha_tools(runtime: KaosRuntime) -> int:
     return len(tools)
 
 
+def register_llm_core_vision_tools(runtime: KaosRuntime) -> int:
+    """Register the 3 VLM vision tools (OCR / describe / classify).
+
+    Returns the number of tools registered. These wrap the
+    :mod:`kaos_llm_core.vision` page programs so an MCP client can run
+    VLM OCR, structural description, or document-page classification over
+    a page image (filesystem path or base64 bytes). They call a
+    vision-capable model at runtime and require the ``[vision]`` extra
+    (Pillow via ``kaos-content[images]``); the dependency is imported
+    lazily so registration itself never needs it. Same "programs" group
+    as the typed-program wrappers — denied by default at the
+    SessionToolSet ceiling, opt-in per session.
+    """
+    _ensure_settings(runtime)
+    tools: list[KaosTool] = [
+        KaosLLMCoreVisionOcrTool(),
+        KaosLLMCoreVisionDescribeTool(),
+        KaosLLMCoreVisionClassifyTool(),
+    ]
+    for tool in tools:
+        runtime.tools.register_tool(tool)
+    return len(tools)
+
+
 def register_llm_core_tools(runtime: KaosRuntime) -> int:
     """Register all kaos-llm-core MCP tools with the runtime.
 
     Backward-compatible union of
-    :func:`register_llm_core_program_tools` and
-    :func:`register_llm_core_alpha_tools`. Existing callers see the
-    same 32 tools as before — no schema, name, or behavior changes.
+    :func:`register_llm_core_program_tools`,
+    :func:`register_llm_core_alpha_tools`, and
+    :func:`register_llm_core_vision_tools`. Existing program and alpha
+    tool names, schemas, and behavior are unchanged; the 3 vision tools
+    are additive.
     """
     count = register_llm_core_program_tools(runtime)
     count += register_llm_core_alpha_tools(runtime)
+    count += register_llm_core_vision_tools(runtime)
     return count
