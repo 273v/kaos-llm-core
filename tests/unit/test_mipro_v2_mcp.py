@@ -262,6 +262,6 @@ class TestRegistration:
         n = register_llm_core_tools(runtime)
         # 23 (Phase 17.1) + 6 alpha tools (WS-TR.PR-6f.7) + 1 program-of-thought (#91)
         # + 2 declarative façade tools (0.1.0a10 plan §7.3) = 32.
-        assert n == 32
+        assert n == 35
         names = set(runtime.tools.list_tools())
         assert "kaos-llm-core-mipro-v2" in names
