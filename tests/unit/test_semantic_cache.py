@@ -80,7 +80,7 @@ class TestSemanticCache:
 
         cache = SemanticCache(similarity_threshold=0.99)
         # Mock the embedding to avoid needing a real embedding API
-        cache._embed = AsyncMock(return_value=[1.0, 0.0, 0.0])  # ty: ignore[invalid-assignment]
+        cache._embed = AsyncMock(return_value=[1.0, 0.0, 0.0])
 
         result = await cache.call(call, text="hello world")
         assert result.entities == ["X"]
@@ -101,12 +101,12 @@ class TestSemanticCache:
 
         cache = SemanticCache(similarity_threshold=0.95)
         # First call: embedding [1.0, 0.0]
-        cache._embed = AsyncMock(return_value=[1.0, 0.0])  # ty: ignore[invalid-assignment]
+        cache._embed = AsyncMock(return_value=[1.0, 0.0])
         await cache.call(call, text="hello world")
         assert call_count == 1
 
         # Second call: very similar embedding → cache hit
-        cache._embed = AsyncMock(return_value=[0.99, 0.01])  # ty: ignore[invalid-assignment]
+        cache._embed = AsyncMock(return_value=[0.99, 0.01])
         result = await cache.call(call, text="hello there world")
         assert result.entities == ["X"]
         assert call_count == 1  # NOT called again
@@ -125,11 +125,11 @@ class TestSemanticCache:
         call = Call(ExtractSig, model="function-test", client=client)
 
         cache = SemanticCache(similarity_threshold=0.95)
-        cache._embed = AsyncMock(return_value=[1.0, 0.0])  # ty: ignore[invalid-assignment]
+        cache._embed = AsyncMock(return_value=[1.0, 0.0])
         await cache.call(call, text="first query")
 
         # Very different embedding → cache miss
-        cache._embed = AsyncMock(return_value=[0.0, 1.0])  # ty: ignore[invalid-assignment]
+        cache._embed = AsyncMock(return_value=[0.0, 1.0])
         await cache.call(call, text="completely different")
         assert call_count == 2
         assert cache.size == 2
@@ -229,7 +229,7 @@ class TestExactInputFastPath:
         call2 = Call(OtherSig, model="function-test", client=client)
 
         cache = SemanticCache(similarity_threshold=0.99)
-        cache._embed = AsyncMock(return_value=[1.0, 0.0, 0.0])  # ty: ignore[invalid-assignment]
+        cache._embed = AsyncMock(return_value=[1.0, 0.0, 0.0])
 
         await cache.call(call1, text="same text")
         # Different signature → different exact-path key → cache miss + new entry
@@ -249,7 +249,7 @@ class TestExactInputFastPath:
         call2 = Call(ExtractSig, model="function-test", client=client, instructions="Be verbose.")
 
         cache = SemanticCache(similarity_threshold=0.99)
-        cache._embed = AsyncMock(return_value=[1.0, 0.0, 0.0])  # ty: ignore[invalid-assignment]
+        cache._embed = AsyncMock(return_value=[1.0, 0.0, 0.0])
 
         await cache.call(call1, text="same text")
         await cache.call(call2, text="same text")
@@ -278,14 +278,14 @@ class TestDiskPersistence:
 
         # Cache 1: cold, write one entry to disk
         cache1 = SemanticCache(disk_path=disk, similarity_threshold=0.99)
-        cache1._embed = AsyncMock(return_value=[1.0, 0.0, 0.0])  # ty: ignore[invalid-assignment]
+        cache1._embed = AsyncMock(return_value=[1.0, 0.0, 0.0])
         await cache1.call(call, text="persistent input")
         assert disk.exists()
         assert cache1.size == 1
 
         # Cache 2: same disk path, should replay the prior entry
         cache2 = SemanticCache(disk_path=disk, similarity_threshold=0.99)
-        cache2._embed = AsyncMock(return_value=[1.0, 0.0, 0.0])  # ty: ignore[invalid-assignment]
+        cache2._embed = AsyncMock(return_value=[1.0, 0.0, 0.0])
         assert cache2.size == 1, "replay should rehydrate the entry"
 
         # Lookup against cache2 should hit the exact-path index
@@ -337,7 +337,7 @@ class TestDiskPersistence:
         call = Call(ExtractSig, model="function-test", client=client)
 
         cache = SemanticCache(disk_path=disk, similarity_threshold=0.99)
-        cache._embed = AsyncMock(return_value=[1.0, 0.0])  # ty: ignore[invalid-assignment]
+        cache._embed = AsyncMock(return_value=[1.0, 0.0])
         await cache.call(call, text="will be cleared")
         assert disk.exists()
         cache.clear_disk()
@@ -354,7 +354,7 @@ class TestDiskPersistence:
         call = Call(ExtractSig, model="function-test", client=client)
 
         cache = SemanticCache(disk_path=disk, similarity_threshold=0.99)
-        cache._embed = AsyncMock(return_value=[1.0, 0.0])  # ty: ignore[invalid-assignment]
+        cache._embed = AsyncMock(return_value=[1.0, 0.0])
         await cache.call(call, text="survives clear")
 
         cache.clear()
