@@ -8,10 +8,16 @@ calls fire. Live tests against Claude Haiku live in
 
 from __future__ import annotations
 
+import pytest
+
+# The vision programs need the optional `vision` extra (kaos-content[images]
+# -> Pillow + numpy). Skip this module cleanly when it is absent, e.g. the
+# min-deps lane, which installs the minimum set with no extras.
+pytest.importorskip("PIL", reason="requires the vision extra (Pillow)")
+
 from dataclasses import dataclass
 from typing import Any, Protocol, cast
 
-import pytest
 from kaos_content.images.model import KaosImage
 from PIL import Image as PILImage
 

@@ -11,10 +11,15 @@ Run::
 
 from __future__ import annotations
 
+import pytest
+
+# Vision extra (kaos-content[images] -> Pillow) required; skip when absent
+# (e.g. the min-deps lane installs no extras).
+pytest.importorskip("PIL", reason="requires the vision extra (Pillow)")
+
 import os
 from typing import Any
 
-import pytest
 from kaos_content.images.model import KaosImage
 from PIL import Image, ImageDraw, ImageFont
 
