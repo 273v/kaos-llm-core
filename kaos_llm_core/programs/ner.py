@@ -44,11 +44,16 @@ class EntityResult(Protocol):
     label name, and a ``[0, 1]`` confidence score.
     """
 
-    start: int
-    end: int
-    text: str
-    label: str
-    score: float
+    @property
+    def start(self) -> int: ...
+    @property
+    def end(self) -> int: ...
+    @property
+    def text(self) -> str: ...
+    @property
+    def label(self) -> str: ...
+    @property
+    def score(self) -> float: ...
 
 
 @runtime_checkable

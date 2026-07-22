@@ -98,11 +98,18 @@ class NLIScore(Protocol):
     probabilities summing to (approximately) ``1.0``. Implementations
     that emit logits should pass them through a softmax before
     handing the result back to :class:`ZeroShotNLIClassifier`.
+
+    Members are read-only (covariant): callers only ever *read* these
+    probabilities, so any object that exposes them — including frozen
+    dataclass stubs — satisfies the protocol.
     """
 
-    entailment: float
-    neutral: float
-    contradiction: float
+    @property
+    def entailment(self) -> float: ...
+    @property
+    def neutral(self) -> float: ...
+    @property
+    def contradiction(self) -> float: ...
 
 
 @runtime_checkable
@@ -359,11 +366,17 @@ class JudgeVerdict(Protocol):
     ``"supported"`` → ``entailment``, ``"refuted"`` → ``contradiction``,
     ``"neutral"`` → ``neutral`` (synonyms ``"entailment"`` /
     ``"contradiction"`` are also accepted).
+
+    Members are read-only (covariant): the verdict is consumed, not
+    mutated, so frozen concrete/stub types satisfy the protocol.
     """
 
-    label: str
-    confidence: float
-    rationale: str | None
+    @property
+    def label(self) -> str: ...
+    @property
+    def confidence(self) -> float: ...
+    @property
+    def rationale(self) -> str | None: ...
 
 
 @runtime_checkable
