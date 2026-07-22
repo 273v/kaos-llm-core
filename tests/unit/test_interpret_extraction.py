@@ -113,7 +113,9 @@ class TestPydanticOutputModel:
         # Pydantic ``create_model`` returns a runtime BaseModel subclass;
         # ty can't statically narrow the dynamically-attached attributes,
         # so assert via ``model_dump()`` rather than attribute access.
-        dumped = OutModel(memo="hello world").model_dump()
+        # create_output_model builds these fields dynamically; ty can't see
+        # them statically and wrongly flags them as discarded extras.
+        dumped = OutModel(memo="hello world").model_dump()  # ty: ignore[pydantic-discarded-extra-argument]
         assert dumped["memo"] == "hello world"
         assert dumped["score"] == 7
         assert dumped["needs_more_extraction"] is False
@@ -123,7 +125,7 @@ class TestPydanticOutputModel:
         from kaos_llm_core.signatures.introspection import create_output_model
 
         OutModel = create_output_model(InterpretExtractionSignature)
-        dumped = OutModel(
+        dumped = OutModel(  # ty: ignore[pydantic-discarded-extra-argument]
             memo="full memo body",
             score=9,
             needs_more_extraction=True,
@@ -141,9 +143,9 @@ class TestPydanticOutputModel:
 
         OutModel = create_output_model(InterpretExtractionSignature)
         with pytest.raises(ValidationError):
-            OutModel(memo="x", score=0)
+            OutModel(memo="x", score=0)  # ty: ignore[pydantic-discarded-extra-argument]
         with pytest.raises(ValidationError):
-            OutModel(memo="x", score=11)
+            OutModel(memo="x", score=11)  # ty: ignore[pydantic-discarded-extra-argument]
 
 
 class TestInstruction:

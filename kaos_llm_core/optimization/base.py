@@ -94,7 +94,11 @@ def resolve_config[C](
     becoming no-ops.
     """
     if overrides:
-        valid = {f.name for f in dataclasses.fields(config_cls)}
+        # ty: dataclasses.fields generic narrowing fails on the unbounded
+        # TypeVar; the runtime contract guarantees config_cls is a dataclass
+        # (mirrors the dataclasses.replace suppression below).
+        fields = dataclasses.fields(config_cls)  # ty: ignore[invalid-argument-type]
+        valid = {f.name for f in fields}
         unknown = set(overrides) - valid
         if unknown:
             msg = (

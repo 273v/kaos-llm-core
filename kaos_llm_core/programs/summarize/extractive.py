@@ -55,11 +55,16 @@ class RankedSegment(Protocol):
     are ignored.
     """
 
-    text: str
-    start: int
-    end: int
-    score: float
-    rank: int
+    @property
+    def text(self) -> str: ...
+    @property
+    def start(self) -> int: ...
+    @property
+    def end(self) -> int: ...
+    @property
+    def score(self) -> float: ...
+    @property
+    def rank(self) -> int: ...
 
 
 @runtime_checkable
