@@ -18,6 +18,25 @@ from dataclasses import dataclass
 
 import pytest
 
+_INTEGRATION_DIR = pathlib.Path(__file__).parent
+
+
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    """Mark every test here ``integration`` and every ``*_live.py`` test ``live``.
+
+    These tests call real provider APIs whenever a key is set in the
+    environment. Without the markers, the documented offline gate
+    (``-m "not live and not network and not slow"``) still ran them, which
+    made billable, nondeterministic calls on any machine with keys.
+    """
+    for item in items:
+        path = pathlib.Path(str(item.fspath))
+        if _INTEGRATION_DIR not in path.parents:
+            continue
+        item.add_marker(pytest.mark.integration)
+        if path.name.endswith("_live.py"):
+            item.add_marker(pytest.mark.live)
+
 
 def _has_key(*env_vars: str) -> bool:
     """Return True if any of the given env vars is set and non-empty."""
