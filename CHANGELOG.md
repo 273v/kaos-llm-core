@@ -8,7 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.15] — 2026-09-23
+
 ### Fixed
+
+- **`[mcp]` extra now requires `kaos-mcp>=0.1.5`.** Earlier kaos-mcp releases
+  leave `mcp` unbounded, so an install could resolve `mcp` 2.x, which removed
+  `mcp.server.fastmcp`, and `import kaos_mcp` failed. kaos-mcp 0.1.5 pins
+  `mcp<2`.
 
 - **Raised the `pydantic` floor to `>=2.11.2`.** On pydantic 2.11.0/2.11.1
   (pydantic-core 2.33.0), the JSON schema for `Field(discriminator="kind")`
