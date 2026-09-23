@@ -79,7 +79,7 @@ vision = [
 # (see `kaos_llm_core.serve`). Install with
 # `pip install kaos-llm-core[mcp]` to run the LLM-core MCP server.
 mcp = [
-  "kaos-mcp>=0.1.0,<0.2",
+  "kaos-mcp>=0.1.5,<0.2",
 ]
 
 [project.scripts]
