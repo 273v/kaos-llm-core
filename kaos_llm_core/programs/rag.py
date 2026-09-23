@@ -52,7 +52,7 @@ logger = get_logger(__name__)
 try:
     from kaos_nlp_core.retrieval.protocol import RetrievalResult
 except ImportError:  # pragma: no cover
-    RetrievalResult = Any  # type: ignore[assignment,misc]  # ty: ignore[invalid-assignment]
+    RetrievalResult = Any  # type: ignore[assignment,misc]
 
 
 # ---------------------------------------------------------------------------

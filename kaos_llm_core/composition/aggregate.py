@@ -113,7 +113,7 @@ class Aggregator(Protocol):
 class _ExclusiveAggregator:
     """Helper shared by exclusive (single-label) strategies."""
 
-    def _build(
+    def _build_exclusive(
         self,
         winner: str | None,
         per_chunk: Sequence[Classification[Label]],
@@ -155,7 +155,7 @@ class VoteAggregator(_ExclusiveAggregator):
     ) -> Classification[Label]:
         per_chunk_names = [_names_from_classification(c) for c in per_chunk]
         winner = vote(per_chunk_names)
-        return self._build(winner, per_chunk, label_set)
+        return self._build_exclusive(winner, per_chunk, label_set)
 
 
 class MajorityAggregator(_ExclusiveAggregator):
@@ -177,13 +177,13 @@ class MajorityAggregator(_ExclusiveAggregator):
     ) -> Classification[Label]:
         per_chunk_names = [_names_from_classification(c) for c in per_chunk]
         winner = majority(per_chunk_names, threshold=self.threshold)
-        return self._build(winner, per_chunk, label_set)
+        return self._build_exclusive(winner, per_chunk, label_set)
 
 
 class _MultiLabelAggregator:
     """Helper shared by multi-label strategies."""
 
-    def _build(
+    def _build_multi(
         self,
         picks: frozenset[str],
         per_chunk: Sequence[Classification[Label]],
@@ -218,7 +218,7 @@ class UnionAggregator(_MultiLabelAggregator):
     ) -> Classification[Label]:
         per_chunk_names = [_names_from_classification(c) for c in per_chunk]
         picks = union(per_chunk_names)
-        return self._build(picks, per_chunk, label_set)
+        return self._build_multi(picks, per_chunk, label_set)
 
 
 class IntersectionAggregator(_MultiLabelAggregator):
@@ -236,7 +236,7 @@ class IntersectionAggregator(_MultiLabelAggregator):
     ) -> Classification[Label]:
         per_chunk_names = [_names_from_classification(c) for c in per_chunk]
         picks = intersection(per_chunk_names)
-        return self._build(picks, per_chunk, label_set)
+        return self._build_multi(picks, per_chunk, label_set)
 
 
 class WeightedAggregator(_MultiLabelAggregator, _ExclusiveAggregator):
@@ -280,9 +280,9 @@ class WeightedAggregator(_MultiLabelAggregator, _ExclusiveAggregator):
         )
         if label_set.exclusive:
             winner = result if isinstance(result, str) else None
-            return _ExclusiveAggregator._build(self, winner, per_chunk, label_set)
+            return self._build_exclusive(winner, per_chunk, label_set)
         picks = result if isinstance(result, frozenset) else frozenset()
-        return _MultiLabelAggregator._build(self, picks, per_chunk, label_set)
+        return self._build_multi(picks, per_chunk, label_set)
 
 
 class MaxScoreAggregator(_MultiLabelAggregator, _ExclusiveAggregator):
@@ -317,9 +317,9 @@ class MaxScoreAggregator(_MultiLabelAggregator, _ExclusiveAggregator):
         )
         if label_set.exclusive:
             winner = result if isinstance(result, str) else None
-            return _ExclusiveAggregator._build(self, winner, per_chunk, label_set, pooled)
+            return self._build_exclusive(winner, per_chunk, label_set, pooled)
         picks = result if isinstance(result, frozenset) else frozenset()
-        return _MultiLabelAggregator._build(self, picks, per_chunk, label_set, pooled)
+        return self._build_multi(picks, per_chunk, label_set, pooled)
 
 
 # ---------------------------------------------------------------------------
