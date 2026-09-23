@@ -53,7 +53,10 @@ dependencies = [
   # them. (The 0.1.0a4 tag exists but its release run failed at the
   # wheels matrix and never published to PyPI.)
   "kaos-nlp-core>=0.1.0,<0.2",
-  "pydantic>=2.11.0",
+  # 2.11.2 (pydantic-core 2.33.1) is the first release whose JSON schema
+  # keeps the ``discriminator`` on ``Field(discriminator=...)`` unions,
+  # which the grounding Signatures rely on.
+  "pydantic>=2.11.2",
 ]
 
 # NOTE: the [pdf] and [tabular] extras (cross-module input bridges for

@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Raised the `pydantic` floor to `>=2.11.2`.** On pydantic 2.11.0/2.11.1
+  (pydantic-core 2.33.0), the JSON schema for `Field(discriminator="kind")`
+  unions omits the `discriminator`. That drops the `kind` discriminator from
+  the grounding Signatures' output schema (`Answer` | `InsufficientEvidence`).
+  The CI min-deps lane now actually installs the lowest direct versions, which
+  exposed the problem.
+
 ## [0.1.14] — 2026-06-26
 
 Expose the VLM vision page programs (OCR / describe / classify) as MCP tools.

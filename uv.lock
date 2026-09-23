@@ -484,7 +484,7 @@ requires-dist = [
     { name = "kaos-mcp", marker = "extra == 'mcp'", specifier = ">=0.1.0,<0.2" },
     { name = "kaos-nlp-core", specifier = ">=0.1.0,<0.2" },
     { name = "opentelemetry-api", marker = "extra == 'otel'", specifier = ">=1.20" },
-    { name = "pydantic", specifier = ">=2.11.0" },
+    { name = "pydantic", specifier = ">=2.11.2" },
 ]
 provides-extras = ["mcp", "otel", "vision"]
 
