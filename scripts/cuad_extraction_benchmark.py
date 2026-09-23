@@ -44,7 +44,7 @@ from kaos_llm_core.programs.extract import CorpusExtractionResult, extract_corpu
 from kaos_llm_core.signatures.extraction import ExtractionSchema
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-FIXTURE_DIR = REPO_ROOT / "kaos-llm-core" / "tests" / "fixtures" / "cuad-sample"
+FIXTURE_DIR = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "cuad-sample"
 GOLDEN_PATH = FIXTURE_DIR / "cuad-extraction-golden.jsonl"
 MANIFEST_PATH = FIXTURE_DIR / "MANIFEST.json"
 OUT_DIR = REPO_ROOT / "docs" / "benchmarks"
