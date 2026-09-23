@@ -176,7 +176,7 @@ def validate_cited_output(
     if span_map and isinstance(corpus, dict):
         # For paragraph-tagged text, resolve #pN URIs to their text.
         # Cast to typed dict to help ty resolve the union.
-        corpus_dict: dict[str, str] = corpus  # ty: ignore[invalid-assignment]
+        corpus_dict: dict[str, str] = corpus
         enriched = dict(corpus_dict)
         base_uri = None
         for uri, (start, end) in span_map.items():

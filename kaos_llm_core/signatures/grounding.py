@@ -487,7 +487,7 @@ class Claim(BaseModel):
 
         errors: list[SpanError] = []
         # Use a local typed getter to help ty resolve the Callable|dict union.
-        _get: Callable[[str], str] = corpus.__getitem__ if isinstance(corpus, dict) else corpus  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
+        _get: Callable[[str], str] = corpus.__getitem__ if isinstance(corpus, dict) else corpus  # type: ignore[assignment]
         for i, span in enumerate(self.supporting_spans):
             try:
                 source_text = _get(span.source_uri)
@@ -801,7 +801,7 @@ class Cited[T](BaseModel):
         """
         strategies = tuple(strategies)
         errors: list[SpanError] = []
-        _get: Callable[[str], str] = corpus.__getitem__ if isinstance(corpus, dict) else corpus  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
+        _get: Callable[[str], str] = corpus.__getitem__ if isinstance(corpus, dict) else corpus  # type: ignore[assignment]
         for i, span in enumerate(self.spans):
             try:
                 source_text = _get(span.source_uri)
